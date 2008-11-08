@@ -35,15 +35,13 @@
 
 !-----------------------------------
 
-  subroutine aniso_inner_core_model(x,c11,c33,c12,c13,c44,REFERENCE_1D_MODEL)
+  subroutine aniso_inner_core_model(x,c11,c33,c12,c13,c44)
 
   implicit none
 
   include "constants.h"
 
 ! given a normalized radius x, gives non-dimensionalized c11,c33,c12,c13,c44
-
-  integer REFERENCE_1D_MODEL
 
   double precision x,c11,c33,c12,c13,c44
 
@@ -52,29 +50,7 @@
   double precision c66
   double precision scale_fac
 
-  if(REFERENCE_1D_MODEL == REFERENCE_MODEL_IASP91) then
-    vp=11.24094d0-4.09689d0*x*x
-    vs=3.56454d0-3.45241d0*x*x
-    rho=13.0885d0-8.8381d0*x*x
-
-! values at center
-    vp0=11.24094d0
-    vs0=3.56454d0
-    rho0=13.0885d0
-
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_PREM) then
-    vp=11.2622d0-6.3640d0*x*x
-    vs=3.6678d0-4.4475d0*x*x
-    rho=13.0885d0-8.8381d0*x*x
-
-! values at center
-    vp0=11.2622d0
-    vs0=3.6678d0
-    rho0=13.0885d0
-
-  else
-    stop 'unknown 1D reference Earth model in anisotropic inner core'
-  endif
+  call reference_1d_model_aniso_inner_core_model_setup(x,vp,vp0,vs,vs0,rho,rho0)
 
 ! elastic tensor for hexagonal symmetry in reduced notation:
 !

@@ -219,80 +219,6 @@
   type (attenuation_model_variables) AM_V
 ! attenuation_model_variables
 
-! model_1066a_variables
-  type model_1066a_variables
-    sequence
-      double precision, dimension(NR_1066A) :: radius_1066a
-      double precision, dimension(NR_1066A) :: density_1066a
-      double precision, dimension(NR_1066A) :: vp_1066a
-      double precision, dimension(NR_1066A) :: vs_1066a
-      double precision, dimension(NR_1066A) :: Qkappa_1066a
-      double precision, dimension(NR_1066A) :: Qmu_1066a
-  end type model_1066a_variables
-
-  type (model_1066a_variables) M1066a_V
-! model_1066a_variables
-
-! model_ak135_variables
-  type model_ak135_variables
-    sequence
-    double precision, dimension(NR_AK135) :: radius_ak135
-    double precision, dimension(NR_AK135) :: density_ak135
-    double precision, dimension(NR_AK135) :: vp_ak135
-    double precision, dimension(NR_AK135) :: vs_ak135
-    double precision, dimension(NR_AK135) :: Qkappa_ak135
-    double precision, dimension(NR_AK135) :: Qmu_ak135
-  end type model_ak135_variables
-
- type (model_ak135_variables) Mak135_V
-! model_ak135_variables
-
-! three_d_mantle_model_variables
-  type three_d_mantle_model_variables
-    sequence
-    double precision dvs_a(0:NK,0:NS,0:NS)
-    double precision dvs_b(0:NK,0:NS,0:NS)
-    double precision dvp_a(0:NK,0:NS,0:NS)
-    double precision dvp_b(0:NK,0:NS,0:NS)
-    double precision spknt(NK+1)
-    double precision qq0(NK+1,NK+1)
-    double precision qq(3,NK+1,NK+1)
-  end type three_d_mantle_model_variables
-
-! model_ref_variables
-  type model_ref_variables
-    sequence
-    double precision, dimension(NR_REF) :: radius_ref
-    double precision, dimension(NR_REF) :: density_ref
-    double precision, dimension(NR_REF) :: vpv_ref
-    double precision, dimension(NR_REF) :: vph_ref
-    double precision, dimension(NR_REF) :: vsv_ref
-    double precision, dimension(NR_REF) :: vsh_ref
-    double precision, dimension(NR_REF) :: eta_ref
-    double precision, dimension(NR_REF) :: Qkappa_ref
-    double precision, dimension(NR_REF) :: Qmu_ref
-  end type model_ref_variables
-
-  type (model_ref_variables) Mref_V
-! model_ref_variables
-
-  type (three_d_mantle_model_variables) D3MM_V
-! three_d_mantle_model_variables
-
-! crustal_model_variables
-  type crustal_model_variables
-    sequence
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: thlr
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: velocp
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: velocs
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: dens
-    character(len=2) abbreviation(NCAP_CRUST/2,NCAP_CRUST)
-    character(len=2) code(NKEYS_CRUST)
-  end type crustal_model_variables
-
-  type (crustal_model_variables) CM_V
-! crustal_model_variables
-
 ! attenuation_model_storage
   type attenuation_model_storage
     sequence
@@ -379,7 +305,7 @@
           NPROC_XI,NPROC_ETA,NTSTEP_BETWEEN_OUTPUT_SEISMOS, &
           NTSTEP_BETWEEN_READ_ADJSRC,NSTEP,NSOURCES,NTSTEP_BETWEEN_FRAMES, &
           NTSTEP_BETWEEN_OUTPUT_INFO,NUMBER_OF_RUNS,NUMBER_OF_THIS_RUN,NCHUNKS,SIMULATION_TYPE, &
-          REFERENCE_1D_MODEL,THREE_D_MODEL,MOVIE_VOLUME_TYPE,MOVIE_START,MOVIE_STOP
+          THREE_D_MODEL,MOVIE_VOLUME_TYPE,MOVIE_START,MOVIE_STOP
 
   double precision DT,ANGULAR_WIDTH_XI_IN_DEGREES,ANGULAR_WIDTH_ETA_IN_DEGREES,CENTER_LONGITUDE_IN_DEGREES, &
           CENTER_LATITUDE_IN_DEGREES,GAMMA_ROTATION_AZIMUTH,ROCEAN,RMIDDLE_CRUST, &
@@ -431,47 +357,9 @@
   double precision :: static_memory_size
 
 ! arrays for BCAST
-  integer, dimension(38) :: bcast_integer
+  integer, dimension(37) :: bcast_integer
   double precision, dimension(30) :: bcast_double_precision
   logical, dimension(26) :: bcast_logical
-
-  integer, parameter :: maxker=200
-  integer, parameter :: maxl=72
-  integer, parameter :: maxcoe=2000
-  integer, parameter :: maxver=1000
-  integer, parameter :: maxhpa=2
-
-  integer numker
-  integer numhpa,numcof
-  integer ihpa,lmax,nylm
-  integer lmxhpa(maxhpa)
-  integer itypehpa(maxhpa)
-  integer ihpakern(maxker)
-  integer numcoe(maxhpa)
-  integer ivarkern(maxker)
-  integer itpspl(maxcoe,maxhpa)
-
-  integer nconpt(maxhpa),iver
-  integer iconpt(maxver,maxhpa)
-  real(kind=4) conpt(maxver,maxhpa)
-
-  real(kind=4) xlaspl(maxcoe,maxhpa)
-  real(kind=4) xlospl(maxcoe,maxhpa)
-  real(kind=4) radspl(maxcoe,maxhpa)
-  real(kind=4) coe(maxcoe,maxker)
-  character(len=80) hsplfl(maxhpa)
-  character(len=40) dskker(maxker)
-  real(kind=4) vercof(maxker)
-  real(kind=4) vercofd(maxker)
-
-  real(kind=4) ylmcof((maxl+1)**2,maxhpa)
-  real(kind=4) wk1(maxl+1)
-  real(kind=4) wk2(maxl+1)
-  real(kind=4) wk3(maxl+1)
-
-  character(len=80) kerstr
-  character(len=80) refmdl
-  character(len=40) varstr(maxker)
 
   integer :: ipass
 
@@ -553,7 +441,7 @@
           ROTATION,ISOTROPIC_3D_MANTLE,TOPOGRAPHY,OCEANS,MOVIE_SURFACE, &
           MOVIE_VOLUME,MOVIE_VOLUME_COARSE,ATTENUATION_3D,RECEIVERS_CAN_BE_BURIED, &
           PRINT_SOURCE_TIME_FUNCTION,SAVE_MESH_FILES, &
-          ATTENUATION,REFERENCE_1D_MODEL,THREE_D_MODEL,ABSORBING_CONDITIONS, &
+          ATTENUATION,THREE_D_MODEL,ABSORBING_CONDITIONS, &
           INCLUDE_CENTRAL_CUBE,INFLATE_CENTRAL_CUBE,LOCAL_PATH,MODEL,SIMULATION_TYPE,SAVE_FORWARD, &
           NPROC,NPROCTOT,NEX_PER_PROC_XI,NEX_PER_PROC_ETA, &
           NSPEC, &
@@ -582,7 +470,7 @@
             NPROC_XI,NPROC_ETA,NTSTEP_BETWEEN_OUTPUT_SEISMOS, &
             NTSTEP_BETWEEN_READ_ADJSRC,NSTEP,NSOURCES,NTSTEP_BETWEEN_FRAMES, &
             NTSTEP_BETWEEN_OUTPUT_INFO,NUMBER_OF_RUNS,NUMBER_OF_THIS_RUN,NCHUNKS,&
-            SIMULATION_TYPE,REFERENCE_1D_MODEL,THREE_D_MODEL,NPROC,NPROCTOT, &
+            SIMULATION_TYPE,THREE_D_MODEL,NPROC,NPROCTOT, &
             NEX_PER_PROC_XI,NEX_PER_PROC_ETA,ratio_divide_central_cube,&
             MOVIE_VOLUME_TYPE,MOVIE_START,MOVIE_STOP/)
 
@@ -605,7 +493,7 @@
 ! broadcast the information read on the master to the nodes
     call MPI_BCAST(NSOURCES,1,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
 
-    call MPI_BCAST(bcast_integer,38,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
+    call MPI_BCAST(bcast_integer,37,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
 
     call MPI_BCAST(bcast_double_precision,30,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
 
@@ -673,16 +561,15 @@
     NUMBER_OF_THIS_RUN = bcast_integer(26)
     NCHUNKS = bcast_integer(27)
     SIMULATION_TYPE = bcast_integer(28)
-    REFERENCE_1D_MODEL = bcast_integer(29)
-    THREE_D_MODEL = bcast_integer(30)
-    NPROC = bcast_integer(31)
-    NPROCTOT = bcast_integer(32)
-    NEX_PER_PROC_XI = bcast_integer(33)
-    NEX_PER_PROC_ETA = bcast_integer(34)
-    ratio_divide_central_cube = bcast_integer(35)
-    MOVIE_VOLUME_TYPE = bcast_integer(36)
-    MOVIE_START = bcast_integer(37)
-    MOVIE_STOP = bcast_integer(38)
+    THREE_D_MODEL = bcast_integer(29)
+    NPROC = bcast_integer(30)
+    NPROCTOT = bcast_integer(31)
+    NEX_PER_PROC_XI = bcast_integer(32)
+    NEX_PER_PROC_ETA = bcast_integer(33)
+    ratio_divide_central_cube = bcast_integer(34)
+    MOVIE_VOLUME_TYPE = bcast_integer(35)
+    MOVIE_START = bcast_integer(36)
+    MOVIE_STOP = bcast_integer(37)
 
     TRANSVERSE_ISOTROPY = bcast_logical(1)
     ANISOTROPIC_3D_MANTLE = bcast_logical(2)
@@ -986,43 +873,10 @@
   if(ISOTROPIC_3D_MANTLE) then
     if(THREE_D_MODEL /= 0) call read_smooth_moho
     if(THREE_D_MODEL == THREE_D_MODEL_S20RTS) then
-! the variables read are declared and stored in structure D3MM_V
-      if(myrank == 0) call read_mantle_model(D3MM_V)
-! broadcast the information read on the master to the nodes
-      call MPI_BCAST(D3MM_V%dvs_a,(NK+1)*(NS+1)*(NS+1),MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-      call MPI_BCAST(D3MM_V%dvs_b,(NK+1)*(NS+1)*(NS+1),MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-      call MPI_BCAST(D3MM_V%dvp_a,(NK+1)*(NS+1)*(NS+1),MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-      call MPI_BCAST(D3MM_V%dvp_b,(NK+1)*(NS+1)*(NS+1),MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-      call MPI_BCAST(D3MM_V%spknt,NK+1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-      call MPI_BCAST(D3MM_V%qq0,(NK+1)*(NK+1),MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-      call MPI_BCAST(D3MM_V%qq,3*(NK+1)*(NK+1),MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
+      call read_s20rts(myrank)
     elseif(THREE_D_MODEL == THREE_D_MODEL_S362ANI .or. THREE_D_MODEL == THREE_D_MODEL_S362WMANI &
            .or. THREE_D_MODEL == THREE_D_MODEL_S362ANI_PREM .or. THREE_D_MODEL == THREE_D_MODEL_S29EA) then
-      if(myrank == 0) call read_model_s362ani(THREE_D_MODEL,THREE_D_MODEL_S362ANI,THREE_D_MODEL_S362WMANI, &
-                              THREE_D_MODEL_S362ANI_PREM,THREE_D_MODEL_S29EA, &
-                              numker,numhpa,ihpa,lmxhpa,itypehpa,ihpakern,numcoe,ivarkern,itpspl, &
-                              xlaspl,xlospl,radspl,coe,hsplfl,dskker,kerstr,varstr,refmdl)
-  call MPI_BCAST(numker,1,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(numhpa,1,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(ihpa,1,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(lmxhpa,maxhpa,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(itypehpa,maxhpa,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(ihpakern,maxker,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(numcoe,maxhpa,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(ivarkern,maxker,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(itpspl,maxcoe*maxhpa,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
-
-  call MPI_BCAST(xlaspl,maxcoe*maxhpa,MPI_REAL,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(xlospl,maxcoe*maxhpa,MPI_REAL,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(radspl,maxcoe*maxhpa,MPI_REAL,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(coe,maxcoe*maxker,MPI_REAL,0,MPI_COMM_WORLD,ier)
-
-  call MPI_BCAST(hsplfl,80*maxhpa,MPI_CHARACTER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(dskker,40*maxker,MPI_CHARACTER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(kerstr,80,MPI_CHARACTER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(refmdl,80,MPI_CHARACTER,0,MPI_COMM_WORLD,ier)
-  call MPI_BCAST(varstr,40*maxker,MPI_CHARACTER,0,MPI_COMM_WORLD,ier)
-
+      call read_s362ani(myrank, THREE_D_MODEL)
     else
       call exit_MPI(myrank,'3D model not defined')
     endif
@@ -1038,15 +892,7 @@
   endif
 
   if(CRUSTAL) then
-! the variables read are declared and stored in structure CM_V
-    if(myrank == 0) call read_crustal_model(CM_V)
-! broadcast the information read on the master to the nodes
-    call MPI_BCAST(CM_V%thlr,NKEYS_CRUST*NLAYERS_CRUST,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-    call MPI_BCAST(CM_V%velocp,NKEYS_CRUST*NLAYERS_CRUST,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-    call MPI_BCAST(CM_V%velocs,NKEYS_CRUST*NLAYERS_CRUST,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-    call MPI_BCAST(CM_V%dens,NKEYS_CRUST*NLAYERS_CRUST,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-    call MPI_BCAST(CM_V%abbreviation,NCAP_CRUST*NCAP_CRUST,MPI_CHARACTER,0,MPI_COMM_WORLD,ier)
-    call MPI_BCAST(CM_V%code,2*NKEYS_CRUST,MPI_CHARACTER,0,MPI_COMM_WORLD,ier)
+    call read_crust_2_0(myrank)
   endif
 
   if(ANISOTROPIC_INNER_CORE) then
@@ -1072,7 +918,7 @@
     call MPI_BCAST(AM_V%min_period, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ier)
     call MPI_BCAST(AM_V%max_period, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ier)
 
-    call attenuation_model_setup(REFERENCE_1D_MODEL, RICB, RCMB, R670, R220, R80,AM_V,M1066a_V,Mak135_V,Mref_V,AM_S,AS_V)
+    call attenuation_model_setup(AM_V,AM_S,AS_V)
   endif
 
 ! read topography and bathymetry file
@@ -1163,14 +1009,11 @@
          myrank,LOCAL_PATH,OCEANS,ibathy_topo, &
          rotation_matrix,ANGULAR_WIDTH_XI_RAD,ANGULAR_WIDTH_ETA_RAD, &
          ATTENUATION,ATTENUATION_3D,SAVE_MESH_FILES, &
-         NCHUNKS,INCLUDE_CENTRAL_CUBE,ABSORBING_CONDITIONS,REFERENCE_1D_MODEL,THREE_D_MODEL, &
+         NCHUNKS,INCLUDE_CENTRAL_CUBE,ABSORBING_CONDITIONS,THREE_D_MODEL, &
          R_CENTRAL_CUBE,RICB,RHO_OCEANS,RCMB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN, &
          ner,ratio_sampling_array,doubling_index,r_bottom, r_top,this_region_has_a_doubling,CASE_3D, &
-         AMM_V, AM_V, M1066a_V, Mak135_V, Mref_V,D3MM_V,CM_V, AM_S,AS_V, &
-         numker,numhpa,numcof,ihpa,lmax,nylm, &
-         lmxhpa,itypehpa,ihpakern,numcoe,ivarkern, &
-         nconpt,iver,iconpt,conpt,xlaspl,xlospl,radspl, &
-         coe,vercof,vercofd,ylmcof,wk1,wk2,wk3,kerstr,varstr,ipass,ratio_divide_central_cube,HONOR_1D_SPHERICAL_MOHO, &
+         AMM_V, AM_V, AM_S,AS_V, &
+         ipass,ratio_divide_central_cube,HONOR_1D_SPHERICAL_MOHO, &
          CUT_SUPERBRICK_XI,CUT_SUPERBRICK_ETA,mod(iproc_xi_slice(myrank),2),mod(iproc_eta_slice(myrank),2))
   enddo
 

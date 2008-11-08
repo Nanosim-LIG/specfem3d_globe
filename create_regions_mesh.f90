@@ -40,14 +40,11 @@
            myrank,LOCAL_PATH,OCEANS,ibathy_topo, &
            rotation_matrix,ANGULAR_WIDTH_XI_RAD,ANGULAR_WIDTH_ETA_RAD,&
            ATTENUATION,ATTENUATION_3D,SAVE_MESH_FILES, &
-           NCHUNKS,INCLUDE_CENTRAL_CUBE,ABSORBING_CONDITIONS,REFERENCE_1D_MODEL,THREE_D_MODEL, &
+           NCHUNKS,INCLUDE_CENTRAL_CUBE,ABSORBING_CONDITIONS,THREE_D_MODEL, &
            R_CENTRAL_CUBE,RICB,RHO_OCEANS,RCMB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN, &
            ner,ratio_sampling_array,doubling_index,r_bottom,r_top,this_region_has_a_doubling,CASE_3D, &
-           AMM_V, AM_V, M1066a_V, Mak135_V, Mref_V,D3MM_V,CM_V, AM_S, AS_V, &
-           numker,numhpa,numcof,ihpa,lmax,nylm, &
-           lmxhpa,itypehpa,ihpakern,numcoe,ivarkern, &
-           nconpt,iver,iconpt,conpt,xlaspl,xlospl,radspl, &
-           coe,vercof,vercofd,ylmcof,wk1,wk2,wk3,kerstr,varstr,ipass,ratio_divide_central_cube,HONOR_1D_SPHERICAL_MOHO,&
+           AMM_V, AM_V, AM_S, AS_V, &
+           ipass,ratio_divide_central_cube,HONOR_1D_SPHERICAL_MOHO,&
            CUT_SUPERBRICK_XI,CUT_SUPERBRICK_ETA,offset_proc_xi,offset_proc_eta)
 
 ! create the different regions of the mesh
@@ -109,80 +106,6 @@
   type (attenuation_model_variables) AM_V
 ! attenuation_model_variables
 
-! model_1066a_variables
-  type model_1066a_variables
-    sequence
-      double precision, dimension(NR_1066A) :: radius_1066a
-      double precision, dimension(NR_1066A) :: density_1066a
-      double precision, dimension(NR_1066A) :: vp_1066a
-      double precision, dimension(NR_1066A) :: vs_1066a
-      double precision, dimension(NR_1066A) :: Qkappa_1066a
-      double precision, dimension(NR_1066A) :: Qmu_1066a
-  end type model_1066a_variables
-
-  type (model_1066a_variables) M1066a_V
-! model_1066a_variables
-
-! model_ak135_variables
-  type model_ak135_variables
-    sequence
-    double precision, dimension(NR_AK135) :: radius_ak135
-    double precision, dimension(NR_AK135) :: density_ak135
-    double precision, dimension(NR_AK135) :: vp_ak135
-    double precision, dimension(NR_AK135) :: vs_ak135
-    double precision, dimension(NR_AK135) :: Qkappa_ak135
-    double precision, dimension(NR_AK135) :: Qmu_ak135
-  end type model_ak135_variables
-
- type (model_ak135_variables) Mak135_V
-! model_ak135_variables
-
-! model_ref_variables
-  type model_ref_variables
-    sequence
-     double precision, dimension(NR_REF) :: radius_ref
-     double precision, dimension(NR_REF) :: density_ref
-     double precision, dimension(NR_REF) :: vpv_ref
-     double precision, dimension(NR_REF) :: vph_ref
-     double precision, dimension(NR_REF) :: vsv_ref
-     double precision, dimension(NR_REF) :: vsh_ref
-     double precision, dimension(NR_REF) :: eta_ref
-     double precision, dimension(NR_REF) :: Qkappa_ref
-     double precision, dimension(NR_REF) :: Qmu_ref
-  end type model_ref_variables
-
- type (model_ref_variables) Mref_V
-! model_ref_variables
-
-! three_d_mantle_model_variables
-  type three_d_mantle_model_variables
-    sequence
-    double precision dvs_a(0:NK,0:NS,0:NS)
-    double precision dvs_b(0:NK,0:NS,0:NS)
-    double precision dvp_a(0:NK,0:NS,0:NS)
-    double precision dvp_b(0:NK,0:NS,0:NS)
-    double precision spknt(NK+1)
-    double precision qq0(NK+1,NK+1)
-    double precision qq(3,NK+1,NK+1)
-  end type three_d_mantle_model_variables
-
-  type (three_d_mantle_model_variables) D3MM_V
-! three_d_mantle_model_variables
-
-! crustal_model_variables
-  type crustal_model_variables
-    sequence
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: thlr
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: velocp
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: velocs
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: dens
-    character(len=2) abbreviation(NCAP_CRUST/2,NCAP_CRUST)
-    character(len=2) code(NKEYS_CRUST)
-  end type crustal_model_variables
-
-  type (crustal_model_variables) CM_V
-! crustal_model_variables
-
 ! attenuation_model_storage
   type attenuation_model_storage
     sequence
@@ -215,7 +138,7 @@
 ! correct number of spectral elements in each block depending on chunk type
   integer nspec,nspec_tiso,nspec_stacey
 
-  integer NEX_XI,NEX_PER_PROC_XI,NEX_PER_PROC_ETA,NCHUNKS,REFERENCE_1D_MODEL,THREE_D_MODEL
+  integer NEX_XI,NEX_PER_PROC_XI,NEX_PER_PROC_ETA,NCHUNKS,THREE_D_MODEL
 
   integer NSPEC2DMAX_XMIN_XMAX,NSPEC2DMAX_YMIN_YMAX,NSPEC2D_BOTTOM,NSPEC2D_TOP
 
@@ -386,40 +309,6 @@
 
   integer :: nb_layer_above_aniso,FIRST_ELT_ABOVE_ANISO
 
-  integer, parameter :: maxker=200
-  integer, parameter :: maxl=72
-  integer, parameter :: maxcoe=2000
-  integer, parameter :: maxver=1000
-  integer, parameter :: maxhpa=2
-
-  integer numker
-  integer numhpa,numcof
-  integer ihpa,lmax,nylm
-  integer lmxhpa(maxhpa)
-  integer itypehpa(maxhpa)
-  integer ihpakern(maxker)
-  integer numcoe(maxhpa)
-  integer ivarkern(maxker)
-
-  integer nconpt(maxhpa),iver
-  integer iconpt(maxver,maxhpa)
-  real(kind=4) conpt(maxver,maxhpa)
-
-  real(kind=4) xlaspl(maxcoe,maxhpa)
-  real(kind=4) xlospl(maxcoe,maxhpa)
-  real(kind=4) radspl(maxcoe,maxhpa)
-  real(kind=4) coe(maxcoe,maxker)
-  real(kind=4) vercof(maxker)
-  real(kind=4) vercofd(maxker)
-
-  real(kind=4) ylmcof((maxl+1)**2,maxhpa)
-  real(kind=4) wk1(maxl+1)
-  real(kind=4) wk2(maxl+1)
-  real(kind=4) wk3(maxl+1)
-
-  character(len=80) kerstr
-  character(len=40) varstr(maxker)
-
 ! now perform two passes in this part to be able to save memory
   integer :: ipass
 
@@ -582,13 +471,7 @@
   call get_shape2D(myrank,shape2D_top,dershape2D_top,xigll,yigll,NGLLX,NGLLY)
 
 ! define models 1066a and ak135 and ref
-  if(REFERENCE_1D_MODEL == REFERENCE_MODEL_1066A) then
-    call define_model_1066a(CRUSTAL, M1066a_V)
-  elseif(REFERENCE_1D_MODEL == REFERENCE_MODEL_AK135) then
-    call define_model_ak135(CRUSTAL, Mak135_V)
-  elseif(REFERENCE_1D_MODEL == REFERENCE_MODEL_REF) then
-    call define_model_ref(Mref_V)
-  endif
+  call define_reference_1d_model(CRUSTAL)
 
 !------------------------------------------------------------------------
 
@@ -853,7 +736,7 @@
            nspl,rspl,espl,espl2,ELLIPTICITY,TOPOGRAPHY,TRANSVERSE_ISOTROPY, &
            ANISOTROPIC_3D_MANTLE,ANISOTROPIC_INNER_CORE,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST, &
            myrank,ibathy_topo,ATTENUATION,ATTENUATION_3D, &
-           ABSORBING_CONDITIONS,REFERENCE_1D_MODEL,THREE_D_MODEL, &
+           ABSORBING_CONDITIONS,THREE_D_MODEL, &
            RICB,RCMB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN, &
            xelm,yelm,zelm,shape3D,dershape3D,rmin,rmax,rhostore,kappavstore,kappahstore,muvstore,muhstore,eta_anisostore, &
            xixstore,xiystore,xizstore,etaxstore,etaystore,etazstore,gammaxstore,gammaystore,gammazstore, &
@@ -861,11 +744,8 @@
            c23store,c24store,c25store,c26store,c33store,c34store,c35store, &
            c36store,c44store,c45store,c46store,c55store,c56store,c66store, &
            nspec_ani,nspec_stacey,Qmu_store,tau_e_store,tau_s,T_c_source,rho_vp,rho_vs,&
-           AMM_V,AM_V,M1066a_V,Mak135_V,Mref_V,D3MM_V,CM_V,AM_S,AS_V, &
-           numker,numhpa,numcof,ihpa,lmax,nylm, &
-           lmxhpa,itypehpa,ihpakern,numcoe,ivarkern, &
-           nconpt,iver,iconpt,conpt,xlaspl,xlospl,radspl, &
-           coe,vercof,vercofd,ylmcof,wk1,wk2,wk3,kerstr,varstr,ACTUALLY_STORE_ARRAYS)
+           AMM_V,AM_V,AM_S,AS_V, &
+           ACTUALLY_STORE_ARRAYS)
 
 ! boundary mesh
         if (ipass == 2 .and. SAVE_BOUNDARY_MESH .and. iregion_code == IREGION_CRUST_MANTLE) then
@@ -1055,7 +935,7 @@
            nspl,rspl,espl,espl2,ELLIPTICITY,TOPOGRAPHY,TRANSVERSE_ISOTROPY, &
            ANISOTROPIC_3D_MANTLE,ANISOTROPIC_INNER_CORE,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST, &
            myrank,ibathy_topo,ATTENUATION,ATTENUATION_3D, &
-           ABSORBING_CONDITIONS,REFERENCE_1D_MODEL,THREE_D_MODEL, &
+           ABSORBING_CONDITIONS,THREE_D_MODEL, &
            RICB,RCMB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN, &
            xelm,yelm,zelm,shape3D,dershape3D,rmin,rmax,rhostore,kappavstore,kappahstore,muvstore,muhstore,eta_anisostore, &
            xixstore,xiystore,xizstore,etaxstore,etaystore,etazstore,gammaxstore,gammaystore,gammazstore, &
@@ -1063,11 +943,8 @@
            c23store,c24store,c25store,c26store,c33store,c34store,c35store, &
            c36store,c44store,c45store,c46store,c55store,c56store,c66store, &
            nspec_ani,nspec_stacey,Qmu_store,tau_e_store,tau_s,T_c_source,rho_vp,rho_vs,&
-           AMM_V,AM_V,M1066a_V,Mak135_V,Mref_V,D3MM_V,CM_V,AM_S,AS_V, &
-           numker,numhpa,numcof,ihpa,lmax,nylm, &
-           lmxhpa,itypehpa,ihpakern,numcoe,ivarkern, &
-           nconpt,iver,iconpt,conpt,xlaspl,xlospl,radspl, &
-           coe,vercof,vercofd,ylmcof,wk1,wk2,wk3,kerstr,varstr,ACTUALLY_STORE_ARRAYS)
+           AMM_V,AM_V,AM_S,AS_V, &
+           ACTUALLY_STORE_ARRAYS)
 
 ! boundary mesh
      if (ipass == 2 .and. SAVE_BOUNDARY_MESH .and. iregion_code == IREGION_CRUST_MANTLE) then
@@ -1224,7 +1101,7 @@
            nspl,rspl,espl,espl2,ELLIPTICITY,TOPOGRAPHY,TRANSVERSE_ISOTROPY, &
            ANISOTROPIC_3D_MANTLE,ANISOTROPIC_INNER_CORE,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST, &
            myrank,ibathy_topo,ATTENUATION,ATTENUATION_3D, &
-           ABSORBING_CONDITIONS,REFERENCE_1D_MODEL,THREE_D_MODEL, &
+           ABSORBING_CONDITIONS,THREE_D_MODEL, &
            RICB,RCMB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN, &
            xelm,yelm,zelm,shape3D,dershape3D,rmin,rmax,rhostore,kappavstore,kappahstore,muvstore,muhstore,eta_anisostore, &
            xixstore,xiystore,xizstore,etaxstore,etaystore,etazstore,gammaxstore,gammaystore,gammazstore, &
@@ -1232,11 +1109,8 @@
            c23store,c24store,c25store,c26store,c33store,c34store,c35store, &
            c36store,c44store,c45store,c46store,c55store,c56store,c66store, &
            nspec_ani,nspec_stacey,Qmu_store,tau_e_store,tau_s,T_c_source,rho_vp,rho_vs,&
-           AMM_V,AM_V,M1066a_V,Mak135_V,Mref_V,D3MM_V,CM_V,AM_S,AS_V, &
-           numker,numhpa,numcof,ihpa,lmax,nylm, &
-           lmxhpa,itypehpa,ihpakern,numcoe,ivarkern, &
-           nconpt,iver,iconpt,conpt,xlaspl,xlospl,radspl, &
-           coe,vercof,vercofd,ylmcof,wk1,wk2,wk3,kerstr,varstr,ACTUALLY_STORE_ARRAYS)
+           AMM_V,AM_V,AM_S,AS_V, &
+           ACTUALLY_STORE_ARRAYS)
       enddo
     enddo
   enddo
@@ -1351,11 +1225,10 @@
     call write_AVS_DX_global_faces_data(myrank,prname,nspec,iMPIcut_xi,iMPIcut_eta,ibool, &
               idoubling,xstore,ystore,zstore,locval,ifseg,npointot)
     call write_AVS_DX_global_chunks_data(myrank,prname,nspec,iboun,ibool, &
-              idoubling,xstore,ystore,zstore,locval,ifseg,npointot, &
+              iregion_code,idoubling,xstore,ystore,zstore,locval,ifseg,npointot, &
               rhostore,kappavstore,muvstore,nspl,rspl,espl,espl2, &
-              ELLIPTICITY,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST,REFERENCE_1D_MODEL, &
-              RICB,RCMB,RTOPDDOUBLEPRIME,R600,R670,R220,R771,R400,R120,R80,RMOHO, &
-              RMIDDLE_CRUST,ROCEAN,M1066a_V,Mak135_V,Mref_V)
+              ELLIPTICITY,TRANSVERSE_ISOTROPY,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST, &
+              RCMB)
     call write_AVS_DX_surface_data(myrank,prname,nspec,iboun,ibool, &
               idoubling,xstore,ystore,zstore,locval,ifseg,npointot)
   endif

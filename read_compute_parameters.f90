@@ -42,7 +42,7 @@
          ROTATION,ISOTROPIC_3D_MANTLE,TOPOGRAPHY,OCEANS,MOVIE_SURFACE, &
          MOVIE_VOLUME,MOVIE_VOLUME_COARSE,ATTENUATION_3D,RECEIVERS_CAN_BE_BURIED, &
          PRINT_SOURCE_TIME_FUNCTION,SAVE_MESH_FILES, &
-         ATTENUATION,REFERENCE_1D_MODEL,THREE_D_MODEL,ABSORBING_CONDITIONS, &
+         ATTENUATION,THREE_D_MODEL,ABSORBING_CONDITIONS, &
          INCLUDE_CENTRAL_CUBE,INFLATE_CENTRAL_CUBE,LOCAL_PATH,MODEL,SIMULATION_TYPE,SAVE_FORWARD, &
          NPROC,NPROCTOT,NEX_PER_PROC_XI,NEX_PER_PROC_ETA, &
          NSPEC, &
@@ -666,10 +666,7 @@
       endif
     endif
 
-    if (REFERENCE_1D_MODEL == REFERENCE_MODEL_1066A) then
-      DT = DT*0.20d0
-    endif
-
+    call reference_1d_model_adjust_time_step(DT)
 
     if( .not. ATTENUATION_RANGE_PREDEFINED ) then
        call auto_attenuation_periods(ANGULAR_WIDTH_XI_IN_DEGREES, NEX_MAX, &
@@ -780,120 +777,9 @@
 ! value common to all models
   RHO_OCEANS = 1020.0 / RHOAV
 
-  if(REFERENCE_1D_MODEL == REFERENCE_MODEL_IASP91) then
-
-! IASP91
-    ROCEAN = 6371000.d0
-    RMIDDLE_CRUST = 6351000.d0
-    RMOHO = 6336000.d0
-    R80  = 6291000.d0
-    R120 = 6251000.d0
-    R220 = 6161000.d0
-    R400 = 5961000.d0
-! there is no d600 discontinuity in IASP91 therefore this value is useless
-! but it needs to be there for compatibility with other subroutines
-    R600 = R_EARTH - 600000.d0
-    R670 = 5711000.d0
-    R771 = 5611000.d0
-    RTOPDDOUBLEPRIME = 3631000.d0
-    RCMB = 3482000.d0
-    RICB = 1217000.d0
-
-    RHO_TOP_OC = 9900.2379 / RHOAV
-    RHO_BOTTOM_OC = 12168.6383 / RHOAV
-
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_AK135) then
-
-! our implementation of AK135 has not been checked carefully yet
-! therefore let us doublecheck it carefully one day
-
-! values below corrected by Ying Zhou <yingz@gps.caltech.edu>
-
-! AK135 without the 300 meters of mud layer
-   ROCEAN = 6368000.d0
-   RMIDDLE_CRUST = 6361000.d0
-   RMOHO  = 6353000.d0
-   R80    = 6291000.d0
-   R220   = 6161000.d0
-   R400   = 5961000.d0
-   R670   = 5711000.d0
-   RTOPDDOUBLEPRIME = 3631000.d0
-   RCMB   = 3479500.d0
-   RICB   = 1217500.d0
-
-! values for AK135 that are not discontinuities
-   R600 = 5771000.d0
-   R771 = 5611000.d0
-
-   RHO_TOP_OC = 9914.5000 / RHOAV
-   RHO_BOTTOM_OC = 12139.1000 / RHOAV
-
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_1066A) then
-
-! values below corrected by Ying Zhou <yingz@gps.caltech.edu>
-
-! 1066A
-   RMOHO = 6360000.d0
-   R400 = 5950000.d0
-   R600 = 5781000.d0
-   R670 = 5700000.d0
-   RCMB = 3484300.d0
-   RICB = 1229480.d0
-
-! values for 1066A that are not discontinuities
-   RTOPDDOUBLEPRIME = 3631000.d0
-   R220 = 6161000.d0
-   R771 = 5611000.d0
-! RMIDDLE_CRUST used only for high resolution FFSW1C model, with 3 elements crust simulations
-! mid_crust = 10 km
-   RMIDDLE_CRUST = 6361000.d0
-   R80 = 6291000.d0
-
-! model 1066A has no oceans, therefore we use the radius of the Earth instead
-   ROCEAN = R_EARTH
-
-   RHO_TOP_OC = 9917.4500 / RHOAV
-   RHO_BOTTOM_OC = 12160.6500 / RHOAV
-
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_REF) then
-
-! REF
-    ROCEAN = 6368000.d0
-    RMIDDLE_CRUST = 6356000.d0
-    RMOHO = 6346600.d0
-    R80  = 6291000.d0
-    R220 = 6151000.d0
-    R400 = 5961000.d0
-    R600 = 5771000.d0
-    R670 = 5721000.d0
-    R771 = 5600000.d0
-    RTOPDDOUBLEPRIME = 3630000.d0
-    RCMB = 3479958.d0
-    RICB = 1221491.d0
-
-    RHO_TOP_OC = 9903.48 / RHOAV
-    RHO_BOTTOM_OC = 12166.35 / RHOAV
-
-  else
-
-! PREM
-    ROCEAN = 6368000.d0
-    RMIDDLE_CRUST = 6356000.d0
-    RMOHO = 6346600.d0
-    R80  = 6291000.d0
-    R220 = 6151000.d0
-    R400 = 5971000.d0
-    R600 = 5771000.d0
-    R670 = 5701000.d0
-    R771 = 5600000.d0
-    RTOPDDOUBLEPRIME = 3630000.d0
-    RCMB = 3480000.d0
-    RICB = 1221000.d0
-
-    RHO_TOP_OC = 9903.4384 / RHOAV
-    RHO_BOTTOM_OC = 12166.5885 / RHOAV
-
-  endif
+  call get_reference_1d_model_radii(ROCEAN,RMIDDLE_CRUST,RMOHO, &
+       R80,R120,R220,R400,R600,R670,R771, &
+       RTOPDDOUBLEPRIME,RCMB,RICB,RHO_TOP_OC,RHO_BOTTOM_OC)
 
 ! honor the PREM Moho or define a fictitious Moho in order to have even radial sampling
 ! from the d220 to the Earth surface
@@ -1058,12 +944,6 @@
 ! check that topology is correct if more than two chunks
   if(NCHUNKS > 2 .and. NEX_XI /= NEX_ETA) stop 'must have NEX_XI = NEX_ETA for more than two chunks'
   if(NCHUNKS > 2 .and. NPROC_XI /= NPROC_ETA) stop 'must have NPROC_XI = NPROC_ETA for more than two chunks'
-
-! check that IASP91, AK135, or 1066A is isotropic
-  if((REFERENCE_1D_MODEL == REFERENCE_MODEL_IASP91 .or. &
-      REFERENCE_1D_MODEL == REFERENCE_MODEL_AK135 .or. &
-      REFERENCE_1D_MODEL == REFERENCE_MODEL_1066A) .and. TRANSVERSE_ISOTROPY) &
-        stop 'models IASP91, AK135 and 1066A are currently isotropic'
 
   ELEMENT_WIDTH = ANGULAR_WIDTH_XI_IN_DEGREES/dble(NEX_MAX) * DEGREES_TO_RADIANS
 

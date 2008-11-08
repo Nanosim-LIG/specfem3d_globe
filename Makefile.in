@@ -51,10 +51,11 @@ RANLIB = ranlib
 O = obj
 S = @srcdir@
 
+model_OBJECTS = $(crust_2_0_OBJECTS) $(s20rts_OBJECTS) $(s362ani_OBJECTS) $(reference_1d_model_OBJECTS)
+
 libspecfem_a_OBJECTS = \
 	$O/add_missing_nodes.o \
 	$O/add_topography.o \
-	$O/add_topography_410_650.o \
 	$O/add_topography_cmb.o \
 	$O/add_topography_icb.o \
 	$O/anisotropic_inner_core_model.o \
@@ -62,6 +63,7 @@ libspecfem_a_OBJECTS = \
 	$O/assemble_MPI_scalar.o \
 	$O/assemble_MPI_vector.o \
 	$O/attenuation_model.o \
+	$O/auto_ner.o \
 	$O/calc_jacobian.o \
 	$O/calendar.o \
 	$O/comp_source_spectrum.o \
@@ -79,7 +81,6 @@ libspecfem_a_OBJECTS = \
 	$O/create_name_database.o \
 	$O/create_regions_mesh.o \
 	$O/create_serial_name_database.o \
-	$O/crustal_model.o \
 	$O/define_derivation_matrices.o \
 	$O/define_superbrick.o \
 	$O/euler_angles.o \
@@ -108,27 +109,20 @@ libspecfem_a_OBJECTS = \
 	$O/locate_sources.o \
 	$O/make_ellipticity.o \
 	$O/make_gravity.o \
-	$O/mantle_model.o \
 	$O/memory_eval.o \
-	$O/model_1066a.o \
-	$O/model_ak135.o \
-	$O/model_iasp91.o \
-	$O/model_prem.o \
-	$O/model_ref.o \
 	$O/moho_stretching.o \
-	$O/spline_routines.o \
 	$O/netlib_specfun_erf.o \
+	$O/prem_common.o \
 	$O/read_arrays_buffers_solver.o \
 	$O/read_compute_parameters.o \
 	$O/read_value_parameters.o \
-	$O/auto_ner.o \
 	$O/recompute_jacobian.o \
 	$O/reduce.o \
 	$O/rthetaphi_xyz.o \
-	$O/s362ani.o \
 	$O/save_arrays_solver.o \
 	$O/save_header_file.o \
 	$O/sort_array_coordinates.o \
+	$O/spline_routines.o \
 	$O/stretching_function.o \
 	$O/topo_bathy.o \
 	$O/write_AVS_DX_global_chunks_data.o \
@@ -185,17 +179,32 @@ bak: backup
 
 
 ####
+#### includes
+####
+
+include $S/MODELS/crust2.0/build.mk
+include $S/MODELS/s20rts/build.mk
+include $S/MODELS/s362ani/build.mk
+
+include $S/MODELS/prem/build.mk
+#include $S/MODELS/iasp91/build.mk
+#include $S/MODELS/1066a/build.mk
+#include $S/MODELS/ak135/build.mk
+#include $S/MODELS/ref/build.mk
+
+
+####
 #### rules for executables
 ####
 
 # rules for the main programs
-XMESHFEM_OBJECTS = $O/meshfem3D.o $(LIBSPECFEM)
+XMESHFEM_OBJECTS = $O/meshfem3D.o $(model_OBJECTS) $(LIBSPECFEM)
 xmeshfem3D: $(XMESHFEM_OBJECTS)
 ## use MPI here
 	${MPIFCCOMPILE_CHECK} -o xmeshfem3D $(XMESHFEM_OBJECTS) $(MPILIBS)
 
 # solver also depends on values from mesher
-XSPECFEM_OBJECTS = $(SOLVER_ARRAY_OBJECTS) $(LIBSPECFEM)
+XSPECFEM_OBJECTS = $(SOLVER_ARRAY_OBJECTS) $(model_OBJECTS) $(LIBSPECFEM)
 xspecfem3D: $(XSPECFEM_OBJECTS)
 ## use MPI here
 	${MPIFCCOMPILE_NO_CHECK} -o xspecfem3D $(XSPECFEM_OBJECTS) $(MPILIBS)
@@ -204,8 +213,9 @@ xspecfem3D: $(XSPECFEM_OBJECTS)
 xconvolve_source_timefunction: $O/convolve_source_timefunction.o
 	${FCCOMPILE_CHECK} -o xconvolve_source_timefunction $O/convolve_source_timefunction.o
 
-xcreate_header_file: $O/create_header_file.o $(LIBSPECFEM)
-	${FCCOMPILE_CHECK} -o xcreate_header_file $O/create_header_file.o $(LIBSPECFEM)
+# XXX: This is not an MPI program!
+xcreate_header_file: $O/create_header_file.o $(model_OBJECTS) $(LIBSPECFEM)
+	${MPIFCCOMPILE_CHECK} -o xcreate_header_file $O/create_header_file.o $(model_OBJECTS) $(LIBSPECFEM)
 
 xcreate_movie_AVS_DX: $O/create_movie_AVS_DX.o $(LIBSPECFEM)
 	${FCCOMPILE_CHECK} -o xcreate_movie_AVS_DX $O/create_movie_AVS_DX.o $(LIBSPECFEM)
@@ -353,9 +363,6 @@ $O/topo_bathy.o: constants.h $S/topo_bathy.f90
 $O/calc_jacobian.o: constants.h $S/calc_jacobian.f90
 	${FCCOMPILE_CHECK} -c -o $O/calc_jacobian.o ${FCFLAGS_f90} $S/calc_jacobian.f90
 
-$O/crustal_model.o: constants.h $S/crustal_model.f90
-	${FCCOMPILE_CHECK} -c -o $O/crustal_model.o ${FCFLAGS_f90} $S/crustal_model.f90
-
 $O/make_ellipticity.o: constants.h $S/make_ellipticity.f90
 	${FCCOMPILE_CHECK} -c -o $O/make_ellipticity.o ${FCFLAGS_f90} $S/make_ellipticity.f90
 
@@ -425,9 +432,6 @@ $O/hex_nodes.o: constants.h $S/hex_nodes.f90
 $O/intgrl.o: constants.h $S/intgrl.f90
 	${FCCOMPILE_CHECK} -c -o $O/intgrl.o ${FCFLAGS_f90} $S/intgrl.f90
 
-$O/mantle_model.o: constants.h $S/mantle_model.f90
-	${FCCOMPILE_CHECK} -c -o $O/mantle_model.o ${FCFLAGS_f90} $S/mantle_model.f90
-
 $O/get_absorb.o: constants.h $S/get_absorb.f90
 	${FCCOMPILE_CHECK} -c -o $O/get_absorb.o ${FCFLAGS_f90} $S/get_absorb.f90
 
@@ -447,20 +451,8 @@ $O/netlib_specfun_erf.o: $S/netlib_specfun_erf.f90
 $O/lgndr.o: constants.h $S/lgndr.f90
 	${FCCOMPILE_CHECK} -c -o $O/lgndr.o ${FCFLAGS_f90} $S/lgndr.f90
 
-$O/model_prem.o: constants.h $S/model_prem.f90
-	${FCCOMPILE_CHECK} -c -o $O/model_prem.o ${FCFLAGS_f90} $S/model_prem.f90
-
-$O/model_iasp91.o: constants.h $S/model_iasp91.f90
-	${FCCOMPILE_CHECK} -c -o $O/model_iasp91.o ${FCFLAGS_f90} $S/model_iasp91.f90
-
-$O/model_1066a.o: constants.h $S/model_1066a.f90
-	${FCCOMPILE_CHECK} -c -o $O/model_1066a.o ${FCFLAGS_f90} $S/model_1066a.f90
-
-$O/model_ak135.o: constants.h $S/model_ak135.f90
-	${FCCOMPILE_CHECK} -c -o $O/model_ak135.o ${FCFLAGS_f90} $S/model_ak135.f90
-
-$O/model_ref.o: constants.h $S/model_ref.f90
-	${FCCOMPILE_CHECK} -c -o $O/model_ref.o ${FCFLAGS_f90} $S/model_ref.f90
+$O/prem_common.o: constants.h $S/prem_common.f90
+	${FCCOMPILE_CHECK} -c -o $O/prem_common.o ${FCFLAGS_f90} $S/prem_common.f90
 
 $O/anisotropic_mantle_model.o: constants.h $S/anisotropic_mantle_model.f90
 	${FCCOMPILE_CHECK} -c -o $O/anisotropic_mantle_model.o ${FCFLAGS_f90} $S/anisotropic_mantle_model.f90
@@ -485,9 +477,6 @@ $O/add_topography.o: constants.h $S/add_topography.f90
 
 $O/moho_stretching.o: constants.h $S/moho_stretching.f90
 	${FCCOMPILE_CHECK} -c -o $O/moho_stretching.o ${FCFLAGS_f90} $S/moho_stretching.f90
-
-$O/add_topography_410_650.o: constants.h $S/add_topography_410_650.f90
-	${FCCOMPILE_CHECK} -c -o $O/add_topography_410_650.o ${FCFLAGS_f90} $S/add_topography_410_650.f90
 
 $O/add_topography_cmb.o: constants.h $S/add_topography_cmb.f90
 	${FCCOMPILE_CHECK} -c -o $O/add_topography_cmb.o ${FCFLAGS_f90} $S/add_topography_cmb.f90
@@ -538,7 +527,7 @@ $O/compute_boundary_kernel.o: constants.h $S/compute_boundary_kernel.f90
 $O/create_central_cube_buffers.o: constants.h $S/create_central_cube_buffers.f90
 	${MPIFCCOMPILE_CHECK} -c -o $O/create_central_cube_buffers.o ${FCFLAGS_f90} $S/create_central_cube_buffers.f90
 
-$O/attenuation_model.o: constants.h $S/attenuation_model.f90 $O/model_ak135.o $O/model_1066a.o $O/model_ref.o
+$O/attenuation_model.o: constants.h $S/attenuation_model.f90
 	${MPIFCCOMPILE_CHECK} -c -o $O/attenuation_model.o ${FCFLAGS_f90} $S/attenuation_model.f90
 
 $O/gll_library.o: constants.h $S/gll_library.f90
@@ -582,9 +571,6 @@ $O/memory_eval.o: constants.h $S/memory_eval.f90
 
 $O/get_backazimuth.o: constants.h $S/get_backazimuth.f90
 	${FCCOMPILE_CHECK} -c -o $O/get_backazimuth.o ${FCFLAGS_f90} $S/get_backazimuth.f90
-
-$O/s362ani.o: constants.h $S/s362ani.f90
-	${FCCOMPILE_CHECK} -c -o $O/s362ani.o ${FCFLAGS_f90} $S/s362ani.f90
 
 ###
 ### rule for the header file

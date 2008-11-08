@@ -706,7 +706,7 @@
           NPROC_XI,NPROC_ETA,NTSTEP_BETWEEN_OUTPUT_SEISMOS,&
           NTSTEP_BETWEEN_READ_ADJSRC,NSTEP,NSOURCES,NTSTEP_BETWEEN_FRAMES, &
           NTSTEP_BETWEEN_OUTPUT_INFO,NUMBER_OF_RUNS,NUMBER_OF_THIS_RUN,NCHUNKS,SIMULATION_TYPE, &
-          REFERENCE_1D_MODEL,THREE_D_MODEL,MOVIE_VOLUME_TYPE,MOVIE_START,MOVIE_STOP
+          THREE_D_MODEL,MOVIE_VOLUME_TYPE,MOVIE_START,MOVIE_STOP
 
   double precision DT,ANGULAR_WIDTH_XI_IN_DEGREES,ANGULAR_WIDTH_ETA_IN_DEGREES,CENTER_LONGITUDE_IN_DEGREES, &
           CENTER_LATITUDE_IN_DEGREES,GAMMA_ROTATION_AZIMUTH,ROCEAN,RMIDDLE_CRUST, &
@@ -782,7 +782,7 @@
   logical :: CASE_3D
 
 ! arrays for BCAST
-  integer, dimension(38) :: bcast_integer
+  integer, dimension(37) :: bcast_integer
   double precision, dimension(30) :: bcast_double_precision
   logical, dimension(33) :: bcast_logical
 
@@ -837,7 +837,7 @@
          ROTATION,ISOTROPIC_3D_MANTLE,TOPOGRAPHY,OCEANS,MOVIE_SURFACE, &
          MOVIE_VOLUME,MOVIE_VOLUME_COARSE,ATTENUATION_3D,RECEIVERS_CAN_BE_BURIED, &
          PRINT_SOURCE_TIME_FUNCTION,SAVE_MESH_FILES, &
-         ATTENUATION,REFERENCE_1D_MODEL,THREE_D_MODEL,ABSORBING_CONDITIONS, &
+         ATTENUATION,THREE_D_MODEL,ABSORBING_CONDITIONS, &
          INCLUDE_CENTRAL_CUBE,INFLATE_CENTRAL_CUBE,LOCAL_PATH,MODEL,SIMULATION_TYPE,SAVE_FORWARD, &
          NPROC,NPROCTOT,NEX_PER_PROC_XI,NEX_PER_PROC_ETA, &
          NSPEC_computed, &
@@ -867,7 +867,7 @@
             NPROC_XI,NPROC_ETA,NTSTEP_BETWEEN_OUTPUT_SEISMOS, &
             NTSTEP_BETWEEN_READ_ADJSRC,NSTEP,NSOURCES,NTSTEP_BETWEEN_FRAMES, &
             NTSTEP_BETWEEN_OUTPUT_INFO,NUMBER_OF_RUNS,NUMBER_OF_THIS_RUN,NCHUNKS,&
-            SIMULATION_TYPE,REFERENCE_1D_MODEL,THREE_D_MODEL,NPROC,NPROCTOT, &
+            SIMULATION_TYPE,THREE_D_MODEL,NPROC,NPROCTOT, &
             NEX_PER_PROC_XI,NEX_PER_PROC_ETA,ratio_divide_central_cube,&
             MOVIE_VOLUME_TYPE,MOVIE_START,MOVIE_STOP/)
 
@@ -892,7 +892,7 @@
 ! broadcast the information read on the master to the nodes
     call MPI_BCAST(NSOURCES,1,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
 
-    call MPI_BCAST(bcast_integer,38,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
+    call MPI_BCAST(bcast_integer,37,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
 
     call MPI_BCAST(bcast_double_precision,30,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
 
@@ -959,16 +959,15 @@
     NUMBER_OF_THIS_RUN = bcast_integer(26)
     NCHUNKS = bcast_integer(27)
     SIMULATION_TYPE = bcast_integer(28)
-    REFERENCE_1D_MODEL = bcast_integer(29)
-    THREE_D_MODEL = bcast_integer(30)
-    NPROC = bcast_integer(31)
-    NPROCTOT = bcast_integer(32)
-    NEX_PER_PROC_XI = bcast_integer(33)
-    NEX_PER_PROC_ETA = bcast_integer(34)
-    ratio_divide_central_cube = bcast_integer(35)
-    MOVIE_VOLUME_TYPE = bcast_integer(36)
-    MOVIE_START = bcast_integer(37)
-    MOVIE_STOP = bcast_integer(38)
+    THREE_D_MODEL = bcast_integer(29)
+    NPROC = bcast_integer(30)
+    NPROCTOT = bcast_integer(31)
+    NEX_PER_PROC_XI = bcast_integer(32)
+    NEX_PER_PROC_ETA = bcast_integer(33)
+    ratio_divide_central_cube = bcast_integer(34)
+    MOVIE_VOLUME_TYPE = bcast_integer(35)
+    MOVIE_START = bcast_integer(36)
+    MOVIE_STOP = bcast_integer(37)
 
     TRANSVERSE_ISOTROPY = bcast_logical(1)
     ANISOTROPIC_3D_MANTLE = bcast_logical(2)
@@ -2500,8 +2499,7 @@
 
 ! use PREM density profile to calculate gravity (fine for other 1D models)
       call prem_iso(myrank,radius,rho,drhodr,vp,vs,Qkappa,Qmu,idoubling,.false., &
-          ONE_CRUST,.false.,RICB,RCMB,RTOPDDOUBLEPRIME, &
-          R600,R670,R220,R771,R400,R80,RMOHO,RMIDDLE_CRUST,ROCEAN)
+          ONE_CRUST,.false.)
 
       dg = 4.0d0*rho - 2.0d0*g/radius
       minus_gravity_table(int_radius) = - g
@@ -2543,8 +2541,7 @@
        radius = dble(int_radius) / (R_EARTH_KM * 10.d0)
        idoubling = 0
        call prem_iso(myrank,radius,rho,drhodr,vp,vs,Qkappa,Qmu,idoubling,.false., &
-           ONE_CRUST,.false.,RICB,RCMB,RTOPDDOUBLEPRIME, &
-           R600,R670,R220,R771,R400,R80,RMOHO,RMIDDLE_CRUST,ROCEAN)
+           ONE_CRUST,.false.)
        d_ln_density_dr_table(int_radius) = drhodr/rho
      enddo
 

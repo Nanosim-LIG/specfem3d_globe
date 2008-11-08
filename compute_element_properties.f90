@@ -31,7 +31,7 @@
            nspl,rspl,espl,espl2,ELLIPTICITY,TOPOGRAPHY,TRANSVERSE_ISOTROPY, &
            ANISOTROPIC_3D_MANTLE,ANISOTROPIC_INNER_CORE,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST, &
            myrank,ibathy_topo,ATTENUATION,ATTENUATION_3D, &
-           ABSORBING_CONDITIONS,REFERENCE_1D_MODEL,THREE_D_MODEL, &
+           ABSORBING_CONDITIONS,THREE_D_MODEL, &
            RICB,RCMB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN, &
            xelm,yelm,zelm,shape3D,dershape3D,rmin,rmax,rhostore,kappavstore,kappahstore,muvstore,muhstore,eta_anisostore, &
            xixstore,xiystore,xizstore,etaxstore,etaystore,etazstore,gammaxstore,gammaystore,gammazstore, &
@@ -39,11 +39,8 @@
            c23store,c24store,c25store,c26store,c33store,c34store,c35store, &
            c36store,c44store,c45store,c46store,c55store,c56store,c66store, &
            nspec_ani,nspec_stacey,Qmu_store,tau_e_store,tau_s,T_c_source,rho_vp,rho_vs,&
-           AMM_V,AM_V,M1066a_V,Mak135_V, Mref_V,D3MM_V,CM_V,AM_S,AS_V, &
-           numker,numhpa,numcof,ihpa,lmax,nylm, &
-           lmxhpa,itypehpa,ihpakern,numcoe,ivarkern, &
-           nconpt,iver,iconpt,conpt,xlaspl,xlospl,radspl, &
-           coe,vercof,vercofd,ylmcof,wk1,wk2,wk3,kerstr,varstr,ACTUALLY_STORE_ARRAYS)
+           AMM_V,AM_V,AM_S,AS_V, &
+           ACTUALLY_STORE_ARRAYS)
 
   implicit none
 
@@ -82,80 +79,6 @@
   type (attenuation_model_variables) AM_V
 ! attenuation_model_variables
 
-! model_1066a_variables
-  type model_1066a_variables
-    sequence
-      double precision, dimension(NR_1066A) :: radius_1066a
-      double precision, dimension(NR_1066A) :: density_1066a
-      double precision, dimension(NR_1066A) :: vp_1066a
-      double precision, dimension(NR_1066A) :: vs_1066a
-      double precision, dimension(NR_1066A) :: Qkappa_1066a
-      double precision, dimension(NR_1066A) :: Qmu_1066a
-  end type model_1066a_variables
-
-  type (model_1066a_variables) M1066a_V
-! model_1066a_variables
-
-! model_ak135_variables
-  type model_ak135_variables
-    sequence
-    double precision, dimension(NR_AK135) :: radius_ak135
-    double precision, dimension(NR_AK135) :: density_ak135
-    double precision, dimension(NR_AK135) :: vp_ak135
-    double precision, dimension(NR_AK135) :: vs_ak135
-    double precision, dimension(NR_AK135) :: Qkappa_ak135
-    double precision, dimension(NR_AK135) :: Qmu_ak135
-  end type model_ak135_variables
-
- type (model_ak135_variables) Mak135_V
-! model_ak135_variables
-
-! model_ref_variables
-  type model_ref_variables
-    sequence
-     double precision, dimension(NR_REF) :: radius_ref
-     double precision, dimension(NR_REF) :: density_ref
-     double precision, dimension(NR_REF) :: vpv_ref
-     double precision, dimension(NR_REF) :: vph_ref
-     double precision, dimension(NR_REF) :: vsv_ref
-     double precision, dimension(NR_REF) :: vsh_ref
-     double precision, dimension(NR_REF) :: eta_ref
-     double precision, dimension(NR_REF) :: Qkappa_ref
-     double precision, dimension(NR_REF) :: Qmu_ref
-  end type model_ref_variables
-
- type (model_ref_variables) Mref_V
-! model_ref_variables
-
-! three_d_mantle_model_variables
-  type three_d_mantle_model_variables
-    sequence
-    double precision dvs_a(0:NK,0:NS,0:NS)
-    double precision dvs_b(0:NK,0:NS,0:NS)
-    double precision dvp_a(0:NK,0:NS,0:NS)
-    double precision dvp_b(0:NK,0:NS,0:NS)
-    double precision spknt(NK+1)
-    double precision qq0(NK+1,NK+1)
-    double precision qq(3,NK+1,NK+1)
-  end type three_d_mantle_model_variables
-
-  type (three_d_mantle_model_variables) D3MM_V
-! three_d_mantle_model_variables
-
-! crustal_model_variables
-  type crustal_model_variables
-    sequence
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: thlr
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: velocp
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: velocs
-    double precision, dimension(NKEYS_CRUST,NLAYERS_CRUST) :: dens
-    character(len=2) abbreviation(NCAP_CRUST/2,NCAP_CRUST)
-    character(len=2) code(NKEYS_CRUST)
-  end type crustal_model_variables
-
-  type (crustal_model_variables) CM_V
-! crustal_model_variables
-
 ! attenuation_model_storage
   type attenuation_model_storage
     sequence
@@ -188,7 +111,7 @@
 ! correct number of spectral elements in each block depending on chunk type
   integer ispec,nspec,nspec_stacey
 
-  integer REFERENCE_1D_MODEL,THREE_D_MODEL
+  integer THREE_D_MODEL
 
   logical ELLIPTICITY,TOPOGRAPHY
   logical TRANSVERSE_ISOTROPY,ANISOTROPIC_3D_MANTLE,ANISOTROPIC_INNER_CORE,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST
@@ -250,40 +173,6 @@
   double precision, dimension(N_SLS)                  :: tau_s
   double precision  T_c_source
 
-  integer, parameter :: maxker=200
-  integer, parameter :: maxl=72
-  integer, parameter :: maxcoe=2000
-  integer, parameter :: maxver=1000
-  integer, parameter :: maxhpa=2
-
-  integer numker
-  integer numhpa,numcof
-  integer ihpa,lmax,nylm
-  integer lmxhpa(maxhpa)
-  integer itypehpa(maxhpa)
-  integer ihpakern(maxker)
-  integer numcoe(maxhpa)
-  integer ivarkern(maxker)
-
-  integer nconpt(maxhpa),iver
-  integer iconpt(maxver,maxhpa)
-  real(kind=4) conpt(maxver,maxhpa)
-
-  real(kind=4) xlaspl(maxcoe,maxhpa)
-  real(kind=4) xlospl(maxcoe,maxhpa)
-  real(kind=4) radspl(maxcoe,maxhpa)
-  real(kind=4) coe(maxcoe,maxker)
-  real(kind=4) vercof(maxker)
-  real(kind=4) vercofd(maxker)
-
-  real(kind=4) ylmcof((maxl+1)**2,maxhpa)
-  real(kind=4) wk1(maxl+1)
-  real(kind=4) wk2(maxl+1)
-  real(kind=4) wk3(maxl+1)
-
-  character(len=80) kerstr
-  character(len=40) varstr(maxker)
-
 ! **************
 ! add topography on the Moho *before* adding the 3D crustal model so that the streched
 ! mesh gets assigned the right model values
@@ -302,13 +191,9 @@
           ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST, &
           ATTENUATION, ATTENUATION_3D, tau_s, tau_e_store, Qmu_store, T_c_source, &
           size(tau_e_store,2), size(tau_e_store,3), size(tau_e_store,4), size(tau_e_store,5), &
-          ABSORBING_CONDITIONS,REFERENCE_1D_MODEL,THREE_D_MODEL, &
+          ABSORBING_CONDITIONS,THREE_D_MODEL, &
           RCMB,RICB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN,&
-          AMM_V,AM_V,M1066a_V,Mak135_V,Mref_V,D3MM_V,CM_V,AM_S,AS_V, &
-          numker,numhpa,numcof,ihpa,lmax,nylm, &
-          lmxhpa,itypehpa,ihpakern,numcoe,ivarkern, &
-          nconpt,iver,iconpt,conpt,xlaspl,xlospl,radspl, &
-          coe,vercof,vercofd,ylmcof,wk1,wk2,wk3,kerstr,varstr)
+          AMM_V,AM_V,AM_S,AS_V)
 
 ! add topography without the crustal model
   if(TOPOGRAPHY .and. (idoubling(ispec)==IFLAG_CRUST .or. idoubling(ispec)==IFLAG_220_80 &
@@ -317,11 +202,7 @@
 ! add topography on 410 km and 650 km discontinuity in model S362ANI
   if(THREE_D_MODEL == THREE_D_MODEL_S362ANI .or. THREE_D_MODEL == THREE_D_MODEL_S362WMANI &
      .or. THREE_D_MODEL == THREE_D_MODEL_S362ANI_PREM .or. THREE_D_MODEL == THREE_D_MODEL_S29EA) &
-          call add_topography_410_650(myrank,xelm,yelm,zelm,R220,R400,R670,R771, &
-                                      numker,numhpa,numcof,ihpa,lmax,nylm, &
-                                      lmxhpa,itypehpa,ihpakern,numcoe,ivarkern, &
-                                      nconpt,iver,iconpt,conpt,xlaspl,xlospl,radspl, &
-                                      coe,ylmcof,wk1,wk2,wk3,varstr)
+          call add_topography_410_650(myrank,xelm,yelm,zelm,R220,R400,R670,R771)
 
 ! CMB topography
 !  if(THREE_D_MODEL == THREE_D_MODEL_S362ANI .and. (idoubling(ispec)==IFLAG_MANTLE_NORMAL &

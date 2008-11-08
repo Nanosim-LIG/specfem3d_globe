@@ -28,24 +28,24 @@
 ! create AVS or DX 2D data for the faces of the global chunks,
 ! to be recombined in postprocessing
   subroutine write_AVS_DX_global_chunks_data(myrank,prname,nspec,iboun, &
-        ibool,idoubling,xstore,ystore,zstore,num_ibool_AVS_DX,mask_ibool, &
+        ibool,iregion_code,idoubling,xstore,ystore,zstore,num_ibool_AVS_DX,mask_ibool, &
         npointot,rhostore,kappavstore,muvstore,nspl,rspl,espl,espl2, &
-        ELLIPTICITY,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST,REFERENCE_1D_MODEL, &
-        RICB,RCMB,RTOPDDOUBLEPRIME,R600,R670,R220,R771,R400,R120,R80,RMOHO, &
-        RMIDDLE_CRUST,ROCEAN,M1066a_V,Mak135_V,Mref_V)
+        ELLIPTICITY,TRANSVERSE_ISOTROPY,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST, &
+        RCMB)
 
   implicit none
 
   include "constants.h"
 
-  integer nspec,myrank,REFERENCE_1D_MODEL
+  integer nspec,myrank,iregion_code
   integer ibool(NGLLX,NGLLY,NGLLZ,nspec)
 
   integer idoubling(nspec)
 
-  logical iboun(6,nspec),ELLIPTICITY,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST
+  logical iboun(6,nspec),ELLIPTICITY,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST, &
+       TRANSVERSE_ISOTROPY
 
-  double precision RICB,RCMB,RTOPDDOUBLEPRIME,R600,R670,R220,R771,R400,R120,R80,RMOHO,RMIDDLE_CRUST,ROCEAN
+  double precision RCMB
 
   double precision xstore(NGLLX,NGLLY,NGLLZ,nspec)
   double precision ystore(NGLLX,NGLLY,NGLLZ,nspec)
@@ -80,51 +80,6 @@
 
 ! processor identification
   character(len=150) prname
-
-! model_1066a_variables
-  type model_1066a_variables
-    sequence
-      double precision, dimension(NR_1066A) :: radius_1066a
-      double precision, dimension(NR_1066A) :: density_1066a
-      double precision, dimension(NR_1066A) :: vp_1066a
-      double precision, dimension(NR_1066A) :: vs_1066a
-      double precision, dimension(NR_1066A) :: Qkappa_1066a
-      double precision, dimension(NR_1066A) :: Qmu_1066a
-  end type model_1066a_variables
-
-  type (model_1066a_variables) M1066a_V
-! model_1066a_variables
-
-! model_ak135_variables
-  type model_ak135_variables
-    sequence
-    double precision, dimension(NR_AK135) :: radius_ak135
-    double precision, dimension(NR_AK135) :: density_ak135
-    double precision, dimension(NR_AK135) :: vp_ak135
-    double precision, dimension(NR_AK135) :: vs_ak135
-    double precision, dimension(NR_AK135) :: Qkappa_ak135
-    double precision, dimension(NR_AK135) :: Qmu_ak135
-  end type model_ak135_variables
-
- type (model_ak135_variables) Mak135_V
-! model_ak135_variables
-
-! model_ref_variables
-  type model_ref_variables
-    sequence
-     double precision, dimension(NR_REF) :: radius_ref
-     double precision, dimension(NR_REF) :: density_ref
-     double precision, dimension(NR_REF) :: vpv_ref
-     double precision, dimension(NR_REF) :: vph_ref
-     double precision, dimension(NR_REF) :: vsv_ref
-     double precision, dimension(NR_REF) :: vsh_ref
-     double precision, dimension(NR_REF) :: eta_ref
-     double precision, dimension(NR_REF) :: Qkappa_ref
-     double precision, dimension(NR_REF) :: Qmu_ref
-  end type model_ref_variables
-
- type (model_ref_variables) Mref_V
-! model_ref_variables
 
 ! writing points
   open(unit=10,file=prname(1:len_trim(prname))//'AVS_DXpointschunks.txt',status='unknown')
@@ -599,28 +554,11 @@
               r=r/factor
             endif
 
-            if(REFERENCE_1D_MODEL == REFERENCE_MODEL_IASP91) then
-              call model_iasp91(myrank,r,rho,vp,vs,Qkappa,Qmu,idoubling(ispec),ONE_CRUST, &
-                .true.,RICB,RCMB,RTOPDDOUBLEPRIME,R771,R670,R400,R220,R120,RMOHO,RMIDDLE_CRUST)
-
-            else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_PREM) then
-              call prem_iso(myrank,r,rho,vp,vs,Qkappa,Qmu,idoubling(ispec), &
-                CRUSTAL,ONE_CRUST,.true.,RICB,RCMB,RTOPDDOUBLEPRIME, &
-                R600,R670,R220,R771,R400,R80,RMOHO,RMIDDLE_CRUST,ROCEAN)
-
-            else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_1066A) then
-              call model_1066a(r,rho,vp,vs,Qkappa,Qmu,idoubling(ispec),M1066a_V)
-
-            else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_AK135) then
-              call model_ak135(r,rho,vp,vs,Qkappa,Qmu,idoubling(ispec),Mak135_V)
-
-            else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_REF) then
-              call model_ref(r,rho,vpv,vph,vsv,vsh,eta_aniso,Qkappa,Qmu,idoubling(ispec),CRUSTAL,Mref_V)
-              vp = vpv
-              vs = vsv
-            else
-              call exit_MPI(myrank,'unknown 1D reference Earth model in writing of AVS/DX data')
-            endif
+            call get_reference_1d_model(myrank,r,rho,vpv,vph,vsv,vsh,eta_aniso, &
+                 Qkappa,Qmu,idoubling(ispec),iregion_code,CRUSTAL,ONE_CRUST,TRANSVERSE_ISOTROPY, &
+                 ISOTROPIC_3D_MANTLE)
+            vp = vpv
+            vs = vsv
 
             dvp = dvp + (sqrt((kappavstore(i,j,k,ispec)+4.*muvstore(i,j,k,ispec)/3.)/rhostore(i,j,k,ispec)) - sngl(vp))/sngl(vp)
             dvs = dvs + (sqrt(muvstore(i,j,k,ispec)/rhostore(i,j,k,ispec)) - sngl(vs))/sngl(vs)

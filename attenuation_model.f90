@@ -66,7 +66,7 @@ end subroutine attenuation_lookup_value
 !
 ! All this subroutine does is define the Attenuation vs Radius and then Compute the Attenuation
 ! Variables (tau_sigma and tau_epslion ( or tau_mu) )
-subroutine attenuation_model_setup(REFERENCE_1D_MODEL,RICB,RCMB,R670,R220,R80,AM_V,M1066a_V,Mak135_V,Mref_V,AM_S,AS_V)
+subroutine attenuation_model_setup(AM_V,AM_S,AS_V)
 
   implicit none
 
@@ -94,51 +94,6 @@ subroutine attenuation_model_setup(REFERENCE_1D_MODEL,RICB,RCMB,R670,R220,R80,AM
 
   type (attenuation_model_variables) AM_V
 ! attenuation_model_variables
-
-! model_1066a_variables
-  type model_1066a_variables
-    sequence
-      double precision, dimension(NR_1066A) :: radius_1066a
-      double precision, dimension(NR_1066A) :: density_1066a
-      double precision, dimension(NR_1066A) :: vp_1066a
-      double precision, dimension(NR_1066A) :: vs_1066a
-      double precision, dimension(NR_1066A) :: Qkappa_1066a
-      double precision, dimension(NR_1066A) :: Qmu_1066a
-  end type model_1066a_variables
-
-  type (model_1066a_variables) M1066a_V
-! model_1066a_variables
-
-! model_ak135_variables
-  type model_ak135_variables
-    sequence
-    double precision, dimension(NR_AK135) :: radius_ak135
-    double precision, dimension(NR_AK135) :: density_ak135
-    double precision, dimension(NR_AK135) :: vp_ak135
-    double precision, dimension(NR_AK135) :: vs_ak135
-    double precision, dimension(NR_AK135) :: Qkappa_ak135
-    double precision, dimension(NR_AK135) :: Qmu_ak135
-  end type model_ak135_variables
-
- type (model_ak135_variables) Mak135_V
-! model_ak135_variables
-
-! model_ref_variables
-  type model_ref_variables
-    sequence
-    double precision, dimension(NR_REF) :: radius_ref
-    double precision, dimension(NR_REF) :: density_ref
-    double precision, dimension(NR_REF) :: vpv_ref
-    double precision, dimension(NR_REF) :: vph_ref
-    double precision, dimension(NR_REF) :: vsv_ref
-    double precision, dimension(NR_REF) :: vsh_ref
-    double precision, dimension(NR_REF) :: eta_ref
-    double precision, dimension(NR_REF) :: Qkappa_ref
-    double precision, dimension(NR_REF) :: Qmu_ref
-  end type model_ref_variables
-
- type (model_ref_variables) Mref_V
-! model_ref_variables
 
 ! attenuation_model_storage
   type attenuation_model_storage
@@ -170,8 +125,6 @@ subroutine attenuation_model_setup(REFERENCE_1D_MODEL,RICB,RCMB,R670,R220,R80,AM
 ! attenuation_simplex_variables
 
   integer myrank
-  integer REFERENCE_1D_MODEL
-  double precision RICB, RCMB, R670, R220, R80
   double precision tau_e(N_SLS)
 
   integer i,ier
@@ -184,44 +137,8 @@ subroutine attenuation_model_setup(REFERENCE_1D_MODEL,RICB,RCMB,R670,R220,R80,AM
   call MPI_COMM_RANK(MPI_COMM_WORLD, myrank, ier)
   if(myrank > 0) return
 
-  if(REFERENCE_1D_MODEL == REFERENCE_MODEL_PREM) then
-     AM_V%Qn = 12
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_IASP91) then
-     AM_V%Qn = 12
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_AK135) then
-     call define_model_ak135(.FALSE.,Mak135_V)
-     AM_V%Qn = NR_AK135
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_1066A) then
-     call define_model_1066a(.FALSE., M1066a_V)
-     AM_V%Qn = NR_1066A
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_REF) then
-     call define_model_ref(Mref_V)
-     AM_V%Qn = NR_REF
-  else
-     call exit_MPI(myrank, 'Reference 1D Model Not recognized')
-  endif
-
-  allocate(AM_V%Qr(AM_V%Qn))
-  allocate(AM_V%Qmu(AM_V%Qn))
-  allocate(AM_V%interval_Q(AM_V%Qn))
-  allocate(AM_V%Qtau_e(N_SLS,AM_V%Qn))
-
-  if(REFERENCE_1D_MODEL == REFERENCE_MODEL_PREM) then
-     AM_V%Qr(:)     = (/    0.0d0,     RICB,  RICB,  RCMB,    RCMB,    R670,    R670,   R220,    R220,    R80,     R80, R_EARTH /)
-     AM_V%Qmu(:)    = (/   84.6d0,   84.6d0, 0.0d0, 0.0d0, 312.0d0, 312.0d0, 143.0d0, 143.0d0, 80.0d0, 80.0d0, 600.0d0, 600.0d0 /)
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_IASP91) then
-     AM_V%Qr(:)     = (/    0.0d0,     RICB,  RICB,  RCMB,    RCMB,    R670,    R670,    R220,   R220,   R120,    R120, R_EARTH /)
-     AM_V%Qmu(:)    = (/   84.6d0,   84.6d0, 0.0d0, 0.0d0, 312.0d0, 312.0d0, 143.0d0, 143.0d0, 80.0d0, 80.0d0, 600.0d0, 600.0d0 /)
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_AK135) then
-     AM_V%Qr(:)     = Mak135_V%radius_ak135(:)
-     AM_V%Qmu(:)    = Mak135_V%Qmu_ak135(:)
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_1066A) then
-     AM_V%Qr(:)     = M1066a_V%radius_1066a(:)
-     AM_V%Qmu(:)    = M1066a_V%Qmu_1066a(:)
-  else if(REFERENCE_1D_MODEL == REFERENCE_MODEL_ref) then
-     AM_V%Qr(:)     = Mref_V%radius_ref(:)
-     AM_V%Qmu(:)    = Mref_V%Qmu_ref(:)
-  end if
+  call define_reference_1d_model(.FALSE.)
+  call reference_1d_model_attenuation_model_setup(AM_V)
 
   do i = 1, AM_V%Qn
      call attenuation_conversion(AM_V%Qmu(i), AM_V%QT_c_source, AM_V%Qtau_s, tau_e, AM_V, AM_S,AS_V)
