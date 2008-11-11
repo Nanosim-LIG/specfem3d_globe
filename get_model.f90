@@ -193,24 +193,30 @@ subroutine get_model(myrank,iregion_code,nspec, &
 
            !      get the 3-D model parameters
            if(ISOTROPIC_3D_MANTLE) then
-              if(r_prem > RCMB/R_EARTH .and. r_prem < RMOHO/R_EARTH) then
-                 radius = r
-              else if(r_prem >= RMOHO/R_EARTH) then
-                 ! extend 3-D mantle model above the Moho to the surface before adding the crust
-                 radius = 0.999999d0*RMOHO/R_EARTH ! r_moho
-              endif
+              do
+                 if(r_prem > RCMB/R_EARTH .and. r_prem < RMOHO/R_EARTH) then
+                    radius = r
+                 else if(r_prem >= RMOHO/R_EARTH) then
+                    ! extend 3-D mantle model above the Moho to the surface before adding the crust
+                    radius = 0.999999d0*RMOHO/R_EARTH ! r_moho
+                 else
+                    exit
+                 endif
 
-              call xyz_2_rthetaphi_dble(xmesh,ymesh,zmesh,r_dummy,theta,phi)
-              call reduce(theta,phi)
-              if(THREE_D_MODEL == THREE_D_MODEL_S20RTS) then
-                 call get_model_s20rts(radius,theta,phi,vpv,vph,vsv,vsh,rho,eta_aniso)
-              elseif(THREE_D_MODEL == THREE_D_MODEL_S362ANI .or. THREE_D_MODEL == THREE_D_MODEL_S362WMANI &
-                   .or. THREE_D_MODEL == THREE_D_MODEL_S362ANI_PREM .or. THREE_D_MODEL == THREE_D_MODEL_S29EA) then
-                 call get_model_s362ani(radius,theta,phi,vpv,vph,vsv,vsh,rho,eta_aniso, &
-                      TRANSVERSE_ISOTROPY)
-              else
-                 stop 'unknown 3D Earth model in get_model'
-              endif
+                 call xyz_2_rthetaphi_dble(xmesh,ymesh,zmesh,r_dummy,theta,phi)
+                 call reduce(theta,phi)
+                 if(THREE_D_MODEL == THREE_D_MODEL_S20RTS) then
+                    call get_model_s20rts(radius,theta,phi,vpv,vph,vsv,vsh,rho,eta_aniso)
+                 elseif(THREE_D_MODEL == THREE_D_MODEL_S362ANI .or. THREE_D_MODEL == THREE_D_MODEL_S362WMANI &
+                      .or. THREE_D_MODEL == THREE_D_MODEL_S362ANI_PREM .or. THREE_D_MODEL == THREE_D_MODEL_S29EA) then
+                    call get_model_s362ani(radius,theta,phi,vpv,vph,vsv,vsh,rho,eta_aniso, &
+                         TRANSVERSE_ISOTROPY)
+                 else
+                    stop 'unknown 3D Earth model in get_model'
+                 endif
+
+                 exit
+              end do
 
            endif
 
@@ -232,7 +238,7 @@ subroutine get_model(myrank,iregion_code,nspec, &
                  call reduce(theta,phi)
                  call aniso_mantle_model(radius,theta,phi,rho,c11,c12,c13,c14,c15,c16, &
                       c22,c23,c24,c25,c26,c33,c34,c35,c36,c44,c45,c46,c55,c56,c66,AMM_V)
-                    
+
               else
                  ! fill the rest of the mantle with the isotropic model
                  c11 = rho*vpv*vpv

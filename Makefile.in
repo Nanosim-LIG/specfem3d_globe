@@ -51,7 +51,7 @@ RANLIB = ranlib
 O = obj
 S = @srcdir@
 
-model_OBJECTS = $(crust_2_0_OBJECTS) $(s20rts_OBJECTS) $(s362ani_OBJECTS) $(reference_1d_model_OBJECTS)
+model_OBJECTS = $(crustal_model_OBJECTS) $(s20rts_OBJECTS) $(s362ani_OBJECTS) $(reference_1d_model_OBJECTS)
 
 libspecfem_a_OBJECTS = \
 	$O/add_missing_nodes.o \
@@ -182,15 +182,16 @@ bak: backup
 #### includes
 ####
 
-include $S/MODELS/crust2.0/build.mk
-include $S/MODELS/s20rts/build.mk
-include $S/MODELS/s362ani/build.mk
+include $S/MODELS/crustal/crust2.0/build.mk
 
-include $S/MODELS/prem/build.mk
-#include $S/MODELS/iasp91/build.mk
-#include $S/MODELS/1066a/build.mk
-#include $S/MODELS/ak135/build.mk
-#include $S/MODELS/ref/build.mk
+include $S/MODELS/3D_mantle/s20rts/build.mk
+include $S/MODELS/3D_mantle/s362ani/build.mk
+
+include $S/MODELS/1D_ref/prem/build.mk
+#include $S/MODELS/1D_ref/iasp91/build.mk
+#include $S/MODELS/1D_ref/1066a/build.mk
+#include $S/MODELS/1D_ref/ak135/build.mk
+#include $S/MODELS/1D_ref/ref/build.mk
 
 
 ####
