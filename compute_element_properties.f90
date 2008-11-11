@@ -31,7 +31,7 @@
            nspl,rspl,espl,espl2,ELLIPTICITY,TOPOGRAPHY,TRANSVERSE_ISOTROPY, &
            ANISOTROPIC_3D_MANTLE,ANISOTROPIC_INNER_CORE,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST, &
            myrank,ibathy_topo,ATTENUATION,ATTENUATION_3D, &
-           ABSORBING_CONDITIONS,THREE_D_MODEL, &
+           ABSORBING_CONDITIONS, &
            RICB,RCMB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN, &
            xelm,yelm,zelm,shape3D,dershape3D,rmin,rmax,rhostore,kappavstore,kappahstore,muvstore,muhstore,eta_anisostore, &
            xixstore,xiystore,xizstore,etaxstore,etaystore,etazstore,gammaxstore,gammaystore,gammazstore, &
@@ -100,8 +100,6 @@
 ! correct number of spectral elements in each block depending on chunk type
   integer ispec,nspec,nspec_stacey
 
-  integer THREE_D_MODEL
-
   logical ELLIPTICITY,TOPOGRAPHY
   logical TRANSVERSE_ISOTROPY,ANISOTROPIC_3D_MANTLE,ANISOTROPIC_INNER_CORE,ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST
 
@@ -165,8 +163,8 @@
 ! **************
 ! add topography on the Moho *before* adding the 3D crustal model so that the streched
 ! mesh gets assigned the right model values
-  if(THREE_D_MODEL/=0 .and. (idoubling(ispec)==IFLAG_CRUST .or. idoubling(ispec)==IFLAG_220_80 &
-     .or. idoubling(ispec)==IFLAG_80_MOHO)) call moho_stretching(myrank,xelm,yelm,zelm,RMOHO,R220)
+  if(idoubling(ispec)==IFLAG_CRUST .or. idoubling(ispec)==IFLAG_220_80 &
+     .or. idoubling(ispec)==IFLAG_80_MOHO) call add_moho_topography(myrank,xelm,yelm,zelm,RMOHO,R220)
 
 ! compute values for the Earth model
   call get_model(myrank,iregion_code,nspec, &
@@ -180,7 +178,7 @@
           ISOTROPIC_3D_MANTLE,CRUSTAL,ONE_CRUST, &
           ATTENUATION, ATTENUATION_3D, tau_s, tau_e_store, Qmu_store, T_c_source, &
           size(tau_e_store,2), size(tau_e_store,3), size(tau_e_store,4), size(tau_e_store,5), &
-          ABSORBING_CONDITIONS,THREE_D_MODEL, &
+          ABSORBING_CONDITIONS, &
           RCMB,RICB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN,&
           AM_V,AM_S,AS_V)
 
