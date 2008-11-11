@@ -39,23 +39,12 @@
            c23store,c24store,c25store,c26store,c33store,c34store,c35store, &
            c36store,c44store,c45store,c46store,c55store,c56store,c66store, &
            nspec_ani,nspec_stacey,Qmu_store,tau_e_store,tau_s,T_c_source,rho_vp,rho_vs,&
-           AMM_V,AM_V,AM_S,AS_V, &
+           AM_V,AM_S,AS_V, &
            ACTUALLY_STORE_ARRAYS)
 
   implicit none
 
   include "constants.h"
-
-! aniso_mantle_model_variables
-  type aniso_mantle_model_variables
-    sequence
-    double precision beta(14,34,37,73)
-    double precision pro(47)
-    integer npar1
-  end type aniso_mantle_model_variables
-
-  type (aniso_mantle_model_variables) AMM_V
-! aniso_mantle_model_variables
 
 ! attenuation_model_variables
   type attenuation_model_variables
@@ -193,16 +182,14 @@
           size(tau_e_store,2), size(tau_e_store,3), size(tau_e_store,4), size(tau_e_store,5), &
           ABSORBING_CONDITIONS,THREE_D_MODEL, &
           RCMB,RICB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN,&
-          AMM_V,AM_V,AM_S,AS_V)
+          AM_V,AM_S,AS_V)
 
 ! add topography without the crustal model
   if(TOPOGRAPHY .and. (idoubling(ispec)==IFLAG_CRUST .or. idoubling(ispec)==IFLAG_220_80 &
      .or. idoubling(ispec)==IFLAG_80_MOHO)) call add_topography(myrank,xelm,yelm,zelm,ibathy_topo,R220)
 
 ! add topography on 410 km and 650 km discontinuity in model S362ANI
-  if(THREE_D_MODEL == THREE_D_MODEL_S362ANI .or. THREE_D_MODEL == THREE_D_MODEL_S362WMANI &
-     .or. THREE_D_MODEL == THREE_D_MODEL_S362ANI_PREM .or. THREE_D_MODEL == THREE_D_MODEL_S29EA) &
-          call add_topography_410_650(myrank,xelm,yelm,zelm,R220,R400,R670,R771)
+  call add_topography_410_650(myrank,xelm,yelm,zelm,R220,R400,R670,R771)
 
 ! CMB topography
 !  if(THREE_D_MODEL == THREE_D_MODEL_S362ANI .and. (idoubling(ispec)==IFLAG_MANTLE_NORMAL &

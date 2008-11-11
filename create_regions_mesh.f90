@@ -43,7 +43,7 @@
            NCHUNKS,INCLUDE_CENTRAL_CUBE,ABSORBING_CONDITIONS,THREE_D_MODEL, &
            R_CENTRAL_CUBE,RICB,RHO_OCEANS,RCMB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN, &
            ner,ratio_sampling_array,doubling_index,r_bottom,r_top,this_region_has_a_doubling,CASE_3D, &
-           AMM_V, AM_V, AM_S, AS_V, &
+           AM_V, AM_S, AS_V, &
            ipass,ratio_divide_central_cube,HONOR_1D_SPHERICAL_MOHO,&
            CUT_SUPERBRICK_XI,CUT_SUPERBRICK_ETA,offset_proc_xi,offset_proc_eta)
 
@@ -72,17 +72,6 @@
   integer, dimension(NGNOD_EIGHT_CORNERS,NSPEC_DOUBLING_SUPERBRICK) :: ibool_superbrick
 
   double precision, dimension(NGLOB_DOUBLING_SUPERBRICK) :: x_superbrick,y_superbrick,z_superbrick
-
-! aniso_mantle_model_variables
-  type aniso_mantle_model_variables
-    sequence
-    double precision beta(14,34,37,73)
-    double precision pro(47)
-    integer npar1
-  end type aniso_mantle_model_variables
-
-  type (aniso_mantle_model_variables) AMM_V
-! aniso_mantle_model_variables
 
 ! attenuation_model_variables
   type attenuation_model_variables
@@ -744,7 +733,7 @@
            c23store,c24store,c25store,c26store,c33store,c34store,c35store, &
            c36store,c44store,c45store,c46store,c55store,c56store,c66store, &
            nspec_ani,nspec_stacey,Qmu_store,tau_e_store,tau_s,T_c_source,rho_vp,rho_vs,&
-           AMM_V,AM_V,AM_S,AS_V, &
+           AM_V,AM_S,AS_V, &
            ACTUALLY_STORE_ARRAYS)
 
 ! boundary mesh
@@ -943,7 +932,7 @@
            c23store,c24store,c25store,c26store,c33store,c34store,c35store, &
            c36store,c44store,c45store,c46store,c55store,c56store,c66store, &
            nspec_ani,nspec_stacey,Qmu_store,tau_e_store,tau_s,T_c_source,rho_vp,rho_vs,&
-           AMM_V,AM_V,AM_S,AS_V, &
+           AM_V,AM_S,AS_V, &
            ACTUALLY_STORE_ARRAYS)
 
 ! boundary mesh
@@ -1109,7 +1098,7 @@
            c23store,c24store,c25store,c26store,c33store,c34store,c35store, &
            c36store,c44store,c45store,c46store,c55store,c56store,c66store, &
            nspec_ani,nspec_stacey,Qmu_store,tau_e_store,tau_s,T_c_source,rho_vp,rho_vs,&
-           AMM_V,AM_V,AM_S,AS_V, &
+           AM_V,AM_S,AS_V, &
            ACTUALLY_STORE_ARRAYS)
       enddo
     enddo

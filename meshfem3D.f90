@@ -186,17 +186,6 @@
 ! Dimitri Komatitsch, IPG Paris, December 1996: first 3-D solver for the CM5
 !
 
-! aniso_mantle_model_variables
-  type aniso_mantle_model_variables
-    sequence
-    double precision beta(14,34,37,73)
-    double precision pro(47)
-    integer npar1
-  end type aniso_mantle_model_variables
-
-  type (aniso_mantle_model_variables) AMM_V
-! aniso_mantle_model_variables
-
 ! attenuation_model_variables
   type attenuation_model_variables
     sequence
@@ -870,26 +859,7 @@
   endif
   if(ELLIPTICITY) call make_ellipticity(nspl,rspl,espl,espl2,ONE_CRUST)
 
-  if(ISOTROPIC_3D_MANTLE) then
-    if(THREE_D_MODEL /= 0) call read_smooth_moho
-    if(THREE_D_MODEL == THREE_D_MODEL_S20RTS) then
-      call read_s20rts(myrank)
-    elseif(THREE_D_MODEL == THREE_D_MODEL_S362ANI .or. THREE_D_MODEL == THREE_D_MODEL_S362WMANI &
-           .or. THREE_D_MODEL == THREE_D_MODEL_S362ANI_PREM .or. THREE_D_MODEL == THREE_D_MODEL_S29EA) then
-      call read_s362ani(myrank, THREE_D_MODEL)
-    else
-      call exit_MPI(myrank,'3D model not defined')
-    endif
-  endif
-
-  if(ANISOTROPIC_3D_MANTLE) then
-! the variables read are declared and stored in structure AMM_V
-    if(myrank == 0) call read_aniso_mantle_model(AMM_V)
-! broadcast the information read on the master to the nodes
-    call MPI_BCAST(AMM_V%npar1,1,MPI_INTEGER,0,MPI_COMM_WORLD,ier)
-    call MPI_BCAST(AMM_V%beta,14*34*37*73,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-    call MPI_BCAST(AMM_V%pro,47,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ier)
-  endif
+  call read_3d_mantle_model(myrank)
 
   if(CRUSTAL) then
     call read_crust_2_0(myrank)
@@ -1012,7 +982,7 @@
          NCHUNKS,INCLUDE_CENTRAL_CUBE,ABSORBING_CONDITIONS,THREE_D_MODEL, &
          R_CENTRAL_CUBE,RICB,RHO_OCEANS,RCMB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN, &
          ner,ratio_sampling_array,doubling_index,r_bottom, r_top,this_region_has_a_doubling,CASE_3D, &
-         AMM_V, AM_V, AM_S,AS_V, &
+         AM_V, AM_S,AS_V, &
          ipass,ratio_divide_central_cube,HONOR_1D_SPHERICAL_MOHO, &
          CUT_SUPERBRICK_XI,CUT_SUPERBRICK_ETA,mod(iproc_xi_slice(myrank),2),mod(iproc_eta_slice(myrank),2))
   enddo

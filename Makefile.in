@@ -51,7 +51,7 @@ RANLIB = ranlib
 O = obj
 S = @srcdir@
 
-model_OBJECTS = $(crustal_model_OBJECTS) $(s20rts_OBJECTS) $(s362ani_OBJECTS) $(reference_1d_model_OBJECTS)
+model_OBJECTS = $(crustal_model_OBJECTS) $(mantle_model_OBJECTS) $(reference_1d_model_OBJECTS)
 
 libspecfem_a_OBJECTS = \
 	$O/add_missing_nodes.o \
@@ -59,7 +59,6 @@ libspecfem_a_OBJECTS = \
 	$O/add_topography_cmb.o \
 	$O/add_topography_icb.o \
 	$O/anisotropic_inner_core_model.o \
-	$O/anisotropic_mantle_model.o \
 	$O/assemble_MPI_scalar.o \
 	$O/assemble_MPI_vector.o \
 	$O/attenuation_model.o \
@@ -185,7 +184,8 @@ bak: backup
 include $S/MODELS/crustal/crust2.0/build.mk
 
 include $S/MODELS/3D_mantle/s20rts/build.mk
-include $S/MODELS/3D_mantle/s362ani/build.mk
+#include $S/MODELS/3D_mantle/s362ani/build.mk
+#include $S/MODELS/3D_mantle/Montagner/build.mk
 
 include $S/MODELS/1D_ref/prem/build.mk
 #include $S/MODELS/1D_ref/iasp91/build.mk
@@ -454,9 +454,6 @@ $O/lgndr.o: constants.h $S/lgndr.f90
 
 $O/prem_common.o: constants.h $S/prem_common.f90
 	${FCCOMPILE_CHECK} -c -o $O/prem_common.o ${FCFLAGS_f90} $S/prem_common.f90
-
-$O/anisotropic_mantle_model.o: constants.h $S/anisotropic_mantle_model.f90
-	${FCCOMPILE_CHECK} -c -o $O/anisotropic_mantle_model.o ${FCFLAGS_f90} $S/anisotropic_mantle_model.f90
 
 $O/anisotropic_inner_core_model.o: constants.h $S/anisotropic_inner_core_model.f90
 	${FCCOMPILE_CHECK} -c -o $O/anisotropic_inner_core_model.o ${FCFLAGS_f90} $S/anisotropic_inner_core_model.f90

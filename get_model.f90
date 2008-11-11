@@ -38,22 +38,11 @@ subroutine get_model(myrank,iregion_code,nspec, &
      CRUSTAL,ONE_CRUST,ATTENUATION,ATTENUATION_3D,tau_s,tau_e_store,Qmu_store,T_c_source,vx,vy,vz,vnspec, &
      ABSORBING_CONDITIONS,THREE_D_MODEL, &
      RCMB,RICB,R670,RMOHO,RTOPDDOUBLEPRIME,R600,R220,R771,R400,R120,R80,RMIDDLE_CRUST,ROCEAN,&
-     AMM_V, AM_V, AM_S, AS_V)
+     AM_V, AM_S, AS_V)
 
   implicit none
 
   include "constants.h"
-
-  ! aniso_mantle_model_variables
-  type aniso_mantle_model_variables
-     sequence
-     double precision beta(14,34,37,73)
-     double precision pro(47)
-     integer npar1
-  end type aniso_mantle_model_variables
-
-  type (aniso_mantle_model_variables) AMM_V
-  ! aniso_mantle_model_variables
 
   ! attenuation_model_variables
   type attenuation_model_variables
@@ -205,15 +194,7 @@ subroutine get_model(myrank,iregion_code,nspec, &
 
                  call xyz_2_rthetaphi_dble(xmesh,ymesh,zmesh,r_dummy,theta,phi)
                  call reduce(theta,phi)
-                 if(THREE_D_MODEL == THREE_D_MODEL_S20RTS) then
-                    call get_model_s20rts(radius,theta,phi,vpv,vph,vsv,vsh,rho,eta_aniso)
-                 elseif(THREE_D_MODEL == THREE_D_MODEL_S362ANI .or. THREE_D_MODEL == THREE_D_MODEL_S362WMANI &
-                      .or. THREE_D_MODEL == THREE_D_MODEL_S362ANI_PREM .or. THREE_D_MODEL == THREE_D_MODEL_S29EA) then
-                    call get_model_s362ani(radius,theta,phi,vpv,vph,vsv,vsh,rho,eta_aniso, &
-                         TRANSVERSE_ISOTROPY)
-                 else
-                    stop 'unknown 3D Earth model in get_model'
-                 endif
+                 call iso_mantle_model(radius,theta,phi,vpv,vph,vsv,vsh,rho,eta_aniso)
 
                  exit
               end do
@@ -237,7 +218,7 @@ subroutine get_model(myrank,iregion_code,nspec, &
                  call xyz_2_rthetaphi_dble(xmesh,ymesh,zmesh,r_dummy,theta,phi)
                  call reduce(theta,phi)
                  call aniso_mantle_model(radius,theta,phi,rho,c11,c12,c13,c14,c15,c16, &
-                      c22,c23,c24,c25,c26,c33,c34,c35,c36,c44,c45,c46,c55,c56,c66,AMM_V)
+                      c22,c23,c24,c25,c26,c33,c34,c35,c36,c44,c45,c46,c55,c56,c66)
 
               else
                  ! fill the rest of the mantle with the isotropic model
