@@ -189,6 +189,7 @@ include $S/MODELS/3D_mantle/s20rts/build.mk
 #include $S/MODELS/3D_mantle/s362ani_prem/build.mk
 #include $S/MODELS/3D_mantle/s362iso/build.mk
 #include $S/MODELS/3D_mantle/s362wmani/build.mk
+#include $S/MODELS/3D_mantle/transversely_isotropic_prem_plus_3D_crust_2.0/build.mk
 #include $S/MODELS/3D_mantle/Montagner/build.mk
 #include $S/MODELS/3D_mantle/none/build.mk
 
