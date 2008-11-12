@@ -188,7 +188,8 @@ include $S/MODELS/3D_mantle/s20rts/build.mk
 #include $S/MODELS/3D_mantle/Montagner/build.mk
 #include $S/MODELS/3D_mantle/none/build.mk
 
-include $S/MODELS/1D_ref/prem/build.mk
+# This is determined by the 3D mantle model.
+#include $S/MODELS/1D_ref/prem/build.mk
 #include $S/MODELS/1D_ref/iasp91/build.mk
 #include $S/MODELS/1D_ref/1066a/build.mk
 #include $S/MODELS/1D_ref/ak135/build.mk

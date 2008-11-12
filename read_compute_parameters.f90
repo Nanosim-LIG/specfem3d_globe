@@ -43,7 +43,7 @@
          MOVIE_VOLUME,MOVIE_VOLUME_COARSE,ATTENUATION_3D,RECEIVERS_CAN_BE_BURIED, &
          PRINT_SOURCE_TIME_FUNCTION,SAVE_MESH_FILES, &
          ATTENUATION,ABSORBING_CONDITIONS, &
-         INCLUDE_CENTRAL_CUBE,INFLATE_CENTRAL_CUBE,LOCAL_PATH,MODEL,SIMULATION_TYPE,SAVE_FORWARD, &
+         INCLUDE_CENTRAL_CUBE,INFLATE_CENTRAL_CUBE,LOCAL_PATH,SIMULATION_TYPE,SAVE_FORWARD, &
          NPROC,NPROCTOT,NEX_PER_PROC_XI,NEX_PER_PROC_ETA, &
          NSPEC, &
          NSPEC2D_XI, &
@@ -71,7 +71,7 @@
           NPROC_XI,NPROC_ETA,NTSTEP_BETWEEN_OUTPUT_SEISMOS, &
           NTSTEP_BETWEEN_READ_ADJSRC,NSTEP,NTSTEP_BETWEEN_FRAMES, &
           NTSTEP_BETWEEN_OUTPUT_INFO,NUMBER_OF_RUNS,NUMBER_OF_THIS_RUN,NCHUNKS,SIMULATION_TYPE, &
-          REFERENCE_1D_MODEL,THREE_D_MODEL,MOVIE_VOLUME_TYPE,MOVIE_START,MOVIE_STOP
+          MOVIE_VOLUME_TYPE,MOVIE_START,MOVIE_STOP
 
   double precision DT,ANGULAR_WIDTH_XI_IN_DEGREES,ANGULAR_WIDTH_ETA_IN_DEGREES,CENTER_LONGITUDE_IN_DEGREES, &
           CENTER_LATITUDE_IN_DEGREES,GAMMA_ROTATION_AZIMUTH,ROCEAN,RMIDDLE_CRUST, &
@@ -90,7 +90,7 @@
           ROTATE_SEISMOGRAMS_RT,WRITE_SEISMOGRAMS_BY_MASTER,&
           SAVE_ALL_SEISMOS_IN_ONE_FILE,USE_BINARY_FOR_LARGE_FILE
 
-  character(len=150) OUTPUT_FILES,LOCAL_PATH,MODEL
+  character(len=150) OUTPUT_FILES,LOCAL_PATH
 
 ! local variables
   integer NEX_MAX
@@ -194,11 +194,6 @@
   if(err_occurred() /= 0) stop 'an error occurred while reading the parameter file'
 
 ! define the velocity model
-  call read_value_string(MODEL, 'model.name')
-  if(err_occurred() /= 0) stop 'an error occurred while reading the parameter file'
-
-! use PREM as the 1D reference model by default
-  REFERENCE_1D_MODEL = REFERENCE_MODEL_PREM
 
 ! HONOR_1D_SPHERICAL_MOHO: honor PREM Moho or not: doing so drastically reduces
 ! the stability condition and therefore the time step, resulting in expensive
@@ -216,209 +211,22 @@
   ONE_CRUST = .false.
   CASE_3D = .false.
 
-! default is no 3D model
-  THREE_D_MODEL = 0
+  ! initialize the rest, too, for cleanliness
+  TRANSVERSE_ISOTROPY = .false.
+  ISOTROPIC_3D_MANTLE = .false.
+  ANISOTROPIC_3D_MANTLE = .false.
+  ANISOTROPIC_INNER_CORE = .false.
+  CRUSTAL = .false.
+  ATTENUATION_3D = .false.
 
-  if(MODEL == '1D_isotropic_prem') then
-    TRANSVERSE_ISOTROPY = .false.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .false.
-    ATTENUATION_3D = .false.
-    HONOR_1D_SPHERICAL_MOHO = .true.
+  call get_model_properties(HONOR_1D_SPHERICAL_MOHO,ONE_CRUST, &
+       TRANSVERSE_ISOTROPY, &
+       ISOTROPIC_3D_MANTLE,ANISOTROPIC_3D_MANTLE,ANISOTROPIC_INNER_CORE, &
+       CRUSTAL,CASE_3D, &
+       ATTENUATION_3D)
 
-  else if(MODEL == '1D_transversely_isotropic_prem') then
-    TRANSVERSE_ISOTROPY = .true.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .false.
-    ATTENUATION_3D = .false.
-    HONOR_1D_SPHERICAL_MOHO = .true.
-
-  else if(MODEL == '1D_iasp91' .or. MODEL == '1D_1066a' .or. MODEL == '1D_ak135') then
-    if(MODEL == '1D_iasp91') then
-      REFERENCE_1D_MODEL = REFERENCE_MODEL_IASP91
-    else if(MODEL == '1D_1066a') then
-      REFERENCE_1D_MODEL = REFERENCE_MODEL_1066A
-    else if(MODEL == '1D_ak135') then
-      REFERENCE_1D_MODEL = REFERENCE_MODEL_AK135
-    else
-      stop 'reference 1D Earth model unknown'
-    endif
-    TRANSVERSE_ISOTROPY = .false.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .false.
-    ATTENUATION_3D = .false.
-    HONOR_1D_SPHERICAL_MOHO = .true.
-
-  else if(MODEL == '1D_ref') then
-    TRANSVERSE_ISOTROPY = .true.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .false.
-    ATTENUATION_3D = .false.
-    HONOR_1D_SPHERICAL_MOHO = .true.
-    REFERENCE_1D_MODEL = REFERENCE_MODEL_REF
-
-  else if(MODEL == '1D_ref_iso') then
-    TRANSVERSE_ISOTROPY = .false.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .false.
-    ATTENUATION_3D = .false.
-    HONOR_1D_SPHERICAL_MOHO = .true.
-    REFERENCE_1D_MODEL = REFERENCE_MODEL_REF
-
-  else if(MODEL == '1D_isotropic_prem_onecrust') then
-    TRANSVERSE_ISOTROPY = .false.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .false.
-    ATTENUATION_3D = .false.
-    HONOR_1D_SPHERICAL_MOHO = .true.
-    ONE_CRUST = .true.
-
-  else if(MODEL == '1D_transversely_isotropic_prem_onecrust') then
-    TRANSVERSE_ISOTROPY = .true.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .false.
-    ATTENUATION_3D = .false.
-    HONOR_1D_SPHERICAL_MOHO = .true.
-    ONE_CRUST = .true.
-
-  else if(MODEL == '1D_iasp91_onecrust' .or. MODEL == '1D_1066a_onecrust' .or. MODEL == '1D_ak135_onecrust') then
-    if(MODEL == '1D_iasp91_onecrust') then
-      REFERENCE_1D_MODEL = REFERENCE_MODEL_IASP91
-    else if(MODEL == '1D_1066a_onecrust') then
-      REFERENCE_1D_MODEL = REFERENCE_MODEL_1066A
-    else if(MODEL == '1D_ak135_onecrust') then
-      REFERENCE_1D_MODEL = REFERENCE_MODEL_AK135
-    else
-      stop 'reference 1D Earth model unknown'
-    endif
-    TRANSVERSE_ISOTROPY = .false.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .false.
-    ATTENUATION_3D = .false.
-    HONOR_1D_SPHERICAL_MOHO = .true.
-    ONE_CRUST = .true.
-
-  else if(MODEL == 'transversely_isotropic_prem_plus_3D_crust_2.0') then
-    TRANSVERSE_ISOTROPY = .true.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .true.
-    ATTENUATION_3D = .false.
-    ONE_CRUST = .true.
-    CASE_3D = .true.
-
-  else if(MODEL == 's20rts') then
-    TRANSVERSE_ISOTROPY = .true.
-    ISOTROPIC_3D_MANTLE = .true.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .true.
-    ATTENUATION_3D = .false.
-    ONE_CRUST = .true.
-    CASE_3D = .true.
-    REFERENCE_1D_MODEL = REFERENCE_MODEL_PREM
-    THREE_D_MODEL = THREE_D_MODEL_S20RTS
-
-  else if(MODEL == 's362ani') then
-    TRANSVERSE_ISOTROPY = .true.
-    ISOTROPIC_3D_MANTLE = .true.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .true.
-    ATTENUATION_3D = .false.
-    ONE_CRUST = .true.
-    CASE_3D = .true.
-    REFERENCE_1D_MODEL = REFERENCE_MODEL_REF
-    THREE_D_MODEL = THREE_D_MODEL_S362ANI
-
-  else if(MODEL == 's362iso') then
-    TRANSVERSE_ISOTROPY = .false.
-    ISOTROPIC_3D_MANTLE = .true.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .true.
-    ATTENUATION_3D = .false.
-    ONE_CRUST = .true.
-    CASE_3D = .true.
-    REFERENCE_1D_MODEL = REFERENCE_MODEL_REF
-    THREE_D_MODEL = THREE_D_MODEL_S362ANI
-
-  else if(MODEL == 's362wmani') then
-    TRANSVERSE_ISOTROPY = .true.
-    ISOTROPIC_3D_MANTLE = .true.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .true.
-    ATTENUATION_3D = .false.
-    ONE_CRUST = .true.
-    CASE_3D = .true.
-    REFERENCE_1D_MODEL = REFERENCE_MODEL_REF
-    THREE_D_MODEL = THREE_D_MODEL_S362WMANI
-
-  else if(MODEL == 's362ani_prem') then
-    TRANSVERSE_ISOTROPY = .true.
-    ISOTROPIC_3D_MANTLE = .true.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .true.
-    ATTENUATION_3D = .false.
-    ONE_CRUST = .true.
-    CASE_3D = .true.
-    REFERENCE_1D_MODEL = REFERENCE_MODEL_PREM
-    THREE_D_MODEL = THREE_D_MODEL_S362ANI_PREM
-
-  else if(MODEL == 's29ea') then
-    TRANSVERSE_ISOTROPY = .true.
-    ISOTROPIC_3D_MANTLE = .true.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .true.
-    ATTENUATION_3D = .false.
-    ONE_CRUST = .true.
-    CASE_3D = .true.
-    REFERENCE_1D_MODEL = REFERENCE_MODEL_REF
-    THREE_D_MODEL = THREE_D_MODEL_S29EA
-
-  else if(MODEL == '3D_attenuation') then
-    TRANSVERSE_ISOTROPY = .false.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .false.
-    ATTENUATION_3D = .true.
-    ONE_CRUST = .true.
-    CASE_3D = .true.
-
-  else if(MODEL == '3D_anisotropic') then
-    TRANSVERSE_ISOTROPY = .true.
-    ISOTROPIC_3D_MANTLE = .false.
-    ANISOTROPIC_3D_MANTLE = .true.
-    ANISOTROPIC_INNER_CORE = .false.
-    CRUSTAL = .false.
-    ATTENUATION_3D = .false.
-    ONE_CRUST = .true.
-    CASE_3D = .true.
-
-  else
-    stop 'model not implemented, edit read_compute_parameters.f90 and recompile'
-  endif
+  if (ISOTROPIC_3D_MANTLE .and. ANISOTROPIC_3D_MANTLE) &
+       stop 'ISOTROPIC_3D_MANTLE and ANISOTROPIC_3D_MANTLE cannot both be true'
 
 ! set time step, radial distribution of elements, and attenuation period range
 ! right distribution is determined based upon maximum value of NEX
