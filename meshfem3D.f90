@@ -860,7 +860,7 @@
   call read_3d_mantle_model(myrank)
 
   if(CRUSTAL) then
-    call read_crust_2_0(myrank)
+    call read_crust(myrank)
   endif
 
   if(ANISOTROPIC_INNER_CORE) then
