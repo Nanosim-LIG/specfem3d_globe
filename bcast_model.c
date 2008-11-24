@@ -10,16 +10,20 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "config.h"
+
 
 static char wd[150], modelDir[150];
 
 
-void bcast_model(int rank, char *scratchDir) {
-    int fd;
+void FC_FUNC_(bcast_model, BCAST_MODEL)(int *pRank, char *scratchDir, int *scratchDirLen) {
+    int fd, rank;
     struct stat statBuf;
     int size;
     char *data;
     int status;
+    
+    rank = *pRank;
     
     /* Save the working directory (which is on the shared filesystem)
        for future reference. */
@@ -66,7 +70,7 @@ void bcast_model(int rank, char *scratchDir) {
     }
     
     /* Create and enter the model directory. */
-    sprintf(modelDir, "%s/model-%d", scratchDir, rank);
+    sprintf(modelDir, "%.*s/model-%d", *scratchDirLen, scratchDir, rank);
     if (mkdir(modelDir, 0777) == -1) {
         perror("mkdir");
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -104,14 +108,14 @@ void bcast_model(int rank, char *scratchDir) {
     /* Stay in the model directory, ready to read files. */
 }
 
-void enter_model_dir() {
+void FC_FUNC_(enter_model_dir, ENTER_MODEL_DIR)() {
     if (chdir(modelDir) == -1) {
         perror("chdir");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 }
 
-void leave_model_dir() {
+void FC_FUNC_(leave_model_dir, LEAVE_MODEL_DIR)() {
     if (chdir(wd) == -1) {
         perror("chdir");
         MPI_Abort(MPI_COMM_WORLD, 1);

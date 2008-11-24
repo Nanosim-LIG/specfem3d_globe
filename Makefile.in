@@ -61,6 +61,7 @@ libspecfem_a_OBJECTS = \
 	$O/assemble_MPI_vector.o \
 	$O/attenuation_model.o \
 	$O/auto_ner.o \
+	$O/bcast_model.o \
 	$O/calc_jacobian.o \
 	$O/calendar.o \
 	$O/comp_source_spectrum.o \
@@ -551,6 +552,9 @@ $O/combine_surf_data.o: constants.h $S/combine_surf_data.f90
 
 $O/write_c_binary.o: $S/write_c_binary.c config.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $O/write_c_binary.o $S/write_c_binary.c
+
+$O/bcast_model.o: $S/bcast_model.c config.h
+	mpicc $(CPPFLAGS) $(CFLAGS) -c -o $O/bcast_model.o $S/bcast_model.c
 
 $O/add_missing_nodes.o: constants.h $S/add_missing_nodes.f90
 	${FCCOMPILE_CHECK} -c -o $O/add_missing_nodes.o ${FCFLAGS_f90} $S/add_missing_nodes.f90

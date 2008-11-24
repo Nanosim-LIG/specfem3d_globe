@@ -857,11 +857,15 @@
   endif
   if(ELLIPTICITY) call make_ellipticity(nspl,rspl,espl,espl2,ONE_CRUST)
 
-  call read_3d_mantle_model(myrank)
+  call bcast_model(myrank, LOCAL_PATH)
+
+  call read_3d_mantle_model()
 
   if(CRUSTAL) then
-    call read_crust(myrank)
+    call read_crust()
   endif
+
+  call leave_model_dir()
 
   if(ANISOTROPIC_INNER_CORE) then
     if(myrank == 0) call read_aniso_inner_core_model
