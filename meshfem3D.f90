@@ -857,7 +857,7 @@
   endif
   if(ELLIPTICITY) call make_ellipticity(nspl,rspl,espl,espl2,ONE_CRUST)
 
-  call bcast_model(myrank, LOCAL_PATH)
+  call bcast_model(myrank, trim(LOCAL_PATH))
 
   call read_3d_mantle_model()
 

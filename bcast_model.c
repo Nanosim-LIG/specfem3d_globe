@@ -16,7 +16,7 @@
 static char wd[150], modelDir[150];
 
 
-void FC_FUNC_(bcast_model, BCAST_MODEL)(int *pRank, char *scratchDir, int *scratchDirLen) {
+void FC_FUNC_(bcast_model, BCAST_MODEL)(int *pRank, char *scratchDir, int scratchDirLen) {
     int fd, rank;
     struct stat statBuf;
     int size;
@@ -70,7 +70,7 @@ void FC_FUNC_(bcast_model, BCAST_MODEL)(int *pRank, char *scratchDir, int *scrat
     }
     
     /* Create and enter the model directory. */
-    sprintf(modelDir, "%.*s/model-%d", *scratchDirLen, scratchDir, rank);
+    sprintf(modelDir, "%.*s/model-%d", scratchDirLen, scratchDir, rank);
     if (mkdir(modelDir, 0777) == -1) {
         perror("mkdir");
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -81,7 +81,7 @@ void FC_FUNC_(bcast_model, BCAST_MODEL)(int *pRank, char *scratchDir, int *scrat
     }
     
     /* Save a local copy of the model archive. */
-    fd = open("model.tgz", O_CREAT | O_WRONLY);
+    fd = open("model.tgz", O_CREAT | O_WRONLY, S_IRUSR);
     if (fd == -1) {
         perror("open");
         MPI_Abort(MPI_COMM_WORLD, 1);
