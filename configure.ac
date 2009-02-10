@@ -34,6 +34,18 @@ AC_SUBST([CUSTOM_REAL])
 AC_SUBST([CUSTOM_MPI_TYPE])
 
 
+if test x$MODEL = x; then
+    if test -f model.mk; then
+        AC_MSG_NOTICE([using previously configured Earth model])
+    else
+        AC_MSG_ERROR([MODEL is not set, and there is no previously configured Earth model])
+    fi
+else
+    AC_MSG_NOTICE([running prepare-model.py])
+    $srcdir/prepare-model.py || AC_MSG_ERROR([prepare-model.py failed])
+fi
+
+
 # Checks for programs.
 
 # a courtesy to the installed base of users
@@ -81,6 +93,8 @@ AC_ARG_VAR(LOCAL_PATH_IS_ALSO_GLOBAL, [files on a local path on each node are al
 if test x"$LOCAL_PATH_IS_ALSO_GLOBAL" = x; then
     LOCAL_PATH_IS_ALSO_GLOBAL=false
 fi
+
+AC_ARG_VAR(MODEL, [directory containing Earth model source])
 
 
 

@@ -636,6 +636,7 @@ MPILIBS
 FLAGS_CHECK
 FLAGS_NO_CHECK
 LOCAL_PATH_IS_ALSO_GLOBAL
+MODEL
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -653,7 +654,8 @@ MPIFC
 MPILIBS
 FLAGS_CHECK
 FLAGS_NO_CHECK
-LOCAL_PATH_IS_ALSO_GLOBAL'
+LOCAL_PATH_IS_ALSO_GLOBAL
+MODEL'
 
 
 # Initialize some variables set by options.
@@ -1246,6 +1248,7 @@ Some influential environment variables:
   LOCAL_PATH_IS_ALSO_GLOBAL
               files on a local path on each node are also seen as global with
               same path [default=false]
+  MODEL       directory containing Earth model source
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -1702,6 +1705,24 @@ else
 fi
 
 
+
+
+if test x$MODEL = x; then
+    if test -f model.mk; then
+        { echo "$as_me:$LINENO: using previously configured Earth model" >&5
+echo "$as_me: using previously configured Earth model" >&6;}
+    else
+        { { echo "$as_me:$LINENO: error: MODEL is not set, and there is no previously configured Earth model" >&5
+echo "$as_me: error: MODEL is not set, and there is no previously configured Earth model" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+else
+    { echo "$as_me:$LINENO: running prepare-model.py" >&5
+echo "$as_me: running prepare-model.py" >&6;}
+    $srcdir/prepare-model.py || { { echo "$as_me:$LINENO: error: prepare-model.py failed" >&5
+echo "$as_me: error: prepare-model.py failed" >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 
 # Checks for programs.
@@ -4641,6 +4662,8 @@ fi
 
 
 
+
+
 # Checks for libraries.
 
 
@@ -5485,11 +5508,12 @@ MPILIBS!$MPILIBS$ac_delim
 FLAGS_CHECK!$FLAGS_CHECK$ac_delim
 FLAGS_NO_CHECK!$FLAGS_NO_CHECK$ac_delim
 LOCAL_PATH_IS_ALSO_GLOBAL!$LOCAL_PATH_IS_ALSO_GLOBAL$ac_delim
+MODEL!$MODEL$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 59; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 60; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
