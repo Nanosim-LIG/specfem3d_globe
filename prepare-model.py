@@ -12,12 +12,14 @@ class CopiedFromPortal:
     def prepareModel(self):
         import tarfile
         from os.path import basename, dirname, splitext
+        from itertools import chain
         
         tgz = tarfile.open(self.model, 'r:gz')
         path = "model"
 
         directories = []
         fortranSourceFiles = []
+        cSourceFiles = []
 
         for tarinfo in tgz:
             if tarinfo.isdir():
@@ -28,9 +30,12 @@ class CopiedFromPortal:
                 except EnvironmentError:
                     pass
                 directories.append(tarinfo)
-            elif tarinfo.name.endswith(".f90"):
+            elif tarinfo.name.endswith(".f90") or tarinfo.name.endswith(".c"):
                 pathname = os.path.join(path, tarinfo.name)
-                fortranSourceFiles.append(pathname)
+                if tarinfo.name.endswith(".f90"):
+                    fortranSourceFiles.append(pathname)
+                else:
+                    cSourceFiles.append(pathname)
                 thisDir = dirname(tarinfo.name) # see bcast_model.c
                 s = tgz.extractfile(tarinfo)
                 f = open(pathname, "w")
@@ -59,7 +64,7 @@ class CopiedFromPortal:
         s = open("model.mk", "w")
         print >>s
         print >>s, "model_OBJECTS = \\"
-        for sourceFile in fortranSourceFiles:
+        for sourceFile in chain(fortranSourceFiles, cSourceFiles):
             base = splitext(basename(sourceFile))[0]
             print >>s, "\t$O/%s.o \\" % base
         print >>s, "\t$(empty)"
@@ -69,6 +74,11 @@ class CopiedFromPortal:
             print >>s, "$O/%s.o: constants.h %s" % (base, sourceFile)
             print >>s, "\t${MPIFCCOMPILE_CHECK} -c -o $O/%s.o ${FCFLAGS_f90} %s" % (base, sourceFile)
             print >>s
+        for sourceFile in cSourceFiles:
+            base = splitext(basename(sourceFile))[0]
+            print >>s, "$O/%s.o: config.h %s" % (base, sourceFile)
+            print >>s, "\tmpicc $(CPPFLAGS) $(CFLAGS) -c -o $O/%s.o %s" % (base, sourceFile)
+            print >>s
         return
 
 
@@ -77,7 +87,8 @@ def prepareModel():
 
     model = "model.tgz"
 
-    modelDir = os.environ['MODEL']
+    modelDir = os.environ.get('MODEL')
+    assert modelDir, "MODEL environment variable is not set"
     tgzOut = tarfile.open(model, 'w:gz')
     tgzOut.dereference = True # follow symlinks
     tgzOut.add(modelDir)
