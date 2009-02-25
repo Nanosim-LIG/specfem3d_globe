@@ -380,6 +380,11 @@
   logical :: CUT_SUPERBRICK_XI,CUT_SUPERBRICK_ETA
   integer, dimension(MAX_NUM_REGIONS) :: NGLOB1D_RADIAL_TEMP
 
+  ! parameters for passing information to citcoms mantle model
+  common /for_citcoms1/ NPROC_XI, NPROC_ETA, NCHUNKS
+  common /for_citcoms2/ ANGULAR_WIDTH_XI_RAD, ANGULAR_WIDTH_ETA_RAD
+  common /for_citcoms3/ rotation_matrix
+
 ! ************** PROGRAM STARTS HERE **************
 
 ! initialize the MPI communicator and start the NPROCTOT MPI processes.
@@ -855,6 +860,12 @@
   write(IMAIN,*)
 
   endif
+
+! compute rotation matrix from Euler angles
+  ANGULAR_WIDTH_XI_RAD = ANGULAR_WIDTH_XI_IN_DEGREES * PI / 180.d0
+  ANGULAR_WIDTH_ETA_RAD = ANGULAR_WIDTH_ETA_IN_DEGREES * PI / 180.d0
+  if(NCHUNKS /= 6) call euler_angles(rotation_matrix,CENTER_LONGITUDE_IN_DEGREES,CENTER_LATITUDE_IN_DEGREES,GAMMA_ROTATION_AZIMUTH)
+
   if(ELLIPTICITY) call make_ellipticity(nspl,rspl,espl,espl2,ONE_CRUST)
 
   call bcast_model(myrank, trim(LOCAL_PATH))
@@ -910,11 +921,6 @@
     write(IMAIN,*)
     write(IMAIN,*) 'Central cube is at a radius of ',R_CENTRAL_CUBE/1000.d0,' km'
   endif
-
-! compute rotation matrix from Euler angles
-  ANGULAR_WIDTH_XI_RAD = ANGULAR_WIDTH_XI_IN_DEGREES * PI / 180.d0
-  ANGULAR_WIDTH_ETA_RAD = ANGULAR_WIDTH_ETA_IN_DEGREES * PI / 180.d0
-  if(NCHUNKS /= 6) call euler_angles(rotation_matrix,CENTER_LONGITUDE_IN_DEGREES,CENTER_LATITUDE_IN_DEGREES,GAMMA_ROTATION_AZIMUTH)
 
 ! volume of the slice
   volume_total = ZERO
