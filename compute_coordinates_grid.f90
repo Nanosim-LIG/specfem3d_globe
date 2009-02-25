@@ -35,18 +35,19 @@
 
   include "constants.h"
 
-  double precision, dimension(NGNOD) :: xelm,yelm,zelm,offset_x,offset_y,offset_z
+  double precision, intent(in), dimension(NGNOD) :: offset_x,offset_y,offset_z
+  double precision, intent(out), dimension(NGNOD) :: xelm,yelm,zelm
 
 ! rotation matrix from Euler angles
-  double precision, dimension(NDIM,NDIM) :: rotation_matrix
+  double precision, intent(in), dimension(NDIM,NDIM) :: rotation_matrix
 
   integer, intent(in) :: iproc_xi,iproc_eta,NPROC_XI,NPROC_ETA, &
                    NEX_PER_PROC_XI,NEX_PER_PROC_ETA,ner,ilayer,ichunk,NCHUNKS
 
-  double precision :: ANGULAR_WIDTH_XI_RAD,ANGULAR_WIDTH_ETA_RAD,r_top,r_bottom
+  double precision, intent(in) :: ANGULAR_WIDTH_XI_RAD,ANGULAR_WIDTH_ETA_RAD,r_top,r_bottom
 
-  logical :: INCLUDE_CENTRAL_CUBE
-  integer :: NUMBER_OF_MESH_LAYERS
+  logical, intent(in) :: INCLUDE_CENTRAL_CUBE
+  integer, intent(in) :: NUMBER_OF_MESH_LAYERS
 
 ! local variables
   integer :: i,j,ignod
