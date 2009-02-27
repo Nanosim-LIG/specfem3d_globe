@@ -108,6 +108,7 @@ libspecfem_a_OBJECTS = \
 	$O/make_ellipticity.o \
 	$O/make_gravity.o \
 	$O/memory_eval.o \
+	$O/model_plugin_support.o \
 	$O/moho_stretching.o \
 	$O/netlib_specfun_erf.o \
 	$O/prem_common.o \
@@ -462,6 +463,9 @@ $O/comp_source_spectrum.o: constants.h $S/comp_source_spectrum.f90
 
 $O/add_topography.o: constants.h $S/add_topography.f90
 	${FCCOMPILE_CHECK} -c -o $O/add_topography.o ${FCFLAGS_f90} $S/add_topography.f90
+
+$O/model_plugin_support.o: constants.h $S/model_plugin_support.f90
+	${FCCOMPILE_CHECK} -c -o $O/model_plugin_support.o ${FCFLAGS_f90} $S/model_plugin_support.f90
 
 $O/moho_stretching.o: constants.h $S/moho_stretching.f90
 	${FCCOMPILE_CHECK} -c -o $O/moho_stretching.o ${FCFLAGS_f90} $S/moho_stretching.f90
