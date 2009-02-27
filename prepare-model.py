@@ -4,7 +4,7 @@
 import os, sys
 
 
-class CopiedFromPortal:
+class MovedFromPortal:
 
     def __init__(self, model):
         self.model = model
@@ -109,17 +109,20 @@ class CopiedFromPortal:
 
 def prepareModel():
     import tarfile
+    from os.path import isdir
 
-    model = "model.tgz"
+    model = os.environ.get('MODEL')
+    assert model, "MODEL environment variable is not set"
+    
+    if isdir(model):
+        modelDir = model
+        model = "model.tgz"
+        tgzOut = tarfile.open(model, 'w:gz')
+        tgzOut.dereference = True # follow symlinks
+        tgzOut.add(modelDir)
+        tgzOut.close()
 
-    modelDir = os.environ.get('MODEL')
-    assert modelDir, "MODEL environment variable is not set"
-    tgzOut = tarfile.open(model, 'w:gz')
-    tgzOut.dereference = True # follow symlinks
-    tgzOut.add(modelDir)
-    tgzOut.close()
-
-    CopiedFromPortal(model).prepareModel()
+    MovedFromPortal(model).prepareModel()
 
 
 try:
