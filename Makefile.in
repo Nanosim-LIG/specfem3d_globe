@@ -221,7 +221,7 @@ xspecfem3D: $(XSPECFEM_OBJECTS)
 	${MPIFCCOMPILE_NO_CHECK} -o xspecfem3D $(XSPECFEM_OBJECTS) $(MPILIBS)
 
 
-SERIAL_LIBS = $(model_OBJECTS) $O/exit_mpi_dummy.o $(LIBSPECFEM)
+SERIAL_LIBS = $(model_SERIAL_OBJECTS) $(LIBSPECFEM)
 
 xconvolve_source_timefunction: $O/convolve_source_timefunction.o
 	${FCCOMPILE_CHECK} -o xconvolve_source_timefunction $O/convolve_source_timefunction.o
@@ -359,9 +359,6 @@ $O/locate_receivers.o: constants.h $S/locate_receivers.f90
 ## use MPI here
 $O/exit_mpi.o: constants.h $S/exit_mpi.f90
 	${MPIFCCOMPILE_CHECK} -c -o $O/exit_mpi.o ${FCFLAGS_f90} $S/exit_mpi.f90
-
-$O/exit_mpi_dummy.o: constants.h $S/MODELS/harness/lib/chino/exit_mpi.f90
-	${FCCOMPILE_CHECK} -c -o $O/exit_mpi_dummy.o ${FCFLAGS_f90} $S/MODELS/harness/lib/chino/exit_mpi.f90
 
 $O/count_number_of_sources.o: constants.h $S/count_number_of_sources.f90
 	${FCCOMPILE_CHECK} -c -o $O/count_number_of_sources.o ${FCFLAGS_f90} $S/count_number_of_sources.f90
