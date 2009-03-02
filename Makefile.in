@@ -81,6 +81,7 @@ libspecfem_a_OBJECTS = \
 	$O/create_serial_name_database.o \
 	$O/define_derivation_matrices.o \
 	$O/define_superbrick.o \
+	$O/dummy_finalize_mantle_model.o \
 	$O/euler_angles.o \
 	$O/exit_mpi.o \
 	$O/get_MPI_1D_buffers.o \
@@ -566,6 +567,9 @@ $O/memory_eval.o: constants.h $S/memory_eval.f90
 
 $O/get_backazimuth.o: constants.h $S/get_backazimuth.f90
 	${FCCOMPILE_CHECK} -c -o $O/get_backazimuth.o ${FCFLAGS_f90} $S/get_backazimuth.f90
+
+$O/dummy_finalize_mantle_model.o: $S/MODELS/3D/dummy/finalize_mantle_model.f90
+	${FCCOMPILE_CHECK} -c -o $O/dummy_finalize_mantle_model.o ${FCFLAGS_f90} $S/MODELS/3D/dummy/finalize_mantle_model.f90
 
 ###
 ### rule for the header file

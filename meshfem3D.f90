@@ -1093,6 +1093,8 @@
 ! end of loop on all the regions
   enddo
 
+  call finalize_mantle_model()
+
   if(myrank == 0) then
 ! check volume of chunk
       write(IMAIN,*)
