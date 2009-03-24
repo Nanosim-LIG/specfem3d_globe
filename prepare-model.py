@@ -11,29 +11,37 @@ class MovedFromPortal:
    
     def prepareModel(self):
         import tarfile
-        from os.path import basename, dirname, splitext
+        from os.path import basename, dirname, exists, join, splitext
         from itertools import chain
         
         tgz = tarfile.open(self.model, 'r:gz')
-        path = "model"
+        root = "model"
+        cwd = os.getcwd()
 
         directories = []
         serialFortranSourceFiles = []
         serialCSourceFiles = []
         fortranSourceFiles = []
         cSourceFiles = []
+        bcastFiles = []
 
         for tarinfo in tgz:
             if tarinfo.isdir():
                 # Extract directory with a safe mode, so that
                 # all files below can be extracted as well.
                 try:
-                    os.makedirs(os.path.join(path, tarinfo.name), 0777)
+                    os.makedirs(join(root, tarinfo.name), 0777)
                 except EnvironmentError:
                     pass
                 directories.append(tarinfo)
-            elif tarinfo.name.endswith(".f90") or tarinfo.name.endswith(".c"):
-                pathname = os.path.join(path, tarinfo.name)
+            else:
+                tgz.extract(tarinfo, root)
+                if not "/shared/" in tarinfo.name:
+                    bcastFiles.append(tarinfo.name)
+            
+            if tarinfo.name.endswith(".f90") or tarinfo.name.endswith(".c"):
+                pathname = join(root, tarinfo.name)
+                os.unlink(pathname)
                 if tarinfo.name.endswith(".f90"):
                     if tarinfo.name.endswith(".serial.f90"):
                         serialFortranSourceFiles.append(pathname)
@@ -51,8 +59,18 @@ class MovedFromPortal:
                 for line in s.readlines():
                     line = line.replace('@THIS_DIR@', thisDir)
                     f.write(line)
-            else:
-                tgz.extract(tarinfo, path)
+
+        # Create symlinks to "shared" directories.
+        sharedParents = []
+        for directory, subdirectories, files in os.walk(root):
+            for subdirectory in subdirectories:
+                if subdirectory == "shared":
+                    pathname = join(directory, "shared")
+                    symLink = join(directory, "_shared")
+                    if exists(symLink):
+                        os.unlink(symLink)
+                    os.symlink(join(cwd, pathname), symLink)
+                    sharedParents.append(directory[len(root)+1:])
 
         # Reverse sort directories.
         directories.sort(lambda a, b: cmp(a.name, b.name))
@@ -60,13 +78,21 @@ class MovedFromPortal:
 
         # Set correct owner, mtime and filemode on directories.
         for tarinfo in directories:
-            path = os.path.join(path, tarinfo.name)
+            pathname = os.path.join(root, tarinfo.name)
             try:
-                tgz.chown(tarinfo, path)
-                tgz.utime(tarinfo, path)
-                tgz.chmod(tarinfo, path)
+                tgz.chown(tarinfo, pathname)
+                tgz.utime(tarinfo, pathname)
+                tgz.chmod(tarinfo, pathname)
             except tarfile.ExtractError, e:
                 pass
+
+        # Generate the bcast tgz file.
+        tgz = tarfile.open("bcast_model.tgz", 'w:gz')
+        for name in bcastFiles:
+            tgz.add(join(root, name), name)
+        for name in sharedParents:
+            tgz.add(join(root, name, "_shared"), join(name, "shared"))
+        tgz.close()
 
         # Generate the make include file.
         s = open("model.mk", "w")
@@ -125,7 +151,4 @@ def prepareModel():
     MovedFromPortal(model).prepareModel()
 
 
-try:
-    prepareModel()
-except Exception, e:
-    sys.exit("%s: %s" % (__file__, e))
+prepareModel()

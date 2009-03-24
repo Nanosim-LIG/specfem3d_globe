@@ -35,7 +35,7 @@ void FC_FUNC_(bcast_model, BCAST_MODEL)(int *pRank, char *scratchDir, int scratc
     /* Broadcast the model archive to all the nodes. */
     if (rank == 0) {
         /* XXX: We shouldn't hardcode this filename. */
-        fd = open("model.tgz", O_RDONLY);
+        fd = open("bcast_model.tgz", O_RDONLY);
         if (fd == -1) {
             perror("open");
             MPI_Abort(MPI_COMM_WORLD, 1);
@@ -81,7 +81,7 @@ void FC_FUNC_(bcast_model, BCAST_MODEL)(int *pRank, char *scratchDir, int scratc
     }
     
     /* Save a local copy of the model archive. */
-    fd = open("model.tgz", O_CREAT | O_WRONLY, S_IRUSR);
+    fd = open("bcast_model.tgz", O_CREAT | O_WRONLY, S_IRUSR);
     if (fd == -1) {
         perror("open");
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -94,7 +94,7 @@ void FC_FUNC_(bcast_model, BCAST_MODEL)(int *pRank, char *scratchDir, int scratc
     free(data);
     
     /* Extract the model files. */
-    status = system("tar xzf model.tgz");
+    status = system("tar xzf bcast_model.tgz");
     if (status == -1) {
         perror("system");
         MPI_Abort(MPI_COMM_WORLD, 1);
