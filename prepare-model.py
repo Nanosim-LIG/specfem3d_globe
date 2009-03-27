@@ -39,7 +39,7 @@ class MovedFromPortal:
                 if not "/shared/" in tarinfo.name:
                     bcastFiles.append(tarinfo.name)
             
-            if tarinfo.name.endswith(".f90") or tarinfo.name.endswith(".c"):
+            if tarinfo.name.endswith(".f90") or tarinfo.name.endswith(".c") or tarinfo.name.endswith(".h"):
                 pathname = join(root, tarinfo.name)
                 os.unlink(pathname)
                 if tarinfo.name.endswith(".f90"):
@@ -47,7 +47,7 @@ class MovedFromPortal:
                         serialFortranSourceFiles.append(pathname)
                     else:
                         fortranSourceFiles.append(pathname)
-                else:
+                elif tarinfo.name.endswith(".c"):
                     if tarinfo.name.endswith(".serial.c"):
                         serialCSourceFiles.append(pathname)
                     else:
