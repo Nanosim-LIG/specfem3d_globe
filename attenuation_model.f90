@@ -138,7 +138,7 @@ subroutine attenuation_model_setup(AM_V,AM_S,AS_V)
   if(myrank > 0) return
 
   call define_reference_1d_model(.FALSE.)
-  call reference_1d_model_attenuation_model_setup(AM_V)
+  call ref1d_attenuation_model_setup(AM_V)
 
   do i = 1, AM_V%Qn
      call attenuation_conversion(AM_V%Qmu(i), AM_V%QT_c_source, AM_V%Qtau_s, tau_e, AM_V, AM_S,AS_V)

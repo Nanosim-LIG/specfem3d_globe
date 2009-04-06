@@ -50,7 +50,7 @@
   double precision c66
   double precision scale_fac
 
-  call reference_1d_model_aniso_inner_core_model_setup(x,vp,vp0,vs,vs0,rho,rho0)
+  call aniso_inner_core_model_setup(x,vp,vp0,vs,vs0,rho,rho0)
 
 ! elastic tensor for hexagonal symmetry in reduced notation:
 !

@@ -474,7 +474,7 @@
       endif
     endif
 
-    call reference_1d_model_adjust_time_step(DT)
+    call adjust_time_step(DT)
 
     if( .not. ATTENUATION_RANGE_PREDEFINED ) then
        call auto_attenuation_periods(ANGULAR_WIDTH_XI_IN_DEGREES, NEX_MAX, &
