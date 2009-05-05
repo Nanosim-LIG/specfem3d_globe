@@ -14,7 +14,12 @@ CFLAGS = -O2
 CPPFLAGS = -I$(SACAUX)/../include
 LDFLAGS = -L$(SACAUX)/../lib -lsacio
 
+all: asc2sac get_sac_header
+
 asc2sac: asc2sac.c
 	$(CC) asc2sac.c -o asc2sac $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+
+get_sac_header: get_sac_header.c
+	$(CC) get_sac_header.c -o get_sac_header $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
 
