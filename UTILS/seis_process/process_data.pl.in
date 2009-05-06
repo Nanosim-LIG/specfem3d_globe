@@ -7,9 +7,9 @@ use POSIX;
 sub Usage{
   print STDERR <<END;
 
-  process_data_new.pl -m CMTFILE -l Start/End -t Ts/Tl -i -p -x Ext -d OutDir
-                      -s Sps -P n/p -T Taper_width -c -y t1/v1/... 
-                      data_sac_files
+  process_data.pl -m CMTFILE -l Start/End -t Ts/Tl -i -p -x Ext -d OutDir
+                  -s Sps -P n/p -T Taper_width -c -y t1/v1/... 
+                  data_sac_files
   with
 
        -m -- use CMTSOLUTION file to set event info
@@ -43,6 +43,9 @@ END
   exit(1);
 }
 
+$sacaux = $ENV{SACAUX} or "@sacaux@";
+unless (-d $sacaux) {die("missing SAC aux directory: '$sacaux'\n");}
+
 if (@ARGV == 0) { Usage(); }
 
 if (!getopts('m:l:t:ipx:d:s:P:T:y:c')) {die('Check input arguments\n');}
@@ -60,10 +63,10 @@ else{($poles,$pass)=split(/\//,$opt_P);
 if (!$opt_T) {$opt_T = 0.05;}
 if ($opt_l) {($lmin,$lmax) = split(/\//,$opt_l);} else {$lmin = 0; $lmax = 3600;}
 
-$saclst="/opt/seismo-util/source/saclst/saclst";
-$phtimes="/opt/seismo-util/bin/phtimes";
+$saclst="$sacaux/../bin/saclst";
+$phtimes="phtimes";
 if (! -e $saclst) {die(" No $saclst file\n");}
-if (! -e $phtimes) {die("No $phtimes file\n");}
+#if (! -e $phtimes) {die("No $phtimes file\n");}
 
 $eps=1e-5; $undef=-12345.0; $cundef="-12345";
 

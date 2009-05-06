@@ -41,6 +41,9 @@ END
 exit(1);
 }
 
+$sacaux = $ENV{SACAUX} or "@sacaux@";
+unless (-d $sacaux) {die("missing SAC aux directory: '$sacaux'\n");}
+
 @ARGV > 1 or Usage();
 
 if (!getopts('Sm:ho:l:t:i:pP:a:cd:x:vs:y:A:')) {die(" check input arguments\n");}
@@ -63,11 +66,11 @@ if ($opt_A) {if ($opt_A !~ /^\d/) {die("-A option should be numbers\n");}}
 $undef = -12345;
 $eps = 0.1;
 
-$saclst="/opt/seismo-util/source/saclst/saclst";
-$phtimes="/opt/seismo-util/bin/phtimes";
-$asc2sac="/opt/seismo-util/bin/ascii2sac.csh";
+$saclst="$sacaux/../bin/saclst";
+$phtimes="phtimes";
+$asc2sac="@prefix@/bin/ascii2sac.csh";
 if (! -e $saclst)  {die(" No $saclst file\n");}
-if (! -e $phtimes) {die("No $phtimes file\n");}
+#if (! -e $phtimes) {die("No $phtimes file\n");}
 if (! -e $asc2sac) {die("No $asc2sac file\n");}
 
 $min_hdur=1.0;
@@ -116,7 +119,7 @@ foreach $file (@ARGV) {
     print SAC "echo on\n r $outfile\n";}
 
     if ($opt_h and $hdur > $min_hdur) { # convolve source time function
-    system("/opt/seismo-util/bin/convolve_stf g $hdur $outfile");
+    system("@prefix@/bin/convolve_stf g $hdur $outfile");
     system("mv ${outfile}.conv ${outfile}");}
 
 

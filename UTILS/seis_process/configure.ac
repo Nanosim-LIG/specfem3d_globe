@@ -11,6 +11,9 @@ AC_ARG_VAR(SACAUX, [SAC 'aux' directory])
 if test "x$SACAUX" = x; then
     AC_MSG_ERROR([environment variable SACAUX is not set])
 fi
+if test ! -d "$SACAUX"; then
+    AC_MSG_ERROR([SACAUX (=$SACAUX) does not name a directory])
+fi
 
 # Checks for programs.
 AC_PROG_CC
