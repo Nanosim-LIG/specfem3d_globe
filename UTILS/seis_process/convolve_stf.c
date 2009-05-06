@@ -100,9 +100,9 @@ void convolve(float **pconv, sac_int_t *pnconv,
 int
 main(int argc, char *argv[])
 {
-    char cstf, *endpt, *outf;
+    char cstf, *endpt;
     float hdur, *data;
-    int j, len_fn;
+    int j;
     sac_int_t datasize;
     const int min_nhdur = 10;
 
@@ -112,12 +112,12 @@ main(int argc, char *argv[])
                 "  This program convolves SAC files with a gaussian(|triangle)\n"
                 "  source time function of given half duration\n",
                 argv[0]);
-        return -1;
+        return 1;
     }
 
     if(strcmp(argv[1], "t") != 0  && strcmp(argv[1], "g") != 0) {
         fprintf(stderr,"The source time function type could only be triangle(t) or gaussian(g) \n");
-        return -1;
+        return 1;
     }
     cstf = argv[1][0];
 
@@ -125,14 +125,7 @@ main(int argc, char *argv[])
     hdur = (float)strtod(argv[2], &endpt);
     if(errno || endpt == argv[2] || *endpt != 0) {
         fprintf(stderr,"No floating point number can be formed from %s\n",argv[2]);
-        return -1;
-    }
-
-
-    len_fn = 255;
-    if((outf = (char *) malloc(len_fn * sizeof(char))) == NULL) {
-        fprintf(stderr,"Out of memory\n");
-        return -1;
+        return 1;
     }
 
 
@@ -144,25 +137,32 @@ main(int argc, char *argv[])
         float beg, del, dt, origin, scale, tmp[1];
         sac_int_t nstf, nconv, i;
         float hstf, *stf, *conv;
+        char *outf;
 
 
         fprintf(stderr, "convolving sac file %s with half duration %7.3f\n",
                 argv[j], hdur);
+
+        if((outf = (char *) malloc(strlen(argv[j]) + strlen(".conv") + 1)) == NULL) {
+            fprintf(stderr,"Out of memory\n");
+            return 1;
+        }
+        strcpy(outf, argv[j]);
+        strcat(outf, ".conv");
 
         /* read header to get the length of time series */
         max = 1;
         rsac1(argv[j], tmp, &nlen, &beg, &del, &max, &nerr, strlen(argv[j]));
         if(nerr != -803) {
             fprintf(stderr,"Error reading sac file %s\n",argv[j]);
-            return -1;
+            return 1;
         }
 
         getnhv("npts", &npts, &nerr, strlen("npts"));
 
         /* now we know how much memory we need to allocate */
         if(npts > datasize) {
-            if(data != NULL) free(data);
-            data = (float*) malloc(npts * sizeof(float));
+            data = (float*)realloc(data, npts * sizeof(float));
             if(data == NULL) {
                 fprintf(stderr, "out of memory\n");
                 return 1;
@@ -175,7 +175,7 @@ main(int argc, char *argv[])
         rsac1(argv[j], data, &nlen, &beg, &del, &max, &nerr, strlen(argv[j]));
         if(nerr) {
             fprintf(stderr,"Error reading sac file %s\n",argv[j]);
-            return -1;
+            return 1;
         }
 
         /* get additional info */
@@ -184,7 +184,7 @@ main(int argc, char *argv[])
         getfhv("scale", &scale, &nerr, strlen("scale"));
         if(nerr) {
             fprintf(stderr,"No origin time is defined for the sac file\n");
-            return -1;
+            return 1;
         }
 
 
@@ -192,7 +192,7 @@ main(int argc, char *argv[])
         /* creat source time function time series */
         if(min_nhdur * dt / 2 > hdur) {
             fprintf(stderr,"The half duration %f is too small to convolve\n", hdur);
-            return -1;
+            return 1;
         }
 
         nstf = (int)ceil(2 * hdur/dt)+1;
@@ -200,7 +200,7 @@ main(int argc, char *argv[])
 
         if((stf = (float *) malloc(nstf*sizeof(float))) == NULL) {
             fprintf(stderr,"Error in allocating memory for source time function\n");
-            return -1;
+            return 1;
         }
         if(cstf == 't') {
             /* triangular */
@@ -212,9 +212,10 @@ main(int argc, char *argv[])
             /* gaussian */
             const float decay_rate = 1.628;
             float alpha = decay_rate / hdur;
+            float divisor = sqrt(4*atan(1.0) /*pi*/);
             for (i=0; i<nstf; i++) {
                 float tao_i = fabs(i*dt - hstf);
-                stf[i] = alpha * exp(- alpha*alpha* tao_i*tao_i) / sqrt(M_PI);
+                stf[i] = alpha * exp(- alpha*alpha* tao_i*tao_i) / divisor;
             }
         }
 
@@ -249,17 +250,16 @@ main(int argc, char *argv[])
         }
 
         /* output to .conv sac file */
-        snprintf(outf, len_fn, "%s.conv", argv[j]);
-
         wsac0(outf, data, conv, &nerr, strlen(outf));
 
         if(nerr) {
             fprintf(stderr, "Not able to write to file %s\n", argv[j]);
-            return -1;
+            return 1;
         }
 
         free(conv);
         free(stf);
+        free(outf);
     }
 
     return 0;
