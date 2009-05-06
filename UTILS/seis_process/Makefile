@@ -14,12 +14,12 @@ CFLAGS = -O2
 CPPFLAGS = -I$(SACAUX)/../include
 LDFLAGS = -L$(SACAUX)/../lib -lsacio
 
-all: asc2sac get_sac_header
+all: asc2sac convolve_stf
 
 asc2sac: asc2sac.c
 	$(CC) asc2sac.c -o asc2sac $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
 
-get_sac_header: get_sac_header.c
-	$(CC) get_sac_header.c -o get_sac_header $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+convolve_stf: convolve_stf.c
+	$(CC) convolve_stf.c -o convolve_stf $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -lm
 
 
