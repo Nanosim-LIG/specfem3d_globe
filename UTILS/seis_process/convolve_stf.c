@@ -29,26 +29,26 @@
 
 
 /* defined in libsac */
-void fft(float *xreal, float *ximag, int n, int idir);
+void fft(float *xreal, float *ximag, long int n, long int idir);
 
 
-static void fzero(float *dst, int n) {
+static void fzero(float *dst, long int n) {
     while (n)
         dst[--n] = 0.0;
 }
 
-static void fcpy(float *dst, const float *src, int n) {
+static void fcpy(float *dst, const float *src, long int n) {
     while (n) {
         --n;
         dst[n] = src[n];
     }
 }
 
-void convolve(float **pconv, int *pnconv,
-              const float *data, int ndata,
-              const float *stf,  int nstf)
+void convolve(float **pconv, long int *pnconv,
+              const float *data, long int ndata,
+              const float *stf,  long int nstf)
 {
-    int nconv, ncorr, i;
+    long int nconv, ncorr, i;
     struct { float *xreal, *ximag; } cdata, cstf, ccorr;
     float *conv, *buffer;
     
@@ -105,19 +105,17 @@ main(int argc, char *argv[])
     int errno, j, datasize, len_fn;
     const int min_nhdur = 10;
 
-
     if(argc < 4) {
         fprintf(stderr,
                 "Usage: %s g[|t] HDUR FILE...\n"
-                "  This program convolves SAC files with gaussian(|triangle)\n"
+                "  This program convolves SAC files with a gaussian(|triangle)\n"
                 "  source time function of given half duration\n",
                 argv[0]);
         return -1;
     }
 
     if(strcmp(argv[1], "t") != 0  && strcmp(argv[1], "g") != 0) {
-        fprintf(stderr,"Usage: convolve_stf g[/t] hdur sacfiles\n");
-        fprintf(stderr,"  The source time function type could only be triangle(t) or gaussian(g) \n");
+        fprintf(stderr,"The source time function type could only be triangle(t) or gaussian(g) \n");
         return -1;
     }
     cstf = argv[1][0];
@@ -141,9 +139,9 @@ main(int argc, char *argv[])
     datasize = 0;
     data = NULL;
     for (j=3; j<argc; j++) {
-        int max, npts, nlen, nerr;
-        float beg, del, dt, origin, tmp[1];
-        int nstf, nconv, i;
+        long int max, npts, nlen, nerr;
+        float beg, del, dt, origin, scale, tmp[1];
+        long int nstf, nconv, i;
         float hstf, *stf, *conv;
 
 
@@ -182,6 +180,7 @@ main(int argc, char *argv[])
         /* get additional info */
         getfhv("delta", &dt, &nerr, strlen("delta"));
         getfhv("o", &origin, &nerr, strlen("o"));
+        getfhv("scale", &scale, &nerr, strlen("scale"));
         if(nerr) {
             fprintf(stderr,"No origin time is defined for the sac file\n");
             return -1;
@@ -222,7 +221,7 @@ main(int argc, char *argv[])
         /* creat convolution time series */
         convolve(&conv,&nconv,data,npts,stf,nstf);
         for(i=0; i<nconv; i++)
-            conv[i] *= dt;
+            conv[i] *= dt * scale;
 
 
         /* update sac file header */
