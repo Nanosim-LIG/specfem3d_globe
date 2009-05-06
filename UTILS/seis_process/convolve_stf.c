@@ -104,14 +104,12 @@ main(int argc, char *argv[])
     float hdur, *data;
     int errno, j, datasize, len_fn;
     const int min_nhdur = 10;
-    const float undef = -12345.0;
-    const float eps = 1e-3;
 
 
     if(argc < 4) {
         fprintf(stderr,
-                "Usage: %s g[|t] hdur sacfiles\n"
-                "  This program convolves sacfiles with gaussion(|triangle)\n"
+                "Usage: %s g[|t] HDUR FILE...\n"
+                "  This program convolves SAC files with gaussian(|triangle)\n"
                 "  source time function of given half duration\n",
                 argv[0]);
         return -1;
@@ -184,7 +182,7 @@ main(int argc, char *argv[])
         /* get additional info */
         getfhv("delta", &dt, &nerr, strlen("delta"));
         getfhv("o", &origin, &nerr, strlen("o"));
-        if(fabs(origin - undef) < eps) {
+        if(nerr) {
             fprintf(stderr,"No origin time is defined for the sac file\n");
             return -1;
         }
