@@ -29,7 +29,7 @@ exit(1)
 if (!getopts('l:L:cdts')) {die('Check input arguments\n');}
 @ARGV > 0 or Usage();
 if (!$opt_l) {$opt_l = 0;}
-$saclst = "/opt/seismo-util/bin/saclst";
+$saclst = "saclst";
 if (not -f $saclst) {die("No such file as $saclst\n");}
 $undef=-12345.0;
 $eps=0.1;
@@ -81,8 +81,8 @@ foreach $file (@ARGV) {
 
   # check if the reference time is the same or not!
 
-  if ($opt_c) {open(SAC,"|sac2000");}
-  else {open(SAC,"|sac2000 > /dev/null");}
+  if ($opt_c) {open(SAC,"| sac");}
+  else {open(SAC,"| sac > /dev/null");}
   print SAC "echo on\n";
   print SAC "r $north $east\n ";
   if ($opt_L or $npts_n != $npts_e or abs($nb-$eb) > $eps) { #cut properly
