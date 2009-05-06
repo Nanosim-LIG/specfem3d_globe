@@ -27,6 +27,76 @@
 #include "sac.h"
 #include "sacio.h"
 
+
+/* defined in libsac */
+void fft(float *xreal, float *ximag, int n, int idir);
+
+
+static void fzero(float *dst, int n) {
+    while (n)
+        dst[--n] = 0.0;
+}
+
+static void fcpy(float *dst, const float *src, int n) {
+    while (n) {
+        --n;
+        dst[n] = src[n];
+    }
+}
+
+void convolve(float **pconv, int *pnconv,
+              const float *data, int ndata,
+              const float *stf,  int nstf)
+{
+    int nconv, ncorr, i;
+    struct { float *xreal, *ximag; } cdata, cstf, ccorr;
+    float *conv, *buffer;
+    
+    nconv = ndata + nstf - 1;
+    conv = (float *)malloc(nconv * sizeof(float));
+    
+    for (ncorr = 2; ncorr < nconv; ncorr *= 2)
+        ;
+    
+    buffer = (float *)malloc(2 * 3 * ncorr * sizeof(float));
+    cdata.xreal = buffer + 0 * ncorr;
+    cdata.ximag = buffer + 1 * ncorr;
+    cstf.xreal  = buffer + 2 * ncorr;
+    cstf.ximag  = buffer + 3 * ncorr;
+    ccorr.xreal = buffer + 4 * ncorr;
+    ccorr.ximag = buffer + 5 * ncorr;
+    
+    fcpy(cdata.xreal, data, ndata);
+    fzero(cdata.xreal + ndata, ncorr - ndata);
+    fzero(cdata.ximag, ncorr);
+    
+    fcpy(cstf.xreal, stf, nstf);
+    fzero(cstf.xreal + nstf, ncorr - nstf);
+    fzero(cstf.ximag, ncorr);
+    
+    fft(cdata.xreal, cdata.ximag, ncorr, 1);
+    fft(cstf.xreal, cstf.ximag, ncorr, 1);
+    
+    for (i = 0; i < ncorr; ++i) {
+        /* ccorr[i] = cdata[i] * cstf[i] */
+        ccorr.xreal[i] = cdata.xreal[i] * cstf.xreal[i] - cdata.ximag[i] * cstf.ximag[i];
+        ccorr.ximag[i] = cdata.xreal[i] * cstf.ximag[i] + cdata.ximag[i] * cstf.xreal[i];
+    }
+    
+    fft(ccorr.xreal, ccorr.ximag, ncorr, -1);
+    for (i = 0; i < nconv; ++i) {
+        conv[i] = ccorr.xreal[i] / (float)ncorr;
+    }
+    
+    free(buffer);
+    
+    *pconv = conv;
+    *pnconv = nconv;
+    
+    return;
+}
+
+
 int
 main(int argc, char *argv[])
 {
@@ -55,7 +125,7 @@ main(int argc, char *argv[])
     cstf = argv[1][0];
 
     errno = 0;
-    hdur = strtof(argv[2], &endpt);
+    hdur = (float)strtod(argv[2], &endpt);
     if(errno || endpt == argv[2] || *endpt != 0) {
         fprintf(stderr,"No floating point number can be formed from %s\n",argv[2]);
         return -1;
@@ -73,9 +143,9 @@ main(int argc, char *argv[])
     datasize = 0;
     data = NULL;
     for (j=3; j<argc; j++) {
-        long int max, npts, nlen, nerr;
+        int max, npts, nlen, nerr;
         float beg, del, dt, origin, tmp[1];
-        long int nstf, nconv, i;
+        int nstf, nconv, i;
         float hstf, *stf, *conv;
 
 
@@ -85,7 +155,7 @@ main(int argc, char *argv[])
         /* read header to get the length of time series */
         max = 1;
         rsac1(argv[j], tmp, &nlen, &beg, &del, &max, &nerr, strlen(argv[j]));
-        if(nerr) {
+        if(nerr != -803) {
             fprintf(stderr,"Error reading sac file %s\n",argv[j]);
             return -1;
         }
@@ -152,16 +222,7 @@ main(int argc, char *argv[])
 
 
         /* creat convolution time series */
-        nconv = nstf + npts - 1;
-        if((conv = (float *) malloc(nconv * sizeof(float))) == NULL) {
-            fprintf(stderr,"Error in allocating memory for convolution function\n");
-            return -1;
-        }
-        /* XXX: convolve */
-        //if(convolve(data,npts,stf,nstf,conv) != nconv) {
-        //    fprintf(stderr,"Error convolving source time function\n");
-        //    return -1;
-        //}
+        convolve(&conv,&nconv,data,npts,stf,nstf);
         for(i=0; i<nconv; i++)
             conv[i] *= dt;
 
