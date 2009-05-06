@@ -42,6 +42,23 @@ AC_FUNC_MALLOC
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([sqrt strtol])
 
+# Check whether SAC uses 'int' instead of 'long' in function prototypes.
+# (the current v101.3 -- and later? -- uses 'int').
+AC_MSG_CHECKING([whether SAC prototypes use 'int' instead of 'long'])
+AC_LANG_WERROR
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include "sacio.h"
+]], [[
+    int nerr;
+    getfhv(0,0,&nerr,0);
+]])], [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE([sac_int_t], [int], [SAC integer type.])
+], [
+    AC_MSG_RESULT(no)
+    AC_DEFINE([sac_int_t], [long], [SAC integer type.])
+])
+
 LDFLAGS=$save_LDFLAGS
 CPPFLAGS=$save_CPPFLAGS
 

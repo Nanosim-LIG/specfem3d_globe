@@ -24,31 +24,31 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <math.h>
-#include "sac.h"
 #include "sacio.h"
+#include "config.h"
 
 
 /* defined in libsac */
-void fft(float *xreal, float *ximag, long int n, long int idir);
+void fft(float *xreal, float *ximag, sac_int_t n, sac_int_t idir);
 
 
-static void fzero(float *dst, long int n) {
+static void fzero(float *dst, sac_int_t n) {
     while (n)
         dst[--n] = 0.0;
 }
 
-static void fcpy(float *dst, const float *src, long int n) {
+static void fcpy(float *dst, const float *src, sac_int_t n) {
     while (n) {
         --n;
         dst[n] = src[n];
     }
 }
 
-void convolve(float **pconv, long int *pnconv,
-              const float *data, long int ndata,
-              const float *stf,  long int nstf)
+void convolve(float **pconv, sac_int_t *pnconv,
+              const float *data, sac_int_t ndata,
+              const float *stf,  sac_int_t nstf)
 {
-    long int nconv, ncorr, i;
+    sac_int_t nconv, ncorr, i;
     struct { float *xreal, *ximag; } cdata, cstf, ccorr;
     float *conv, *buffer;
     
@@ -102,7 +102,8 @@ main(int argc, char *argv[])
 {
     char cstf, *endpt, *outf;
     float hdur, *data;
-    int errno, j, datasize, len_fn;
+    int j, len_fn;
+    sac_int_t datasize;
     const int min_nhdur = 10;
 
     if(argc < 4) {
@@ -139,9 +140,9 @@ main(int argc, char *argv[])
     datasize = 0;
     data = NULL;
     for (j=3; j<argc; j++) {
-        long int max, npts, nlen, nerr;
+        sac_int_t max, npts, nlen, nerr;
         float beg, del, dt, origin, scale, tmp[1];
-        long int nstf, nconv, i;
+        sac_int_t nstf, nconv, i;
         float hstf, *stf, *conv;
 
 

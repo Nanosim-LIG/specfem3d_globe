@@ -25,10 +25,11 @@
 #include <limits.h>
 #include <errno.h>
 #include "sacio.h"
+#include "config.h"
+
 
 void asc2sac(char *ascfn) {
-    long int npts, max_npts, nerr, nconv, len;
-    long int itmp;
+    sac_int_t npts, max_npts, nerr, nconv, itmp;
     float ftmp;
     char *sacfn;
     float *time, *data, a, b;
@@ -69,7 +70,7 @@ void asc2sac(char *ascfn) {
         data[npts] = b;
     }
     if (nconv != EOF || ferror(f)) {
-        fprintf(stderr, "error while reading file '%s' (on or near line %d)\n", ascfn, npts);
+        fprintf(stderr, "error while reading file '%s' (on or near line %ld)\n", ascfn, (long)npts);
 	exit(1);
     }
     fclose(f);
