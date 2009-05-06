@@ -24,77 +24,53 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <errno.h>
-#include "sac.h"
+#include "sacio.h"
 
-int
-main(int argc, char *argv[])
-{
-    long int npts, nerr, i;
+void asc2sac(char *ascfn) {
+    long int npts, max_npts, nerr, nconv, len;
     long int itmp;
     float ftmp;
-    char *endptr, *str;
-    char *ascfn, *sacfn;
-    float *time, *data;
+    char *sacfn;
+    float *time, *data, a, b;
     FILE *f;
-
-    if(argc < 4) {
-        fprintf(stderr,
-                "Converting evenly spaced time series ASCII file to SAC binary\n"
-                "usage: %s ascii-file npts sac-file\n\n"
-                "ascii-file: name of the input file. The file must have two columns,\n"
-                "            1st column must be evenly spaced.\n"
-                "npts:       number of lines in the input file.\n"
-                "sac-file:   name of the output file.\n",
-                argv[0]);
-        exit(1);
-    }
-
-    str = argv[2];
-    errno = 0;
-    endptr = str;
-    npts = strtol(str, &endptr, 10);
-
-    /* Check for various possible errors */
-    if (errno || (*endptr != 0)) {
-        fprintf(stderr, "Error when converting '%s' to integer\n", str);
-        exit(-1);
-    }
-
-    if (npts <= 0) {
-        fprintf(stderr, "npts must be positive\n");
-        exit(EXIT_FAILURE);
-    }
-
-    /* If we got here, strtol() successfully parsed a number */
-    ascfn = argv[1];
-    sacfn = argv[3];
-
-    time = (float*) malloc(npts * sizeof(float));
-    data = (float*) malloc(npts * sizeof(float));
-
-    if(time == NULL || data == NULL) {
+    
+    sacfn = (char *)malloc(strlen(ascfn) + strlen(".sac") + 1);
+    if (!sacfn) {
         fprintf(stderr, "Out of memory\n");
         exit(1);
     }
-
+    strcpy(sacfn, ascfn);
+    strcat(sacfn, ".sac");
 
     /* reading ascii file */
     f = fopen(ascfn, "r");
     if(f == NULL) {
 	fprintf(stderr, "Cannot open file '%s' to read\n", ascfn);
-	exit(-1);
+	exit(1);
     }
-
-    for(i=0; i<npts; i++) {
-        char buffer[255];
-        float a, b;
-        fgets(buffer, 254, f);
-        if(sscanf(buffer, "%f %f\n", &a, &b) != 2) {
-            fprintf(stderr, "error when reading file '%s'\n", ascfn);
-            exit(-1);
+    
+    time = data = 0;
+    max_npts = 0;
+    for (npts = 0; (nconv = fscanf(f, "%f %f\n", &a, &b)) == 2; ++npts) {
+        if (nconv != 2) {
+            fprintf(stderr, "error while reading file '%s'\n", ascfn);
+            exit(1);
         }
-        time[i] = a;
-        data[i] = b;
+        if (npts >= max_npts) {
+            max_npts = max_npts ? 2 * max_npts : 1024;
+            time = (float*) realloc(time, max_npts * sizeof(float));
+            data = (float*) realloc(data, max_npts * sizeof(float));
+            if(time == NULL || data == NULL) {
+                fprintf(stderr, "Out of memory\n");
+                exit(1);
+            }
+        }
+        time[npts] = a;
+        data[npts] = b;
+    }
+    if (nconv != EOF || ferror(f)) {
+        fprintf(stderr, "error while reading file '%s' (on or near line %d)\n", ascfn, npts);
+	exit(1);
     }
     fclose(f);
     /* finished reading ascii file */
@@ -114,15 +90,41 @@ main(int argc, char *argv[])
 
     if(nerr) {
 	fprintf(stderr, "error when setting header for '%s'\n", sacfn);
-        exit(-1);
+        exit(1);
     }
 
     wsac0(sacfn, time, data, &nerr, strlen(sacfn));
 
     if(nerr) {
         fprintf(stderr, "error when writing '%s'\n", sacfn);
-        exit(-1);
+        exit(1);
     }
+    
+    free(time);
+    free(data);
+    free(sacfn);
 
+    return;
+}
+
+
+int main(int argc, char *argv[]) {
+    int i;
+     
+    if (argc < 2) {
+        fprintf(stderr,
+                "usage: %s FILE...\n"
+                "\n"
+                "    Converts ASCII time series files to SAC binary files.\n"
+                "    Input files must have two columns:  t, f(t).\n"
+                "\n",
+                argv[0]);
+        exit(1);
+    }
+    
+    for (i = 1; i < argc; ++i) {
+        asc2sac(argv[i]);
+    }
+    
     return 0;
 }

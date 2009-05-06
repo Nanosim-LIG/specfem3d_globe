@@ -68,7 +68,7 @@ $eps = 0.1;
 
 $saclst="$sacaux/../bin/saclst";
 $phtimes="phtimes";
-$asc2sac="@prefix@/bin/ascii2sac.csh";
+$asc2sac="@prefix@/bin/asc2sac";
 if (! -e $saclst)  {die(" No $saclst file\n");}
 #if (! -e $phtimes) {die("No $phtimes file\n");}
 if (! -e $asc2sac) {die("No $asc2sac file\n");}
