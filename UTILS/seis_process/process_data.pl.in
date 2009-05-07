@@ -16,7 +16,6 @@ sub Usage{
        -l Start/End -- start and end of record from o
        -t Ts/Tl -- shortest and longest period
        -i -- transfer record to displacement
-       -p -- pick event p and s first arrival into sac headers (t1 and t2)
        -x Ext -- extension of new file name
        -d Dir -- directory to put the output files (default .)
        -s Sps -- sample per second (default 1.0)
@@ -28,7 +27,7 @@ sub Usage{
        data_sac_files --- names of the data sac files to be processed
 
  Notice:
-  0. Make sure you have sac, saclst, phtimes in PATH before execution
+  0. Make sure you have sac, saclst in PATH before execution
   1. We require that polezero files are in the same directory as the sac 
      data files which is generally satisfied. All the needed info are 
      taken from sac headers
@@ -70,7 +69,7 @@ if ($opt_l) {($lmin,$lmax) = split(/\//,$opt_l);} else {$lmin = 0; $lmax = 3600;
 
 $sac="$sacaux/../bin/sac";
 $saclst="$sacaux/../bin/saclst";
-$phtimes="phtimes";
+#$phtimes="phtimes";
 if (! -e $sac)  {die(" No $sac file\n");}
 if (! -e $saclst) {die(" No $saclst file\n");}
 #if (! -e $phtimes) {die("No $phtimes file\n");}
@@ -147,17 +146,18 @@ foreach $file (@ARGV) {
     printf SAC ("trans from polezero s %20s to none freq %12.6f%12.6f%12.6f%12.6f \n",
 		$pzfile,$f0,$f1,$f2,$f3);}
 
-  if ($opt_p) { # add p and s arrival info
-    print "    Add first P and S arrival information\n";
-    (undef,$gcarc,$edep)=split(" ",`$saclst gcarc evdp f $outfile`);
-    if (abs($gcarc-$undef) < $eps or abs($edep-$undef) < $eps) {die("No gcarc and depth info\n");}
-    ($Pph,$Ptime)=split(" ",`$phtimes $edep $gcarc P`);
-    ($Sph,$Stime)=split(" ",`$phtimes $edep $gcarc S`);
-    if (not $opt_m) {$tshift = 0;}
-    print SAC "evaluate to tmp1 $Ptime - $tshift\n";
-    print SAC "evaluate to tmp2 $Stime - $tshift\n";
-    print SAC "ch t1 %tmp1% t2 %tmp2%\n";
-    print SAC "ch kt1 $Pph kt2 $Sph\n";}
+  ### phtimes is not included in this distribution
+  #if ($opt_p) { # add p and s arrival info
+  #  print "    Add first P and S arrival information\n";
+  #  (undef,$gcarc,$edep)=split(" ",`$saclst gcarc evdp f $outfile`);
+  #  if (abs($gcarc-$undef) < $eps or abs($edep-$undef) < $eps) {die("No gcarc and depth info\n");}
+  #  ($Pph,$Ptime)=split(" ",`$phtimes $edep $gcarc P`);
+  #  ($Sph,$Stime)=split(" ",`$phtimes $edep $gcarc S`);
+  #  if (not $opt_m) {$tshift = 0;}
+  #  print SAC "evaluate to tmp1 $Ptime - $tshift\n";
+  #  print SAC "evaluate to tmp2 $Stime - $tshift\n";
+  #  print SAC "ch t1 %tmp1% t2 %tmp2%\n";
+  #  print SAC "ch kt1 $Pph kt2 $Sph\n";}
 
   if ($opt_y) { # add arrival times to headers
     @numbers=split(/\//,$opt_y); $npairs = floor(@numbers/2);

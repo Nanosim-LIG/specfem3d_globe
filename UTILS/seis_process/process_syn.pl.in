@@ -21,7 +21,6 @@ where
     -P -- number of poles and passes in butterworth filter(default 4/2)
     -i Dir -- convolve synthetics with instrument response in Dir
     -A amp_factor -- multiple all files with an amplification factor
-    -p -- pick P and S arrivals according to iasp91 model to t1/t2 headers
     -a STAFILE -- add station information from STAFILE
     -s sps -- resampling rate for synthetics (default is 1.0)
     -y t0/V0/t1/V1 -- add to t3/t4 the arrival times of t + dist/V
@@ -31,7 +30,7 @@ where
 
     names of files -- name of syn files to be processed
 
-    Make sure you have sac, saclst, phtimes, asc2sac, ascii2sac.csh  
+    Make sure you have sac, saclst, asc2sac  
     in PATH before execution
 
     Qinya Liu, Caltech, May 2007
@@ -72,7 +71,7 @@ $eps = 0.1;
 
 $sac="$sacaux/../bin/sac";
 $saclst="$sacaux/../bin/saclst";
-$phtimes="phtimes";
+#$phtimes="phtimes";
 $asc2sac="@prefix@/bin/asc2sac";
 if (! -e $sac)  {die(" No $sac file\n");}
 if (! -e $saclst)  {die(" No $saclst file\n");}
@@ -176,16 +175,17 @@ foreach $file (@ARGV) {
     print SAC "transfer from none to polezero s ${pz}\n";
     print SAC "w over\n";}
 
-  if ($opt_p) { # pick arrival
-    print "Picking arrivals...\n";
-    (undef,$gcarc)=split(" ",`$saclst gcarc f $outfile`);
-    if (abs($gcarc-$undef)< $eps) {die("No gcarc is defined\n");}
-    ($Pph,$Ptime)=split(" ",`$phtimes $edep $gcarc P`);
-    ($Sph,$Stime)=split(" ",`$phtimes $edep $gcarc S`);
-    print SAC "evaluate to tmp1 $Ptime - $tshift\n";
-    print SAC "evaluate to tmp2 $Stime - $tshift\n";
-    print SAC "ch t1 %tmp1% t2 %tmp2%\n";
-    print SAC "ch kt1 $Pph kt2 $Sph\n wh\n";}
+  ### phtimes is not included in this distribution
+  #if ($opt_p) { # pick arrival
+  #  print "Picking arrivals...\n";
+  #  (undef,$gcarc)=split(" ",`$saclst gcarc f $outfile`);
+  #  if (abs($gcarc-$undef)< $eps) {die("No gcarc is defined\n");}
+  #  ($Pph,$Ptime)=split(" ",`$phtimes $edep $gcarc P`);
+  #  ($Sph,$Stime)=split(" ",`$phtimes $edep $gcarc S`);
+  #  print SAC "evaluate to tmp1 $Ptime - $tshift\n";
+  #  print SAC "evaluate to tmp2 $Stime - $tshift\n";
+  #  print SAC "ch t1 %tmp1% t2 %tmp2%\n";
+  #  print SAC "ch kt1 $Pph kt2 $Sph\n wh\n";}
 
   if ($opt_y) { # add arrival time for surface waves
     @numbers=split(/\//,$opt_y); $npairs = floor(@numbers/2);
