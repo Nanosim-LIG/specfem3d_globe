@@ -14,6 +14,9 @@ fi
 if test ! -d "$SACAUX"; then
     AC_MSG_ERROR([SACAUX (=$SACAUX) does not name a directory])
 fi
+if test ! -f "$SACAUX/messages" -o ! -e "$SACAUX/../bin/sac"; then
+    AC_MSG_ERROR([SACAUX (=$SACAUX) is not valid])
+fi
 
 # Checks for programs.
 AC_PROG_CC

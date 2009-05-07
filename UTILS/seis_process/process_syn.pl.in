@@ -22,8 +22,7 @@ where
     -i Dir -- convolve synthetics with instrument response in Dir
     -A amp_factor -- multiple all files with an amplification factor
     -p -- pick P and S arrivals according to iasp91 model to t1/t2 headers
-    -a STAFILE -- add station information from STAFILE, use "-a none"
-       to get information from Vala''s station file
+    -a STAFILE -- add station information from STAFILE
     -s sps -- resampling rate for synthetics (default is 1.0)
     -y t0/V0/t1/V1 -- add to t3/t4 the arrival times of t + dist/V
     -c -- show sac output
@@ -41,7 +40,12 @@ END
 exit(1);
 }
 
-$sacaux = $ENV{SACAUX} or "@sacaux@";
+if (defined $ENV{SACAUX}) {
+    $sacaux = $ENV{SACAUX};
+} else {
+    $sacaux = "@sacaux@";
+    $ENV{SACAUX}=$sacaux;
+}
 unless (-d $sacaux) {die("missing SAC aux directory: '$sacaux'\n");}
 
 @ARGV > 1 or Usage();
@@ -57,7 +61,7 @@ else{($poles,$pass)=split(/\//,$opt_P);
      if(not defined $pass or $pass<1){$pass=2;}}
 if ($opt_l) {($lmin,$lmax) = split(/\//,$opt_l);} 
 else {$lmin = 0; $lmax = 3600;}
-if ($opt_a and not -f $opt_a) {$opt_a="/opt/seismo-util/data/STATIONS_new";}
+if ($opt_a and not -f $opt_a) {die("No such file as $opt_a\n");}
 if ($opt_o and not $opt_m) {die("Specify centroid time first\n");}
 if ($opt_d and not -d $opt_d) {die("No such directory as $opt_d\n");}
 if ($opt_i and not -d $opt_i) {die("No such directory as $opt_i\n");}
@@ -66,9 +70,11 @@ if ($opt_A) {if ($opt_A !~ /^\d/) {die("-A option should be numbers\n");}}
 $undef = -12345;
 $eps = 0.1;
 
+$sac="$sacaux/../bin/sac";
 $saclst="$sacaux/../bin/saclst";
 $phtimes="phtimes";
 $asc2sac="@prefix@/bin/asc2sac";
+if (! -e $sac)  {die(" No $sac file\n");}
 if (! -e $saclst)  {die(" No $saclst file\n");}
 #if (! -e $phtimes) {die("No $phtimes file\n");}
 if (! -e $asc2sac) {die("No $asc2sac file\n");}
@@ -103,7 +109,7 @@ foreach $file (@ARGV) {
   if ($ext or $opt_d) {system("\\cp -f $file $outfile");}
   print "Output to file $outfile\n";
 
-  if ($opt_c) { open(SAC,"|sac");}else {open(SAC,"|sac > /dev/null");}
+  if ($opt_c) { open(SAC,"|$sac");}else {open(SAC,"|$sac > /dev/null");}
   print SAC "echo on\n";
 
   print SAC "r $outfile\n";
@@ -115,10 +121,10 @@ foreach $file (@ARGV) {
     print SAC "ch evla $elat evlo $elon evdp $edep \n wh\n";
     print SAC "w over \nquit\n";
     close(SAC);
-    if ($opt_c) {open(SAC,"|sac");}else {open(SAC,"|sac > /dev/null");}
+    if ($opt_c) {open(SAC,"|$sac");}else {open(SAC,"|$sac > /dev/null");}
     print SAC "echo on\n r $outfile\n";}
 
-    if ($opt_h and $hdur > $min_hdur) { # convolve source time function
+  if ($opt_h and $hdur > $min_hdur) { # convolve source time function
     system("@prefix@/bin/convolve_stf g $hdur $outfile");
     system("mv ${outfile}.conv ${outfile}");}
 
@@ -151,7 +157,7 @@ foreach $file (@ARGV) {
   if ($opt_s) {print SAC "interp delta $dt\n";}
   print SAC "w over\nquit\n";
   close(SAC);
-  if ($opt_c) { open(SAC,"|sac");}else {open(SAC,"|sac > /dev/null");}
+  if ($opt_c) { open(SAC,"|$sac");}else {open(SAC,"|$sac > /dev/null");}
   print SAC "echo on\n r $outfile\n ";
 
   if ($opt_t){ # filter record

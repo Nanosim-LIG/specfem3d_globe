@@ -180,8 +180,9 @@ main(int argc, char *argv[])
 
         /* get additional info */
         getfhv("delta", &dt, &nerr, strlen("delta"));
-        getfhv("o", &origin, &nerr, strlen("o"));
         getfhv("scale", &scale, &nerr, strlen("scale"));
+        
+        getfhv("o", &origin, &nerr, strlen("o"));
         if(nerr) {
             fprintf(stderr,"No origin time is defined for the sac file\n");
             return 1;
