@@ -185,7 +185,7 @@ main(int argc, char *argv[])
         getfhv("o", &origin, &nerr, strlen("o"));
         if(nerr) {
             /* Assuming origin time is 0, per convention of SPECFEM */
-	    fprintf(stderr, "  Assuming origin time is 0\n");
+	    fprintf(stderr, " Ignoring the error, assuming origin time is 0\n");
             origin = 0.0;
             setfhv("o", &origin, &nerr, strlen("o"));
         }
