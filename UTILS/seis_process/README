@@ -1,0 +1,33 @@
+===========
+Installation
+============
+
+The package requires SAC program, which can be obtained from IRIS website. 
+You will need to set the environment variable SACAUX properly before 
+installing this package.
+
+Running the following commands to compile and install the package. 
+  ./configure --prefix=$PWD
+  make
+  make install
+
+
+=================
+Using the Package
+=================
+
+There are five programs in the package. Each program can be run without
+agument to get a help message. The purpose of each program is:
+
+* "process_data.pl" can post-process real seismograms.
+
+* "process_syn.pl" can post-process synthetic seismograms.
+
+* "asc2sac" can convert a time series in ASCII to SAC format.
+
+* "rotate.pl" can rotate the seismograms from East-North components to 
+  Transversal-Radial components.
+
+* "convolve_stf" can convolve the seismograms with a gaussiang or triangular
+  source time function.
+
