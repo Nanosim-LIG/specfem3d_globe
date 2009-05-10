@@ -12,9 +12,10 @@ Usage:   process_syn_new.pl
      -i Dir -A amp_factor -p -a STAFILE -s sps -y t0/V0/t1/V1...
      -c -d OutDir -x Ext  synthetics_files
 where
-    -S already sac file, will not apply ascii2sac.csh
+    -S already sac file, will not apply asc2sac
     -m CMTSOLUTION file for event origin, location and half duration
-    -h convolve a triangle stf with half duration from -m
+    -h HDUR -- convolve a gaussian source time function with half duration HDUR,
+       or if HDUR <= 1, use the half duration from -m
     -o moves the synthetics back by 'offset' from centroid time.
     -l lmin/lmax   start/end cut of trace
     -t Tmin/Tmax -- shortest/longest period of bandpass filter
@@ -49,7 +50,7 @@ unless (-d $sacaux) {die("missing SAC aux directory: '$sacaux'\n");}
 
 @ARGV > 1 or Usage();
 
-if (!getopts('Sm:ho:l:t:i:pP:a:cd:x:vs:y:A:')) {die(" check input arguments\n");}
+if (!getopts('Sm:h:o:l:t:i:pP:a:cd:x:vs:y:A:')) {die(" check input arguments\n");}
 
 if ($opt_t) {($tmin, $tmax) = split(/\//,$opt_t);
              $f1 = 1./$tmax;  $f2=1./$tmin;}
@@ -65,6 +66,7 @@ if ($opt_o and not $opt_m) {die("Specify centroid time first\n");}
 if ($opt_d and not -d $opt_d) {die("No such directory as $opt_d\n");}
 if ($opt_i and not -d $opt_i) {die("No such directory as $opt_i\n");}
 if ($opt_A) {if ($opt_A !~ /^\d/) {die("-A option should be numbers\n");}}
+if ($opt_h) {if ($opt_h !~ /^\d/) {die("-h option should be numbers\n");}}
 
 $undef = -12345;
 $eps = 0.1;
@@ -123,7 +125,8 @@ foreach $file (@ARGV) {
     if ($opt_c) {open(SAC,"|$sac");}else {open(SAC,"|$sac > /dev/null");}
     print SAC "echo on\n r $outfile\n";}
 
-  if ($opt_h and $hdur > $min_hdur) { # convolve source time function
+  if (not $opt_h eq "") { # convolve source time function
+    if ($opt_h > $min_hdur) {$hdur = $opt_h;}
     system("@prefix@/bin/convolve_stf g $hdur $outfile");
     system("mv ${outfile}.conv ${outfile}");}
 
