@@ -184,8 +184,10 @@ main(int argc, char *argv[])
         
         getfhv("o", &origin, &nerr, strlen("o"));
         if(nerr) {
-            fprintf(stderr,"No origin time is defined for the sac file\n");
-            return 1;
+            /* Assuming origin time is 0, per convention of SPECFEM */
+	    fprintf(stderr, "  Assuming origin time is 0\n");
+            origin = 0.0;
+            setfhv("o", &origin, &nerr, strlen("o"));
         }
 
 
