@@ -11,6 +11,8 @@ Running the following commands to compile and install the package.
   make
   make install
 
+The programs will be installed in $PWD/bin. You can add $PWD/bin to your 
+PATH, or use the full path to run the programs.
 
 =================
 Using the Package
