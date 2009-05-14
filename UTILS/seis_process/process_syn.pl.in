@@ -125,12 +125,6 @@ foreach $file (@ARGV) {
     if ($opt_c) {open(SAC,"|$sac");}else {open(SAC,"|$sac > /dev/null");}
     print SAC "echo on\n r $outfile\n";}
 
-  if (not $opt_h eq "") { # convolve source time function
-    if ($opt_h > $min_hdur) {$hdur = $opt_h;}
-    system("@prefix@/bin/convolve_stf g $hdur $outfile");
-    system("mv ${outfile}.conv ${outfile}");}
-
-
   if ($opt_a) { # add station information
     print "Add station information\n";
     print SAC "ch kstnm $sta knetwk $net kcmpnm $comp\n ";
@@ -205,6 +199,12 @@ foreach $file (@ARGV) {
 
   print SAC "w over\nquit\n";
   close(SAC);
+
+  if (not $opt_h eq "") { # convolve source time function
+    if ($opt_h > $min_hdur) {$hdur = $opt_h;}
+    elsif(not $opt_m) {die("Error: HDUR <= $min_hdur, but no -m flag.\n");}
+    system("@prefix@/bin/convolve_stf g $hdur $outfile");
+    system("mv ${outfile}.conv ${outfile}");}
 
 }
 if ($sta_text) {
