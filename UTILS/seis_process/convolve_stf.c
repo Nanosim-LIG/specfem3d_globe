@@ -232,9 +232,10 @@ main(int argc, char *argv[])
         /* update sac file header */
         {
             int n;
-            float bnew, aminm, amaxm, amean;
+            float bnew, enew, aminm, amaxm, amean;
 
             bnew = origin - hstf + beg;
+            enew = bnew + del * nconv;
 
             aminm = amaxm = conv[0];
             amean = 0;
@@ -246,6 +247,7 @@ main(int argc, char *argv[])
             amean /= nconv;
 
             setfhv("b", &bnew, &nerr, strlen("b"));
+            setfhv("e", &enew, &nerr, strlen("e"));
             setnhv("npts", &nconv, &nerr, strlen("npts"));
             setfhv("depmin", &aminm, &nerr, strlen("depmin"));
             setfhv("depmax", &amaxm, &nerr, strlen("depmax"));
