@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([seis_process], [1.0.0], [cig-seismo@geodynamics.org])
+AC_INIT([seis_process], [1.0.1], [cig-seismo@geodynamics.org])
 AC_CONFIG_SRCDIR([convolve_stf.c])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([foreign])
