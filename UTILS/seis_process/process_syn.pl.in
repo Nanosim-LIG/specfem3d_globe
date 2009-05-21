@@ -7,15 +7,14 @@ use POSIX;
 sub Usage{
 print STDERR <<END;
 
-Usage:   process_syn_new.pl
-     -S -m CMTFILE -h -o offset -lStart/End -tTmin/Tmax -P n/p
+Usage:   process_syn.pl
+     -S -m CMTFILE -h -o offset -l Start/End -t Tmin/Tmax -P n/p
      -i Dir -A amp_factor -p -a STAFILE -s sps -y t0/V0/t1/V1...
      -c -d OutDir -x Ext  synthetics_files
 where
     -S already sac file, will not apply asc2sac
     -m CMTSOLUTION file for event origin, location and half duration
-    -h HDUR -- convolve a gaussian source time function with half duration HDUR,
-       or if HDUR <= 1, use the half duration from -m
+    -h convolve a gaussian source time function with half duration from -m
     -o moves the synthetics back by 'offset' from centroid time.
     -l lmin/lmax   start/end cut of trace
     -t Tmin/Tmax -- shortest/longest period of bandpass filter
@@ -32,7 +31,16 @@ where
     names of files -- name of syn files to be processed
 
     Make sure you have sac, saclst, asc2sac  
-    in PATH before execution
+    in PATH before execution.
+
+
+Examples:
+
+    The following command will convolve, filter, add event/station information
+    to all *.sac files and output the result as *.sac.cv files:
+
+          process_syn.pl -S -m CMTFILE -h -t 20/500 -a STATFILE -x cv *.sac
+
 
     Qinya Liu, Caltech, May 2007
 
@@ -50,7 +58,7 @@ unless (-d $sacaux) {die("missing SAC aux directory: '$sacaux'\n");}
 
 @ARGV > 1 or Usage();
 
-if (!getopts('Sm:h:o:l:t:i:pP:a:cd:x:vs:y:A:')) {die(" check input arguments\n");}
+if (!getopts('Sm:ho:l:t:i:pP:a:cd:x:vs:y:A:')) {die(" check input arguments\n");}
 
 if ($opt_t) {($tmin, $tmax) = split(/\//,$opt_t);
              $f1 = 1./$tmax;  $f2=1./$tmin;}
@@ -66,7 +74,6 @@ if ($opt_o and not $opt_m) {die("Specify centroid time first\n");}
 if ($opt_d and not -d $opt_d) {die("No such directory as $opt_d\n");}
 if ($opt_i and not -d $opt_i) {die("No such directory as $opt_i\n");}
 if ($opt_A) {if ($opt_A !~ /^\d/) {die("-A option should be numbers\n");}}
-if ($opt_h) {if ($opt_h !~ /^\d/) {die("-h option should be numbers\n");}}
 
 $undef = -12345;
 $eps = 0.1;
@@ -122,6 +129,11 @@ foreach $file (@ARGV) {
     print SAC "ch evla $elat evlo $elon evdp $edep \n wh\n";
     print SAC "w over \nquit\n";
     close(SAC);
+
+    if ($opt_h and $hdur > $min_hdur) { # convolve source time function
+	system("@prefix@/bin/convolve_stf g $hdur $outfile");
+	system("mv ${outfile}.conv ${outfile}");}
+
     if ($opt_c) {open(SAC,"|$sac");}else {open(SAC,"|$sac > /dev/null");}
     print SAC "echo on\n r $outfile\n";}
 
@@ -199,12 +211,6 @@ foreach $file (@ARGV) {
 
   print SAC "w over\nquit\n";
   close(SAC);
-
-  if (not $opt_h eq "") { # convolve source time function
-    if ($opt_h > $min_hdur) {$hdur = $opt_h;}
-    elsif(not $opt_m) {die("Error: HDUR <= $min_hdur, but no -m flag.\n");}
-    system("@prefix@/bin/convolve_stf g $hdur $outfile");
-    system("mv ${outfile}.conv ${outfile}");}
 
 }
 if ($sta_text) {
