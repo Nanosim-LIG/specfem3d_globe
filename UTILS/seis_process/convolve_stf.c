@@ -85,7 +85,7 @@ void convolve(float **pconv, sac_int_t *pnconv,
     
     fft(ccorr.xreal, ccorr.ximag, ncorr, -1);
     for (i = 0; i < nconv; ++i) {
-        conv[i] = ccorr.xreal[i] / (float)ncorr;
+        conv[i] = ccorr.xreal[i] * ncorr;
     }
     
     free(buffer);
@@ -134,7 +134,7 @@ main(int argc, char *argv[])
     data = NULL;
     for (j=3; j<argc; j++) {
         sac_int_t max, npts, nlen, nerr;
-        float beg, del, dt, origin, scale, tmp[1];
+        float beg, del, dt, origin, tmp[1];
         sac_int_t nstf, nconv, i;
         float hstf, *stf, *conv;
         char *outf;
@@ -180,8 +180,7 @@ main(int argc, char *argv[])
 
         /* get additional info */
         getfhv("delta", &dt, &nerr, strlen("delta"));
-        getfhv("scale", &scale, &nerr, strlen("scale"));
-        
+
         getfhv("o", &origin, &nerr, strlen("o"));
         if(nerr) {
             /* Assuming origin time is 0, per convention of SPECFEM */
@@ -226,7 +225,7 @@ main(int argc, char *argv[])
         /* creat convolution time series */
         convolve(&conv,&nconv,data,npts,stf,nstf);
         for(i=0; i<nconv; i++)
-            conv[i] *= dt * scale;
+            conv[i] *= dt;
 
 
         /* update sac file header */
