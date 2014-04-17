@@ -550,7 +550,7 @@
 
   else
     ! on GPU
-    call noise_add_surface_movie_cuda(Mesh_pointer,noise_surface_movie)
+    call noise_add_surface_movie_gpu(Mesh_pointer,noise_surface_movie)
   endif
 
   end subroutine noise_read_add_surface_movie

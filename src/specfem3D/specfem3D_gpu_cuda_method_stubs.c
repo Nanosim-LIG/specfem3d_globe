@@ -37,7 +37,7 @@ typedef float realw;
 
 
 //
-// src/cuda/assemble_MPI_scalar_cuda.cu
+// src/gpu/assemble_MPI_scalar_gpu.cu
 //
 
 void FC_FUNC_(transfer_boun_pot_from_device,
@@ -52,7 +52,7 @@ void FC_FUNC_(transfer_asmbl_pot_to_device,
 
 
 //
-// src/cuda/assemble_MPI_vector_cuda.cu
+// src/gpu/assemble_MPI_vector_gpu.cu
 //
 
 void FC_FUNC_(transfer_boun_from_device,
@@ -82,7 +82,7 @@ void FC_FUNC_(sync_copy_from_device,
 
 
 //
-// src/cuda/check_fields_cuda.cu
+// src/gpu/check_fields_gpu.cu
 //
 
 void FC_FUNC_(pause_for_debug,
@@ -141,7 +141,7 @@ void FC_FUNC_(check_norm_strain_from_device,
 
 
 //
-// src/cuda/compute_add_sources_elastic_cuda.cu
+// src/gpu/compute_add_sources_elastic_gpu.cu
 //
 
 void FC_FUNC_(compute_add_sources_gpu,
@@ -172,7 +172,7 @@ void FC_FUNC_(transfer_adj_to_device_async,
 
 
 //
-// src/cuda/compute_coupling_cuda.cu
+// src/gpu/compute_coupling_gpu.cu
 //
 
 void FC_FUNC_(compute_coupling_fluid_cmb_gpu,
@@ -197,7 +197,7 @@ void FC_FUNC_(compute_coupling_ocean_gpu,
 
 
 //
-// src/cuda/compute_forces_crust_mantle_gpu.cu
+// src/gpu/compute_forces_crust_mantle_gpu.cu
 //
 
 void FC_FUNC_(compute_forces_crust_mantle_gpu,
@@ -207,7 +207,7 @@ void FC_FUNC_(compute_forces_crust_mantle_gpu,
 
 
 //
-// src/cuda/compute_forces_inner_core_gpu.cu
+// src/gpu/compute_forces_inner_core_gpu.cu
 //
 
 void FC_FUNC_(compute_forces_inner_core_gpu,
@@ -217,7 +217,7 @@ void FC_FUNC_(compute_forces_inner_core_gpu,
 
 
 //
-// src/cuda/compute_forces_outer_core_gpu.cu
+// src/gpu/compute_forces_outer_core_gpu.cu
 //
 
 void FC_FUNC_(compute_forces_outer_core_gpu,
@@ -228,7 +228,7 @@ void FC_FUNC_(compute_forces_outer_core_gpu,
 
 
 //
-// src/cuda/compute_kernels_gpu.cu
+// src/gpu/compute_kernels_gpu.cu
 //
 
 void FC_FUNC_(compute_kernels_cm_gpu,
@@ -251,7 +251,7 @@ void FC_FUNC_(compute_kernels_hess_gpu,
 
 
 //
-// src/cuda/compute_stacey_acoustic_gpu.cu
+// src/gpu/compute_stacey_acoustic_gpu.cu
 //
 
 void FC_FUNC_(compute_stacey_acoustic_gpu,
@@ -270,7 +270,7 @@ void FC_FUNC_(compute_stacey_acoustic_undoatt_gpu,
 
 
 //
-// src/cuda/compute_stacey_elastic_gpu.cu
+// src/gpu/compute_stacey_elastic_gpu.cu
 //
 
 void FC_FUNC_(compute_stacey_elastic_gpu,
@@ -289,18 +289,18 @@ void FC_FUNC_(compute_stacey_elastic_undoatt_gpu,
 
 
 //
-// src/cuda/initialize_gpu.cu
+// src/gpu/initialize_gpu.cu
 //
 
 void FC_FUNC_(initialize_gpu_device,
               INITIALIZE_GPU_DEVICE)(int *runtime_f, const char *platform_filter, const char *device_filter, int *myrank_f, int *nb_devices) {
- fprintf(stderr,"ERROR: GPU_MODE enabled without GPU/CUDA Support. To enable GPU support, reconfigure with --with-cuda and/or --with-opencl flag.\n");
+ fprintf(stderr,"ERROR: GPU_MODE enabled without GPU/CUDA Support. To enable GPU support, reconfigure with --with-gpu and/or --with-opencl flag.\n");
  exit(1);
 }
 
 
 //
-// src/cuda/noise_tomography_gpu.cu
+// src/gpu/noise_tomography_gpu.cu
 //
 
 void FC_FUNC_(fortranflush,FORTRANFLUSH)(int* rank){}
@@ -329,7 +329,7 @@ void FC_FUNC_(noise_add_surface_movie_gpu,
 
 
 //
-// src/cuda/prepare_mesh_constants_gpu.cu
+// src/gpu/prepare_mesh_constants_gpu.cu
 //
 
 void FC_FUNC_(prepare_constants_device,
@@ -591,7 +591,7 @@ void FC_FUNC_(prepare_cleanup_device,
 
 
 //
-// src/cuda/transfer_fields_gpu.cu
+// src/gpu/transfer_fields_gpu.cu
 //
 
 void FC_FUNC_(transfer_fields_cm_to_device,
@@ -785,7 +785,7 @@ void FC_FUNC_(transfer_kernels_hess_cm_tohost,
 
 
 //
-// src/cuda/update_displacement_gpu.cu
+// src/gpu/update_displacement_gpu.cu
 //
 
 void FC_FUNC_(update_displacement_ic_gpu,
@@ -829,7 +829,7 @@ void FC_FUNC_(update_veloc_acoustic_gpu,
 
 
 //
-// src/cuda/write_seismograms_gpu.cu
+// src/gpu/write_seismograms_gpu.cu
 //
 
 void FC_FUNC_(write_seismograms_transfer_gpu,
