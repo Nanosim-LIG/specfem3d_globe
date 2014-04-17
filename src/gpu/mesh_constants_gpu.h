@@ -104,6 +104,7 @@ extern int run_opencl;
 // for debugging and benchmarking
 /*----------------------------------------------------------------------------------------------- */
 
+// debug: outputs traces
 #define DEBUG 0
 #if DEBUG == 1
 #define TRACE(x) printf ("%s\n", x);
@@ -111,6 +112,7 @@ extern int run_opencl;
 #define TRACE(x)
 #endif
 
+// more outputs
 #define MAXDEBUG 0
 #if MAXDEBUG == 1
 #define LOG(x) printf ("%s\n", x)
@@ -143,7 +145,9 @@ extern int run_opencl;
 #endif
 
 
-#define ENABLE_VERY_SLOW_ERROR_CHECKING
+// error checking after cuda function calls
+// (note: this synchronizes many calls, thus e.g. no asynchronuous memcpy possible)
+//#define ENABLE_VERY_SLOW_ERROR_CHECKING
 
 // maximum function
 #define MAX(x, y)                  (((x) < (y)) ? (y) : (x))
@@ -161,8 +165,7 @@ extern int run_opencl;
 // Gauss-Lobatto-Legendre
 #define NGLLX 5
 #define NGLL2 25
-#define NGLL3 125
-// no padding: requires same size as in fortran for NGLLX  *NGLLY  *NGLLZ
+#define NGLL3 125 // no padding: requires same size as in fortran for NGLLX * NGLLY * NGLLZ
 
 // padding: 128 == 2**7 might improve on older graphics cards w/ coalescent memory accesses:
 #define NGLL3_PADDED 128
@@ -174,6 +177,7 @@ extern int run_opencl;
 
 // region ids
 #define IREGION_CRUST_MANTLE  1
+#define IREGION_OUTER_CORE    2
 #define IREGION_INNER_CORE  3
 
 // inner core : fictitious elements id (from constants.h)
@@ -185,6 +189,8 @@ extern int run_opencl;
 // uncomment line below for PREM with oceans
 //#define R_EARTH_KM 6368.0f
 
+// Asynchronuous memory copies between GPU and CPU
+#define GPU_ASYNC_COPY 1
 /*----------------------------------------------------------------------------------------------- */
 
 // (optional) pre-processing directive used in kernels: if defined check that it is also set in src/shared/constants.h:
@@ -209,14 +215,25 @@ extern int run_opencl;
 /*----------------------------------------------------------------------------------------------- */
 
 // Texture memory usage:
-// Use textures for d_displ and d_accel -- 10% performance boost
+// requires CUDA version >= 4.0, see check below
+// Use textures for d_displ and d_accel ~ 1% performance boost
 //#define USE_TEXTURES_FIELDS
+
+// Using texture memory for the hprime-style constants is slower on
+// Fermi generation hardware, but *may* be faster on Kepler
+// generation.
+// Use textures for hprime_xx
+//#define USE_TEXTURES_CONSTANTS
+// CUDA version >= 4.0 needed for cudaTextureType1D and cudaDeviceSynchronize()
+#if CUDA_VERSION < 4000
+#undef USE_TEXTURES_FIELDS
+#undef USE_TEXTURES_CONSTANTS
+#endif
+
+// compiling infos
 #ifdef USE_TEXTURES_FIELDS
 #pragma message ("\nCompiling with: USE_TEXTURES_FIELDS enabled\n")
 #endif
-
-// Use textures for hprime_xx
-//#define USE_TEXTURES_CONSTANTS
 #ifdef USE_TEXTURES_CONSTANTS
 #pragma message ("\nCompiling with: USE_TEXTURES_CONSTANTS enabled\n")
 #endif
@@ -225,8 +242,27 @@ extern int run_opencl;
 // leads up to ~1% performance increase
 //#define MANUALLY_UNROLLED_LOOPS
 
+// compiler specifications
+// (optional) use launch_bounds specification to increase compiler optimization
+//
+// note: main kernel is Kernel_2_crust_mantle_impl() which is limited by register usage to only 5 active blocks
+//       while shared memory usage would allow up to 7 blocks (see profiling with nvcc...)
+//       here we specifiy to launch 7 blocks to increase occupancy and let the compiler reduce registers
+//       (depending on GPU type, register spilling might slow down the performance)
+//
+// performance statistics: main kernel Kernel_2_crust_mantle_impl():
+//       shared memory per block = 6200    for Kepler: total = 49152 -> limits active blocks to 7
+//       registers per thread    = 72                                   (limited by LAUNCH_MIN_BLOCKS 7)
+//       registers per block     = 9216                total = 65536    (limited by LAUNCH_MIN_BLOCKS 7)
+//
+// using launch_bounds leads to ~ 20% performance increase on Kepler GPUs
+// (uncomment if not desired)
+#define USE_LAUNCH_BOUNDS
+#define LAUNCH_MIN_BLOCKS 7
+
 /*----------------------------------------------------------------------------------------------- */
 
+// cuda kernel block size for updating displacements/potential (newmark time scheme)
 // current hardware: 128 is slightly faster than 256 (~ 4%)
 #define BLOCKSIZE_KERNEL1 128
 #define BLOCKSIZE_KERNEL3 128
@@ -238,20 +274,18 @@ extern int run_opencl;
 /*----------------------------------------------------------------------------------------------- */
 
 // indexing
-#define INDEX2(xsize, x, y) x + (y)*xsize
-#define INDEX3(xsize, ysize, x, y, z) x + xsize * (y + ysize*z)
-#define INDEX4(xsize, ysize, zsize, x, y, z, i) x + xsize * (y + ysize * (z + zsize*i))
-#define INDEX4_PADDED(xsize, ysize, zsize, x, y, z, i) x + xsize * (y + ysize*z) + (i)*NGLL3_PADDED
-#define INDEX5(xsize, ysize, zsize, isize, x, y, z, i, j) x + xsize * (y + ysize * (z + zsize *(i + isize *(j))))
-#define INDEX6(xsize, ysize, zsize, isize, jsize, x, y, z, i, j, k) x + xsize * (y + ysize * (z + zsize * (i + isize * (j + jsize*k))))
+#define INDEX2(isize,i,j) i + isize*j
+#define INDEX3(isize,jsize,i,j,k) i + isize*(j + jsize*k)
+#define INDEX4(isize,jsize,ksize,i,j,k,x) i + isize*(j + jsize*(k + ksize*x))
+#define INDEX5(isize,jsize,ksize,xsize,i,j,k,x,y) i + isize*(j + jsize*(k + ksize*(x + xsize*y)))
 
 /*----------------------------------------------------------------------------------------------- */
 // mesh pointer wrapper structure
 /*----------------------------------------------------------------------------------------------- */
 
 typedef struct mesh_ {
-  // mesh resolution
 
+  // mesh resolution
   // ------------------------------------------------------------------   //
   // crust_mantle
   // ------------------------------------------------------------------   //
@@ -667,9 +701,14 @@ typedef struct mesh_ {
   gpu_int_mem d_number_receiver_global;
   gpu_int_mem d_ispec_selected_rec;
   gpu_int_mem d_islice_selected_rec;
+
   int nrec_local;
+
   gpu_realw_mem d_station_seismo_field;
   realw *h_station_seismo_field;
+
+  gpu_realw_mem d_station_strain_field;
+  realw* h_station_strain_field;
 
   // adjoint receivers/sources
   int nadj_rec_local;
@@ -792,6 +831,36 @@ typedef struct mesh_ {
 
   // noise sensitivity kernel
   gpu_realw_mem d_Sigma_kl;
+
+  // ------------------------------------------------------------------ //
+  // optimizations
+  // ------------------------------------------------------------------ //
+
+#if USE_CUDA
+  // overlapped memcpy streams
+  cudaStream_t compute_stream;
+  cudaStream_t copy_stream;
+#endif
+
+  // A buffer for mpi-send/recv, which is duplicated in fortran but is
+  // allocated with pinned memory to facilitate asynchronus device <->
+  // host memory transfers
+  // crust/mantle
+  float* h_send_accel_buffer_cm;
+  float* h_recv_accel_buffer_cm;
+  float* h_b_send_accel_buffer_cm;
+  float* h_b_recv_accel_buffer_cm;
+  // inner core
+  float* h_send_accel_buffer_ic;
+  float* h_recv_accel_buffer_ic;
+  float* h_b_send_accel_buffer_ic;
+  float* h_b_recv_accel_buffer_ic;
+  // outer core
+  float* h_send_accel_buffer_oc;
+  float* h_recv_accel_buffer_oc;
+  float* h_b_send_accel_buffer_oc;
+  float* h_b_recv_accel_buffer_oc;
+
 } Mesh;
 
 

@@ -475,6 +475,24 @@
 !-------------------------------------------------------------------------------------------------
 !
 
+  subroutine bcast_all_str(buffer, count)
+
+  use mpi
+
+  implicit none
+
+  integer :: count
+  character, dimension(count) :: buffer
+
+  integer :: ier
+
+  call MPI_BCAST(buffer,count,MPI_CHARACTER,0,MPI_COMM_WORLD,ier)
+
+  end subroutine bcast_all_str
+
+!
+!-------------------------------------------------------------------------------------------------
+!
   subroutine bcast_all_cr(buffer, count)
 
   use mpi

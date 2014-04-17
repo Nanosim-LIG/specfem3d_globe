@@ -156,10 +156,10 @@ void FC_FUNC_ (noise_add_source_master_rec_gpu,
 
 extern EXTERN_LANG
 void FC_FUNC_ (noise_add_surface_movie_gpu,
-               NOISE_ADD_SURFACE_MOVIE_OCL) (long *Mesh_pointer_f,
+               NOISE_ADD_SURFACE_MOVIE_GPU) (long *Mesh_pointer_f,
                                              realw *h_noise_surface_movie) {
 
-  TRACE ("noise_add_surface_movie_ocl");
+  TRACE ("noise_add_surface_movie_gpu");
 
   Mesh *mp = (Mesh *) *Mesh_pointer_f;   //get mesh pointer out of fortran integer container
 

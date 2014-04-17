@@ -28,6 +28,27 @@
 
 #include "mesh_constants_gpu.h"
 
+#ifdef USE_CUDA
+#ifdef USE_TEXTURES_FIELDS
+//forward
+realw_texture d_displ_ic_tex;
+realw_texture d_accel_ic_tex;
+//backward/reconstructed
+realw_texture d_b_displ_ic_tex;
+realw_texture d_b_accel_ic_tex;
+// templates definitions
+template<int FORWARD_OR_ADJOINT> __device__ float texfetch_displ_ic(int x);
+template<int FORWARD_OR_ADJOINT> __device__ float texfetch_accel_ic(int x);
+// templates for texture fetching
+// FORWARD_OR_ADJOINT == 1 <- forward arrays
+template<> __device__ float texfetch_displ_ic<1>(int x) { return tex1Dfetch(d_displ_ic_tex, x); }
+template<> __device__ float texfetch_accel_ic<1>(int x) { return tex1Dfetch(d_accel_ic_tex, x); }
+// FORWARD_OR_ADJOINT == 3 <- backward/reconstructed arrays
+template<> __device__ float texfetch_displ_ic<3>(int x) { return tex1Dfetch(d_b_displ_ic_tex, x); }
+template<> __device__ float texfetch_accel_ic<3>(int x) { return tex1Dfetch(d_b_accel_ic_tex, x); }
+#endif
+#endif
+
 void inner_core (int nb_blocks_to_compute, Mesh *mp,
                  int iphase,
                  gpu_int_mem d_ibool,
@@ -225,7 +246,8 @@ skipexec:
     dim3 threads(blocksize,1,1);
 
     if( FORWARD_OR_ADJOINT == 1 ){
-      inner_core_impl_kernel<<<grid,threads>>>(nb_blocks_to_compute,
+#ifdef BUG
+      inner_core_impl_kernel<<<grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
                                                mp->NGLOB_INNER_CORE,
                                                d_ibool.cuda,
                                                d_idoubling.cuda,
@@ -235,7 +257,6 @@ skipexec:
                                                mp->deltat,
                                                mp->use_mesh_coloring_gpu,
                                                mp->d_displ_inner_core.cuda,
-                                               mp->d_veloc_inner_core.cuda,
                                                mp->d_accel_inner_core.cuda,
                                                d_xix.cuda, d_xiy.cuda, d_xiz.cuda,
                                                d_etax.cuda, d_etay.cuda, d_etaz.cuda,
@@ -269,11 +290,13 @@ skipexec:
                                                mp->d_wgll_cube.cuda,
                                                mp->NSPEC_INNER_CORE_STRAIN_ONLY,
                                                mp->NSPEC_INNER_CORE);
+#endif
     }else if( FORWARD_OR_ADJOINT == 3 ){
+      // backward/reconstructed wavefields -> FORWARD_OR_ADJOINT == 3
       // debug
       DEBUG_BACKWARD_FORCES();
-
-      inner_core_impl_kernel<<< grid,threads>>>(nb_blocks_to_compute,
+#ifdef BUG
+      inner_core_impl_kernel<<< grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
                                                 mp->NGLOB_INNER_CORE,
                                                 d_ibool.cuda,
                                                 d_idoubling.cuda,
@@ -283,7 +306,6 @@ skipexec:
                                                 mp->b_deltat,
                                                 mp->use_mesh_coloring_gpu,
                                                 mp->d_b_displ_inner_core.cuda,
-                                                mp->d_b_veloc_inner_core.cuda,
                                                 mp->d_b_accel_inner_core.cuda,
                                                 d_xix.cuda, d_xiy.cuda, d_xiz.cuda,
                                                 d_etax.cuda, d_etay.cuda, d_etaz.cuda,
@@ -317,6 +339,7 @@ skipexec:
                                                 mp->d_wgll_cube.cuda,
                                                 mp->NSPEC_INNER_CORE_STRAIN_ONLY,
                                                 mp->NSPEC_INNER_CORE);
+#endif
     }
   }
 #endif
@@ -330,11 +353,11 @@ skipexec:
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_forces_inner_core_gpu,
-               COMPUTE_FORCES_INNER_CORE_OCL) (long *Mesh_pointer_f,
+               COMPUTE_FORCES_INNER_CORE_GPU) (long *Mesh_pointer_f,
                                                int *iphase,
                                                int *FORWARD_OR_ADJOINT_f) {
 
-  TRACE ("compute_forces_inner_core_ocl");
+  TRACE ("compute_forces_inner_core_gpu");
 
   Mesh *mp = (Mesh *) *Mesh_pointer_f;   // get Mesh from fortran integer wrapper
   int FORWARD_OR_ADJOINT = *FORWARD_OR_ADJOINT_f;

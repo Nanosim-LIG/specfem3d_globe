@@ -33,13 +33,13 @@
 
 extern EXTERN_LANG
 void FC_FUNC_ (update_displacement_ic_gpu,
-               UPDATE_DISPLACMENT_IC_OCL) (long *Mesh_pointer_f,
+               UPDATE_DISPLACMENT_IC_GPU) (long *Mesh_pointer_f,
                                            realw *deltat_f,
                                            realw *deltatsqover2_f,
                                            realw *deltatover2_f,
                                            int *FORWARD_OR_ADJOINT) {
 
-  TRACE ("update_displacement_ic_ocl");
+  TRACE ("update_displacement_ic_gpu");
 
   //get Mesh from fortran integer wrapper
   Mesh *mp = (Mesh *) *Mesh_pointer_f;
@@ -48,7 +48,7 @@ void FC_FUNC_ (update_displacement_ic_gpu,
 
   //debug
 
-#if DEBUG_BACKWARD_SIMULATIONS == 1
+#if DEBUG_BACKWARD_SIMULATIONS == 1 && DEBUG == 1
   realw max_d, max_v, max_a;
   max_d = get_device_array_maximum_value (mp, mp->d_b_displ_inner_core, size);
   max_v = get_device_array_maximum_value (mp, mp->d_b_veloc_inner_core, size);
@@ -119,7 +119,7 @@ void FC_FUNC_ (update_displacement_ic_gpu,
 
     if( *FORWARD_OR_ADJOINT == 1 ){
       //launch kernel
-      update_disp_veloc_kernel<<<grid,threads>>>(mp->d_displ_inner_core.cuda,
+      update_disp_veloc_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_inner_core.cuda,
                                                  mp->d_veloc_inner_core.cuda,
                                                  mp->d_accel_inner_core.cuda,
                                                  size,deltat,deltatsqover2,deltatover2);
@@ -128,7 +128,7 @@ void FC_FUNC_ (update_displacement_ic_gpu,
       DEBUG_BACKWARD_UPDATE();
 
       // kernel for backward fields
-      update_disp_veloc_kernel<<<grid,threads>>>(mp->d_b_displ_inner_core.cuda,
+      update_disp_veloc_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_displ_inner_core.cuda,
                                                  mp->d_b_veloc_inner_core.cuda,
                                                  mp->d_b_accel_inner_core.cuda,
                                                  size,deltat,deltatsqover2,deltatover2);
@@ -136,7 +136,7 @@ void FC_FUNC_ (update_displacement_ic_gpu,
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("update_displacement_ic_ocl");
+  exit_on_gpu_error ("update_displacement_ic_gpu");
 #endif
 }
 
@@ -148,13 +148,13 @@ void FC_FUNC_ (update_displacement_ic_gpu,
 
 extern EXTERN_LANG
 void FC_FUNC_ (update_displacement_cm_gpu,
-               UPDATE_DISPLACMENT_CM_OCL) (long *Mesh_pointer_f,
+               UPDATE_DISPLACMENT_CM_GPU) (long *Mesh_pointer_f,
                                            realw *deltat_f,
                                            realw *deltatsqover2_f,
                                            realw *deltatover2_f,
                                            int *FORWARD_OR_ADJOINT) {
 
-  TRACE ("update_displacement_cm_ocl");
+  TRACE ("update_displacement_cm_gpu");
 
   //get Mesh from fortran integer wrapper
   Mesh *mp = (Mesh *) *Mesh_pointer_f;
@@ -163,7 +163,7 @@ void FC_FUNC_ (update_displacement_cm_gpu,
 
   //debug
 
-#if DEBUG_BACKWARD_SIMULATIONS == 1
+#if DEBUG_BACKWARD_SIMULATIONS == 1 && DEBUG == 1
   realw max_d, max_v, max_a;
   max_d = get_device_array_maximum_value (mp, mp->d_b_displ_crust_mantle, size);
   max_v = get_device_array_maximum_value (mp, mp->d_b_veloc_crust_mantle, size);
@@ -233,7 +233,7 @@ void FC_FUNC_ (update_displacement_cm_gpu,
     dim3 threads(blocksize,1,1);
     if( *FORWARD_OR_ADJOINT == 1 ){
       //launch kernel
-      update_disp_veloc_kernel<<<grid,threads>>>(mp->d_displ_crust_mantle.cuda,
+      update_disp_veloc_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_crust_mantle.cuda,
                                                  mp->d_veloc_crust_mantle.cuda,
                                                  mp->d_accel_crust_mantle.cuda,
                                                  size,deltat,deltatsqover2,deltatover2);
@@ -242,7 +242,7 @@ void FC_FUNC_ (update_displacement_cm_gpu,
       DEBUG_BACKWARD_UPDATE();
 
       // kernel for backward fields
-      update_disp_veloc_kernel<<<grid,threads>>>(mp->d_b_displ_crust_mantle.cuda,
+      update_disp_veloc_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_displ_crust_mantle.cuda,
                                                  mp->d_b_veloc_crust_mantle.cuda,
                                                  mp->d_b_accel_crust_mantle.cuda,
                                                  size,deltat,deltatsqover2,deltatover2);
@@ -250,20 +250,20 @@ void FC_FUNC_ (update_displacement_cm_gpu,
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("update_displacement_cm_ocl");
+  exit_on_gpu_error ("update_displacement_cm_gpu");
 #endif
 
 }
 
 extern EXTERN_LANG
 void FC_FUNC_ (update_displacement_oc_gpu,
-               UPDATE_DISPLACEMENT_OC_ocl) (long *Mesh_pointer_f,
+               UPDATE_DISPLACEMENT_OC_gpu) (long *Mesh_pointer_f,
                                             realw *deltat_f,
                                             realw *deltatsqover2_f,
                                             realw *deltatover2_f,
                                             int *FORWARD_OR_ADJOINT) {
 
-  TRACE ("update_displacement_oc_ocl");
+  TRACE ("update_displacement_oc_gpu");
 
   //get Mesh from fortran integer wrapper
   Mesh *mp = (Mesh *) *Mesh_pointer_f;
@@ -272,7 +272,7 @@ void FC_FUNC_ (update_displacement_oc_gpu,
 
   //debug
 
-#if DEBUG_BACKWARD_SIMULATIONS == 1
+#if DEBUG_BACKWARD_SIMULATIONS == 1 && DEBUG == 1
   realw max_d, max_v, max_a;
   max_d = get_device_array_maximum_value (mp, mp->d_b_displ_outer_core, size);
   max_v = get_device_array_maximum_value (mp, mp->d_b_veloc_outer_core, size);
@@ -343,7 +343,7 @@ void FC_FUNC_ (update_displacement_oc_gpu,
 
     if( *FORWARD_OR_ADJOINT == 1 ){
       //launch kernel
-      update_potential_kernel<<<grid,threads>>>(mp->d_displ_outer_core.cuda,
+      update_potential_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_outer_core.cuda,
                                                 mp->d_veloc_outer_core.cuda,
                                                 mp->d_accel_outer_core.cuda,
                                                 size,deltat,deltatsqover2,deltatover2);
@@ -351,7 +351,7 @@ void FC_FUNC_ (update_displacement_oc_gpu,
       // debug
       DEBUG_BACKWARD_UPDATE();
 
-      update_potential_kernel<<<grid,threads>>>(mp->d_b_displ_outer_core.cuda,
+      update_potential_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_displ_outer_core.cuda,
                                                 mp->d_b_veloc_outer_core.cuda,
                                                 mp->d_b_accel_outer_core.cuda,
                                                 size,deltat,deltatsqover2,deltatover2);
@@ -359,7 +359,7 @@ void FC_FUNC_ (update_displacement_oc_gpu,
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("update_displacement_oc_ocl");
+  exit_on_gpu_error ("update_displacement_oc_gpu");
 #endif
 }
 
@@ -367,9 +367,9 @@ void FC_FUNC_ (update_displacement_oc_gpu,
 
 extern EXTERN_LANG
 void FC_FUNC_ (multiply_accel_elastic_gpu,
-               MULTIPLY_ACCEL_ELASTIC_OCL) (long *Mesh_pointer,
+               MULTIPLY_ACCEL_ELASTIC_GPU) (long *Mesh_pointer,
                                             int *FORWARD_OR_ADJOINT) {
-  TRACE ("multiply_accel_elastic_ocl");
+  TRACE ("multiply_accel_elastic_gpu");
 
   int size_padded, num_blocks_x, num_blocks_y;
 
@@ -432,7 +432,7 @@ void FC_FUNC_ (multiply_accel_elastic_gpu,
     threads = dim3(blocksize,1,1);
 
     if( *FORWARD_OR_ADJOINT == 1 ){
-      update_accel_elastic_kernel<<< grid, threads>>>(mp->d_accel_crust_mantle.cuda,
+      update_accel_elastic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_accel_crust_mantle.cuda,
                                                       mp->d_veloc_crust_mantle.cuda,
                                                       mp->NGLOB_CRUST_MANTLE,
                                                       mp->two_omega_earth,
@@ -443,7 +443,7 @@ void FC_FUNC_ (multiply_accel_elastic_gpu,
       // debug
       DEBUG_BACKWARD_UPDATE();
 
-      update_accel_elastic_kernel<<< grid, threads>>>(mp->d_b_accel_crust_mantle.cuda,
+      update_accel_elastic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_b_accel_crust_mantle.cuda,
                                                       mp->d_b_veloc_crust_mantle.cuda,
                                                       mp->NGLOB_CRUST_MANTLE,
                                                       mp->b_two_omega_earth,
@@ -497,7 +497,7 @@ void FC_FUNC_ (multiply_accel_elastic_gpu,
     threads = dim3(blocksize,1,1);
 
     if( *FORWARD_OR_ADJOINT == 1 ){
-      update_accel_elastic_kernel<<< grid, threads>>>(mp->d_accel_inner_core.cuda,
+      update_accel_elastic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_accel_inner_core.cuda,
                                                       mp->d_veloc_inner_core.cuda,
                                                       mp->NGLOB_INNER_CORE,
                                                       mp->two_omega_earth,
@@ -508,7 +508,7 @@ void FC_FUNC_ (multiply_accel_elastic_gpu,
       // debug
       DEBUG_BACKWARD_UPDATE();
 
-      update_accel_elastic_kernel<<< grid, threads>>>(mp->d_b_accel_inner_core.cuda,
+      update_accel_elastic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_b_accel_inner_core.cuda,
                                                       mp->d_b_veloc_inner_core.cuda,
                                                       mp->NGLOB_INNER_CORE,
                                                       mp->b_two_omega_earth,
@@ -520,17 +520,17 @@ void FC_FUNC_ (multiply_accel_elastic_gpu,
 #endif
 
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("after multiply_accel_elastic_ocl");
+  exit_on_gpu_error ("after multiply_accel_elastic_gpu");
 #endif
 }
 
 extern EXTERN_LANG
 void FC_FUNC_ (update_veloc_elastic_gpu,
-               UPDATE_VELOC_ELASTIC_OCL) (long *Mesh_pointer,
+               UPDATE_VELOC_ELASTIC_GPU) (long *Mesh_pointer,
                                           realw *deltatover2_f,
                                           int *FORWARD_OR_ADJOINT) {
 
-  TRACE ("update_veloc_elastic_ocl");
+  TRACE ("update_veloc_elastic_gpu");
 
   int size_padded, num_blocks_x, num_blocks_y;
 
@@ -583,12 +583,12 @@ void FC_FUNC_ (update_veloc_elastic_gpu,
     threads = dim3(blocksize,1,1);
 
     if( *FORWARD_OR_ADJOINT == 1 ){
-      update_veloc_elastic_kernel<<< grid, threads>>>(mp->d_veloc_crust_mantle.cuda,
+      update_veloc_elastic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_veloc_crust_mantle.cuda,
                                                       mp->d_accel_crust_mantle.cuda,
                                                       mp->NGLOB_CRUST_MANTLE,
                                                       deltatover2);
     }else if( *FORWARD_OR_ADJOINT == 3 ){
-      update_veloc_elastic_kernel<<< grid, threads>>>(mp->d_b_veloc_crust_mantle.cuda,
+      update_veloc_elastic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_b_veloc_crust_mantle.cuda,
                                                       mp->d_b_accel_crust_mantle.cuda,
                                                       mp->NGLOB_CRUST_MANTLE,
                                                       deltatover2);
@@ -630,12 +630,12 @@ void FC_FUNC_ (update_veloc_elastic_gpu,
     threads = dim3(blocksize,1,1);
 
     if( *FORWARD_OR_ADJOINT == 1 ){
-      update_veloc_elastic_kernel<<< grid, threads>>>(mp->d_veloc_inner_core.cuda,
+      update_veloc_elastic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_veloc_inner_core.cuda,
                                                       mp->d_accel_inner_core.cuda,
                                                       mp->NGLOB_INNER_CORE,
                                                       deltatover2);
     }else if( *FORWARD_OR_ADJOINT == 3 ){
-      update_veloc_elastic_kernel<<< grid, threads>>>(mp->d_b_veloc_inner_core.cuda,
+      update_veloc_elastic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_b_veloc_inner_core.cuda,
                                                       mp->d_b_accel_inner_core.cuda,
                                                       mp->NGLOB_INNER_CORE,
                                                       deltatover2);
@@ -649,9 +649,9 @@ void FC_FUNC_ (update_veloc_elastic_gpu,
 
 extern EXTERN_LANG
 void FC_FUNC_ (multiply_accel_acoustic_gpu,
-               MULTIPLY_ACCEL_ACOUSTIC_OCL) (long *Mesh_pointer,
+               MULTIPLY_ACCEL_ACOUSTIC_GPU) (long *Mesh_pointer,
                                              int *FORWARD_OR_ADJOINT) {
-  TRACE ("multiply_accel_acoustic_ocl");
+  TRACE ("multiply_accel_acoustic_gpu");
 
   //get Mesh from fortran integer wrapper
   Mesh *mp = (Mesh *) *Mesh_pointer;
@@ -699,31 +699,31 @@ void FC_FUNC_ (multiply_accel_acoustic_gpu,
 
     // multiplies accel with inverse of mass matrix
     if( *FORWARD_OR_ADJOINT == 1 ){
-      update_accel_acoustic_kernel<<< grid, threads>>>(mp->d_accel_outer_core.cuda,
+      update_accel_acoustic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_accel_outer_core.cuda,
                                                        mp->NGLOB_OUTER_CORE,
                                                        mp->d_rmass_outer_core.cuda);
     }else if( *FORWARD_OR_ADJOINT == 3 ){
       // debug
       DEBUG_BACKWARD_UPDATE();
 
-      update_accel_acoustic_kernel<<< grid, threads>>>(mp->d_b_accel_outer_core.cuda,
+      update_accel_acoustic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_b_accel_outer_core.cuda,
                                                        mp->NGLOB_OUTER_CORE,
                                                        mp->d_b_rmass_outer_core.cuda);
     }
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("after multiply_accel_acoustic_ocl");
+  exit_on_gpu_error ("after multiply_accel_acoustic_gpu");
 #endif
 }
 
 extern EXTERN_LANG
 void FC_FUNC_ (update_veloc_acoustic_gpu,
-               UPDATE_VELOC_ACOUSTIC_OCL) (long *Mesh_pointer,
+               UPDATE_VELOC_ACOUSTIC_GPU) (long *Mesh_pointer,
                                            realw *deltatover2_f,
                                            int *FORWARD_OR_ADJOINT) {
 
-  TRACE ("update_veloc_acoustic_ocl");
+  TRACE ("update_veloc_acoustic_gpu");
 
   //get Mesh from fortran integer wrapper
   Mesh *mp = (Mesh *) *Mesh_pointer;
@@ -776,7 +776,7 @@ void FC_FUNC_ (update_veloc_acoustic_gpu,
 
     // updates velocity
     if( *FORWARD_OR_ADJOINT == 1 ){
-      update_veloc_acoustic_kernel<<< grid, threads>>>(mp->d_veloc_outer_core.cuda,
+      update_veloc_acoustic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_veloc_outer_core.cuda,
                                                        mp->d_accel_outer_core.cuda,
                                                        mp->NGLOB_OUTER_CORE,
                                                        deltatover2);
@@ -784,7 +784,7 @@ void FC_FUNC_ (update_veloc_acoustic_gpu,
       // debug
       DEBUG_BACKWARD_UPDATE();
 
-      update_veloc_acoustic_kernel<<< grid, threads>>>(mp->d_b_veloc_outer_core.cuda,
+      update_veloc_acoustic_kernel<<< grid, threads,0,mp->compute_stream>>>(mp->d_b_veloc_outer_core.cuda,
                                                        mp->d_b_accel_outer_core.cuda,
                                                        mp->NGLOB_OUTER_CORE,
                                                        deltatover2);
@@ -792,6 +792,6 @@ void FC_FUNC_ (update_veloc_acoustic_gpu,
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("after update_veloc_acoustic_ocl");
+  exit_on_gpu_error ("after update_veloc_acoustic_gpu");
 #endif
 }

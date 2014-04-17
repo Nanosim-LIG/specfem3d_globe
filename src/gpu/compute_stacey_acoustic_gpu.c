@@ -32,10 +32,10 @@
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_stacey_acoustic_gpu,
-               COMPUTE_STACEY_ACOUSTIC_OCL) (long *Mesh_pointer_f,
+               COMPUTE_STACEY_ACOUSTIC_GPU) (long *Mesh_pointer_f,
                                              realw *absorb_potential,
                                              int *itype) {
-  TRACE ("compute_stacey_acoustic_ocl");
+  TRACE ("compute_stacey_acoustic_gpu");
   int num_abs_boundary_faces;
   gpu_int_mem *d_abs_boundary_ispec;
   gpu_realw_mem *d_abs_boundary_jacobian2D;
@@ -93,7 +93,7 @@ void FC_FUNC_ (compute_stacey_acoustic_gpu,
     break;
 
   default:
-    exit_on_gpu_error ("compute_stacey_acoustic_ocl: unknown interface type");
+    exit_on_gpu_error ("compute_stacey_acoustic_gpu: unknown interface type");
     break;
   }
 
@@ -149,7 +149,7 @@ void FC_FUNC_ (compute_stacey_acoustic_gpu,
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(blocksize,1,1);
 
-    compute_stacey_acoustic_kernel<<<grid,threads>>>(mp->d_veloc_outer_core.cuda,
+    compute_stacey_acoustic_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_veloc_outer_core.cuda,
                                                      mp->d_accel_outer_core.cuda,
                                                      interface_type,
                                                      num_abs_boundary_faces,
@@ -170,7 +170,7 @@ void FC_FUNC_ (compute_stacey_acoustic_gpu,
 #endif
 
   //  adjoint simulations: stores absorbed wavefield part
-  if (mp->save_forward && num_abs_boundary_faces > 0) {
+  if (mp->save_forward) {
     // copies array to CPU
 #ifdef USE_OPENCL
     if (run_opencl) {
@@ -181,6 +181,9 @@ void FC_FUNC_ (compute_stacey_acoustic_gpu,
 #endif
 #ifdef USE_CUDA
     if (run_cuda) {
+      // explicitly waits until previous compute stream finishes
+      // (cudaMemcpy implicitly synchronizes all other cuda operations)
+      cudaStreamSynchronize(mp->compute_stream);
       print_CUDA_error_if_any(cudaMemcpy(absorb_potential,d_b_absorb_potential,
                                          NGLL2*num_abs_boundary_faces*sizeof(realw),
                                          cudaMemcpyDeviceToHost),7701);
@@ -196,10 +199,10 @@ void FC_FUNC_ (compute_stacey_acoustic_gpu,
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_stacey_acoustic_backward_gpu,
-               COMPUTE_STACEY_ACOUSTIC_BACKWARD_OCL) (long *Mesh_pointer_f,
+               COMPUTE_STACEY_ACOUSTIC_BACKWARD_GPU) (long *Mesh_pointer_f,
                                                       realw *absorb_potential,
                                                       int *itype) {
-  TRACE ("compute_stacey_acoustic_backward_ocl");
+  TRACE ("compute_stacey_acoustic_backward_gpu");
 
   int num_abs_boundary_faces;
   gpu_int_mem *d_abs_boundary_ispec;
@@ -246,7 +249,7 @@ void FC_FUNC_ (compute_stacey_acoustic_backward_gpu,
     break;
 
   default:
-    exit_on_gpu_error ("compute_stacey_acoustic_ocl: unknown interface type");
+    exit_on_error ("compute_stacey_acoustic_gpu: unknown interface type");
     break;
   }
 
@@ -316,7 +319,7 @@ void FC_FUNC_ (compute_stacey_acoustic_backward_gpu,
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(blocksize,1,1);
 
-    compute_stacey_acoustic_backward_kernel<<<grid,threads>>>(mp->d_b_accel_outer_core.cuda,
+    compute_stacey_acoustic_backward_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_accel_outer_core.cuda,
                                                               d_b_absorb_potential->cuda,
                                                               interface_type,
                                                               num_abs_boundary_faces,
@@ -341,9 +344,9 @@ void FC_FUNC_ (compute_stacey_acoustic_backward_gpu,
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_stacey_acoustic_undoatt_gpu,
-               COMPUTE_STACEY_ACOUSTIC_UNDOATT_OCL) (long *Mesh_pointer_f,
+               COMPUTE_STACEY_ACOUSTIC_UNDOATT_GPU) (long *Mesh_pointer_f,
                                                      int *itype) {
-  TRACE ("compute_stacey_acoustic_undoatt_ocl");
+  TRACE ("compute_stacey_acoustic_undoatt_gpu");
 
   int num_abs_boundary_faces;
   gpu_int_mem *d_abs_boundary_ispec;
@@ -401,7 +404,7 @@ void FC_FUNC_ (compute_stacey_acoustic_undoatt_gpu,
     break;
 
   default:
-    exit_on_gpu_error ("compute_stacey_acoustic_ocl: unknown interface type");
+    exit_on_error ("compute_stacey_acoustic_gpu: unknown interface type");
     break;
   }
 
@@ -456,7 +459,7 @@ void FC_FUNC_ (compute_stacey_acoustic_undoatt_gpu,
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(blocksize,1,1);
 
-    compute_stacey_acoustic_kernel<<<grid,threads>>>(mp->d_b_veloc_outer_core.cuda,
+    compute_stacey_acoustic_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_veloc_outer_core.cuda,
                                                      mp->d_b_accel_outer_core.cuda,
                                                      interface_type,
                                                      num_abs_boundary_faces,
@@ -476,6 +479,6 @@ void FC_FUNC_ (compute_stacey_acoustic_undoatt_gpu,
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("compute_stacey_acoustic_undoatt_ocl");
+  exit_on_gpu_error ("compute_stacey_acoustic_undoatt_gpu");
 #endif
 }

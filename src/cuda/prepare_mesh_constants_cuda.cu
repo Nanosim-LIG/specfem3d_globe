@@ -959,6 +959,7 @@ void FC_FUNC_(prepare_mpi_buffers_device,
 
     // allocates mpi buffer for exchange with cpu
     print_CUDA_error_if_any(cudaMalloc((void**)&(mp->d_send_accel_buffer_crust_mantle),size_mpi_buffer*sizeof(realw)),4004);
+
     if( mp->simulation_type == 3){
       print_CUDA_error_if_any(cudaMalloc((void**)&(mp->d_b_send_accel_buffer_crust_mantle),size_mpi_buffer*sizeof(realw)),4004);
     }

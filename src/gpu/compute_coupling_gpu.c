@@ -35,10 +35,10 @@
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_coupling_fluid_cmb_gpu,
-               COMPUTE_COUPLING_FLUID_CMB_OCL) (long *Mesh_pointer_f,
+               COMPUTE_COUPLING_FLUID_CMB_GPU) (long *Mesh_pointer_f,
                                                 int *FORWARD_OR_ADJOINT) {
 
-  TRACE ("compute_coupling_fluid_cmb_ocl");
+  TRACE ("compute_coupling_fluid_cmb_gpu");
 
   //get mesh pointer out of fortran integer container
   Mesh *mp = (Mesh *) *Mesh_pointer_f;
@@ -91,7 +91,7 @@ skip_exec:
 
     // launches GPU kernel
     if( *FORWARD_OR_ADJOINT == 1 ){
-      compute_coupling_fluid_CMB_kernel<<<grid,threads>>>(mp->d_displ_crust_mantle.cuda,
+      compute_coupling_fluid_CMB_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_crust_mantle.cuda,
                                                           mp->d_accel_outer_core.cuda,
                                                           mp->d_ibool_crust_mantle.cuda,
                                                           mp->d_ibelm_bottom_crust_mantle.cuda,
@@ -106,7 +106,7 @@ skip_exec:
       DEBUG_BACKWARD_COUPLING();
 
       // adjoint simulations
-      compute_coupling_fluid_CMB_kernel<<<grid,threads>>>(mp->d_b_displ_crust_mantle.cuda,
+      compute_coupling_fluid_CMB_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_displ_crust_mantle.cuda,
                                                           mp->d_b_accel_outer_core.cuda,
                                                           mp->d_ibool_crust_mantle.cuda,
                                                           mp->d_ibelm_bottom_crust_mantle.cuda,
@@ -127,10 +127,10 @@ skip_exec:
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_coupling_fluid_icb_gpu,
-               COMPUTE_COUPLING_FLUID_ICB_OCL) (long *Mesh_pointer_f,
+               COMPUTE_COUPLING_FLUID_ICB_GPU) (long *Mesh_pointer_f,
                                                 int *FORWARD_OR_ADJOINT) {
 
-  TRACE ("compute_coupling_fluid_icb_ocl");
+  TRACE ("compute_coupling_fluid_icb_gpu");
 
   Mesh *mp = (Mesh *)*Mesh_pointer_f;   //get mesh pointer out of fortran integer container
 
@@ -183,7 +183,7 @@ skipexec:
 
     // launches GPU kernel
     if( *FORWARD_OR_ADJOINT == 1 ){
-      compute_coupling_fluid_ICB_kernel<<<grid,threads>>>(mp->d_displ_inner_core.cuda,
+      compute_coupling_fluid_ICB_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_inner_core.cuda,
                                                           mp->d_accel_outer_core.cuda,
                                                           mp->d_ibool_inner_core.cuda,
                                                           mp->d_ibelm_top_inner_core.cuda,
@@ -198,7 +198,7 @@ skipexec:
       DEBUG_BACKWARD_COUPLING();
 
       // adjoint simulations
-      compute_coupling_fluid_ICB_kernel<<<grid,threads>>>(mp->d_b_displ_inner_core.cuda,
+      compute_coupling_fluid_ICB_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_displ_inner_core.cuda,
                                                           mp->d_b_accel_outer_core.cuda,
                                                           mp->d_ibool_inner_core.cuda,
                                                           mp->d_ibelm_top_inner_core.cuda,
@@ -220,9 +220,9 @@ skipexec:
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_coupling_cmb_fluid_gpu,
-               COMPUTE_COUPLING_CMB_FLUID_OCL) (long *Mesh_pointer_f, int *FORWARD_OR_ADJOINT) {
+               COMPUTE_COUPLING_CMB_FLUID_GPU) (long *Mesh_pointer_f, int *FORWARD_OR_ADJOINT) {
 
-  TRACE ("compute_coupling_cmb_fluid_ocl");
+  TRACE ("compute_coupling_cmb_fluid_gpu");
 
   Mesh *mp = (Mesh *) *Mesh_pointer_f;   //get mesh pointer out of fortran integer container
 
@@ -281,7 +281,7 @@ skipexec:
 
     // launches GPU kernel
     if( *FORWARD_OR_ADJOINT == 1 ){
-      compute_coupling_CMB_fluid_kernel<<<grid,threads>>>(mp->d_displ_crust_mantle.cuda,
+      compute_coupling_CMB_fluid_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_crust_mantle.cuda,
                                                           mp->d_accel_crust_mantle.cuda,
                                                           mp->d_accel_outer_core.cuda,
                                                           mp->d_ibool_crust_mantle.cuda,
@@ -300,7 +300,7 @@ skipexec:
       DEBUG_BACKWARD_COUPLING();
 
       //  adjoint simulations
-      compute_coupling_CMB_fluid_kernel<<<grid,threads>>>(mp->d_b_displ_crust_mantle.cuda,
+      compute_coupling_CMB_fluid_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_displ_crust_mantle.cuda,
                                                           mp->d_b_accel_crust_mantle.cuda,
                                                           mp->d_b_accel_outer_core.cuda,
                                                           mp->d_ibool_crust_mantle.cuda,
@@ -318,14 +318,14 @@ skipexec:
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("compute_coupling_CMB_fluid_ocl");
+  exit_on_gpu_error ("compute_coupling_CMB_fluid_gpu");
 #endif
 }
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_coupling_icb_fluid_gpu,
-               COMPUTE_COUPLING_ICB_FLUID_OCL) (long *Mesh_pointer_f, int *FORWARD_OR_ADJOINT) {
-  TRACE ("compute_coupling_icb_fluid_ocl");
+               COMPUTE_COUPLING_ICB_FLUID_GPU) (long *Mesh_pointer_f, int *FORWARD_OR_ADJOINT) {
+  TRACE ("compute_coupling_icb_fluid_gpu");
 
   Mesh *mp = (Mesh *) *Mesh_pointer_f;   //get mesh pointer out of fortran integer container
 
@@ -383,7 +383,7 @@ skipexec:
 
     // launches GPU kernel
     if( *FORWARD_OR_ADJOINT == 1 ){
-      compute_coupling_ICB_fluid_kernel<<<grid,threads>>>(mp->d_displ_inner_core.cuda,
+      compute_coupling_ICB_fluid_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_inner_core.cuda,
                                                           mp->d_accel_inner_core.cuda,
                                                           mp->d_accel_outer_core.cuda,
                                                           mp->d_ibool_inner_core.cuda,
@@ -402,7 +402,7 @@ skipexec:
       DEBUG_BACKWARD_COUPLING();
 
       //  adjoint simulations
-      compute_coupling_ICB_fluid_kernel<<<grid,threads>>>(mp->d_b_displ_inner_core.cuda,
+      compute_coupling_ICB_fluid_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_displ_inner_core.cuda,
                                                           mp->d_b_accel_inner_core.cuda,
                                                           mp->d_b_accel_outer_core.cuda,
                                                           mp->d_ibool_inner_core.cuda,
@@ -420,7 +420,7 @@ skipexec:
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("compute_coupling_ICB_fluid_ocl");
+  exit_on_gpu_error ("compute_coupling_ICB_fluid_gpu");
 #endif
 }
 
@@ -430,10 +430,10 @@ skipexec:
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_coupling_ocean_gpu,
-               COMPUTE_COUPLING_OCEAN_OCL) (long *Mesh_pointer_f,
+               COMPUTE_COUPLING_OCEAN_GPU) (long *Mesh_pointer_f,
                                             int *FORWARD_OR_ADJOINT) {
 
-  TRACE ("compute_coupling_ocean_ocl");
+  TRACE ("compute_coupling_ocean_gpu");
 
   Mesh *mp = (Mesh *) *Mesh_pointer_f;   //get mesh pointer out of fortran integer container
 
@@ -489,7 +489,7 @@ skipexec:
 
     // uses corrected mass matrices
     if( *FORWARD_OR_ADJOINT == 1 ){
-      compute_coupling_ocean_kernel<<<grid,threads>>>(mp->d_accel_crust_mantle.cuda,
+      compute_coupling_ocean_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_accel_crust_mantle.cuda,
                                                       mp->d_rmassx_crust_mantle.cuda,
                                                       mp->d_rmassy_crust_mantle.cuda,
                                                       mp->d_rmassz_crust_mantle.cuda,
@@ -502,7 +502,7 @@ skipexec:
       DEBUG_BACKWARD_COUPLING();
 
       // for backward/reconstructed potentials
-      compute_coupling_ocean_kernel<<<grid,threads>>>(mp->d_b_accel_crust_mantle.cuda,
+      compute_coupling_ocean_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_accel_crust_mantle.cuda,
                                                       mp->d_b_rmassx_crust_mantle.cuda,
                                                       mp->d_b_rmassy_crust_mantle.cuda,
                                                       mp->d_b_rmassz_crust_mantle.cuda,
@@ -514,6 +514,6 @@ skipexec:
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("compute_coupling_ocean_ocl");
+  exit_on_gpu_error ("compute_coupling_ocean_gpu");
 #endif
 }

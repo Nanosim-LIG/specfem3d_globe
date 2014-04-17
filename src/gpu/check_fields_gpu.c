@@ -28,8 +28,6 @@
 
 #include "mesh_constants_gpu.h"
 
-int mocl_errcode;
-
 /*----------------------------------------------------------------------------------------------- */
 // Helper functions
 /*----------------------------------------------------------------------------------------------- */
@@ -82,6 +80,8 @@ void pause_for_debugger (int pause) {
 /*----------------------------------------------------------------------------------------------- */
 
 #ifdef USE_OPENCL
+cl_int mocl_errcode;
+
 cl_int clGetLastError () {
   return mocl_errcode;
 }
@@ -211,7 +211,7 @@ void exit_on_gpu_error (char *kernel_name) {
 #else
     myrank = 0;
 #endif
-    sprintf (filename, "../in_out_files/OUTPUT_FILES/error_message_%06d.txt", myrank);
+    sprintf(filename,"OUTPUT_FILES/error_message_%06d.txt",myrank);
     fp = fopen (filename, "a+");
     if (fp != NULL) {
       fprintf (fp, "Error after %s: %s\n", kernel_name, strerr);
@@ -219,7 +219,6 @@ void exit_on_gpu_error (char *kernel_name) {
     }
 
     // releases previous contexts
-    /* crashes device ... */
 
     // stops program
 #ifdef WITH_MPI
@@ -227,6 +226,35 @@ void exit_on_gpu_error (char *kernel_name) {
 #endif
     exit (EXIT_FAILURE);
   }
+}
+
+/*----------------------------------------------------------------------------------------------- */
+
+void exit_on_error (char *info) {
+  printf ("\nERROR: %s\n", info);
+  fflush (stdout);
+
+  // outputs error file
+  FILE *fp;
+  int myrank;
+  char filename[BUFSIZ];
+#ifdef WITH_MPI
+  MPI_Comm_rank (MPI_COMM_WORLD, &myrank);
+#else
+  myrank = 0;
+#endif
+  sprintf(filename,"OUTPUT_FILES/error_message_%06d.txt",myrank);
+  fp = fopen (filename, "a+");
+  if (fp != NULL) {
+    fprintf (fp, "ERROR: %s\n", info);
+    fclose (fp);
+  }
+
+  // stops program
+#ifdef WITH_MPI
+  MPI_Abort (MPI_COMM_WORLD, 1);
+#endif
+  exit (EXIT_FAILURE);
 }
 
 #ifdef USE_CUDA
@@ -260,36 +288,20 @@ void print_CUDA_error_if_any(cudaError_t err, int num) {
   }
   return;
 }
-#endif
 
-/*----------------------------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------------------------------- */
+// CUDA synchronization
+/* ----------------------------------------------------------------------------------------------- */
 
-void exit_on_error (char *info) {
-  printf ("\nERROR: %s\n", info);
-  fflush (stdout);
-
-  // outputs error file
-  FILE *fp;
-  int myrank;
-  char filename[BUFSIZ];
-#ifdef WITH_MPI
-  MPI_Comm_rank (MPI_COMM_WORLD, &myrank);
+void synchronize_cuda() {
+#if CUDA_VERSION >= 4000
+    cudaDeviceSynchronize();
 #else
-  myrank = 0;
+    cudaThreadSynchronize();
 #endif
-  sprintf (filename, "../in_out_files/OUTPUT_FILES/error_message_%06d.txt", myrank);
-  fp = fopen (filename, "a+");
-  if (fp != NULL) {
-    fprintf (fp, "ERROR: %s\n", info);
-    fclose (fp);
-  }
-
-  // stops program
-#ifdef WITH_MPI
-  MPI_Abort (MPI_COMM_WORLD, 1);
-#endif
-  exit (EXIT_FAILURE);
 }
+
+#endif
 
 /*----------------------------------------------------------------------------------------------- */
 
@@ -301,6 +313,37 @@ void synchronize_mpi () {
 
 /*----------------------------------------------------------------------------------------------- */
 
+// Timing helper functions
+
+/* ----------------------------------------------------------------------------------------------- */
+
+void start_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop){
+  // creates & starts event
+  cudaEventCreate(start);
+  cudaEventCreate(stop);
+  cudaEventRecord( *start, 0 );
+}
+
+/* ----------------------------------------------------------------------------------------------- */
+
+void stop_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop, char* info_str){
+  realw time;
+  // stops events
+  cudaEventRecord( *stop, 0 );
+  cudaEventSynchronize( *stop );
+  cudaEventElapsedTime( &time, *start, *stop );
+  cudaEventDestroy( *start );
+  cudaEventDestroy( *stop );
+  // user output
+  printf("%s: Execution Time = %f ms\n",info_str,time);
+}
+
+
+/* ----------------------------------------------------------------------------------------------- */
+
+// CUDA kernel setup functions
+
+/* ----------------------------------------------------------------------------------------------- */
 
 void get_blocks_xy (int num_blocks, int *num_blocks_x, int *num_blocks_y) {
   // Initially sets the blocks_x to be the num_blocks, and adds rows as needed (block size limit of 65535).
@@ -318,7 +361,9 @@ void get_blocks_xy (int num_blocks, int *num_blocks_x, int *num_blocks_y) {
 }
 
 /*----------------------------------------------------------------------------------------------- */
-// gets memory usage in byte
+// GPU device memory functions
+/* ----------------------------------------------------------------------------------------------- */
+
 void get_free_memory (double *free_db, double *used_db, double *total_db) {
 #ifdef USE_OPENCL
   if (run_opencl) {
@@ -346,21 +391,39 @@ void get_free_memory (double *free_db, double *used_db, double *total_db) {
 }
 
 /*----------------------------------------------------------------------------------------------- */
-/* Saves GPU memory usage to file */
+// Saves GPU memory usage to file
 
 void output_free_memory (int myrank, char *info_str) {
   FILE *fp;
   char filename[BUFSIZ];
   double free_db, used_db, total_db;
+  int do_output_info;
 
+  // by default, only master process outputs device infos to avoid file cluttering
+  do_output_info = 0;
+  if( myrank == 0 ){
+    do_output_info = 1;
+    sprintf(filename,"OUTPUT_FILES/gpu_device_mem_usage.txt");
+  }
+  // debugging
+  if( DEBUG ){
+    do_output_info = 1;
+    sprintf(filename,"OUTPUT_FILES/gpu_device_mem_usage_proc_%06d.txt",myrank);
+  }
+
+  // outputs to file
+  if( do_output_info ){
+
+    // gets memory usage
   get_free_memory (&free_db, &used_db, &total_db);
 
-  sprintf (filename, "OUTPUT_FILES/gpu_device_mem_usage_proc_%06d.txt", myrank);
+    // file output
   fp = fopen (filename, "a+");
   if (fp != NULL) {
-    fprintf (fp, "%d: @%s GPU memory usage: used = %f MB, free = %f MB, total = %f MB\n",
-             myrank, info_str, used_db/1024.0/1024.0, free_db/1024.0/1024.0, total_db/1024.0/1024.0);
+      fprintf(fp,"%d: @%s GPU memory usage: used = %f MB, free = %f MB, total = %f MB\n", myrank, info_str,
+              used_db/1024.0/1024.0, free_db/1024.0/1024.0, total_db/1024.0/1024.0);
     fclose (fp);
+    }
   }
 }
 
@@ -397,9 +460,7 @@ void FC_FUNC_ (get_free_device_memory,
 
 
 /*----------------------------------------------------------------------------------------------- */
-/* Auxiliary functions */
-/*----------------------------------------------------------------------------------------------- */
-
+// Auxiliary functions
 /*----------------------------------------------------------------------------------------------- */
 
 realw get_device_array_maximum_value (Mesh *mp, gpu_realw_mem *d_array, int size) {
@@ -407,7 +468,7 @@ realw get_device_array_maximum_value (Mesh *mp, gpu_realw_mem *d_array, int size
 
   // checks if anything to do
   if (size > 0) {
-    realw *h_array;
+    realw *h_array = (realw *) calloc(size ,sizeof (realw));
 
     h_array = (realw *) calloc (size, sizeof (realw));
 #ifdef USE_OPENCL
@@ -419,6 +480,9 @@ realw get_device_array_maximum_value (Mesh *mp, gpu_realw_mem *d_array, int size
 #endif
 #ifdef USE_CUDA
     if (run_cuda) {
+      // explicitly wait for cuda kernels to finish
+      // (cudaMemcpy implicitly synchronizes all other cuda operations)
+      synchronize_cuda();
       print_CUDA_error_if_any(cudaMemcpy(h_array,d_array,sizeof(realw)*size,cudaMemcpyDeviceToHost),33001);
     }
 #endif
@@ -437,8 +501,6 @@ realw get_device_array_maximum_value (Mesh *mp, gpu_realw_mem *d_array, int size
 
 /*-----------------------------------------------------------------------------------------------*/
 // scalar arrays (acoustic/fluid outer core)
-/*----------------------------------------------------------------------------------------------- */
-//__global__ void get_maximum_scalar_kernel_kernel (realw *array, int size, realw *d_max) {
 /*----------------------------------------------------------------------------------------------- */
 
 extern EXTERN_LANG
@@ -506,9 +568,9 @@ void FC_FUNC_ (check_norm_acoustic_from_device,
     cudaMalloc((void**)&d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw));
 
     if(*FORWARD_OR_ADJOINT == 1 ){
-      get_maximum_scalar_kernel<<<grid,threads>>>(mp->d_displ_outer_core.cuda,size,d_max.cuda);
+      get_maximum_scalar_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_outer_core.cuda,size,d_max.cuda);
     }else if(*FORWARD_OR_ADJOINT == 3 ){
-      get_maximum_scalar_kernel<<<grid,threads>>>(mp->d_b_displ_outer_core.cuda,size,d_max.cuda);
+      get_maximum_scalar_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_displ_outer_core.cuda,size,d_max.cuda);
     }
 
     print_CUDA_error_if_any(cudaMemcpy(h_max,d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw),
@@ -613,9 +675,9 @@ void FC_FUNC_ (check_norm_elastic_from_device,
     cudaMalloc((void**)&d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw));
 
     if(*FORWARD_OR_ADJOINT == 1 ){
-      get_maximum_vector_kernel<<<grid,threads>>>(mp->d_displ_crust_mantle.cuda,size,d_max.cuda);
+      get_maximum_vector_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_crust_mantle.cuda,size,d_max.cuda);
     }else if(*FORWARD_OR_ADJOINT == 3 ){
-      get_maximum_vector_kernel<<<grid,threads>>>(mp->d_b_displ_crust_mantle.cuda,size,d_max.cuda);
+      get_maximum_vector_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_displ_crust_mantle.cuda,size,d_max.cuda);
     }
   }
 #endif
@@ -689,9 +751,9 @@ void FC_FUNC_ (check_norm_elastic_from_device,
     cudaMalloc((void**)&d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw));
 
     if(*FORWARD_OR_ADJOINT == 1 ){
-      get_maximum_vector_kernel<<<grid,threads>>>(mp->d_displ_inner_core.cuda,size,d_max.cuda);
+      get_maximum_vector_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_inner_core.cuda,size,d_max.cuda);
     }else if(*FORWARD_OR_ADJOINT == 3 ){
-      get_maximum_vector_kernel<<<grid,threads>>>(mp->d_b_displ_inner_core.cuda,size,d_max.cuda);
+      get_maximum_vector_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_displ_inner_core.cuda,size,d_max.cuda);
     }
 
     // copies to CPU
@@ -799,7 +861,7 @@ void FC_FUNC_ (check_norm_strain_from_device,
     cudaMalloc((void**)&d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw));
 
     // determines max for: eps_trace_over_3_crust_mantle
-    get_maximum_scalar_kernel<<<grid,threads>>>(mp->d_eps_trace_over_3_crust_mantle.cuda,size,d_max.cuda);
+    get_maximum_scalar_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_eps_trace_over_3_crust_mantle.cuda,size,d_max.cuda);
 
     print_CUDA_error_if_any(cudaMemcpy(h_max,d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw),
                                        cudaMemcpyDeviceToHost),221);
@@ -884,7 +946,7 @@ void FC_FUNC_ (check_norm_strain_from_device,
     cudaMalloc((void**)&d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw));
 
     // determines max for: epsilondev_xx_crust_mantle
-    get_maximum_scalar_kernel<<<grid,threads>>>(mp->d_epsilondev_xx_crust_mantle.cuda,size,d_max.cuda);
+    get_maximum_scalar_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_epsilondev_xx_crust_mantle.cuda,size,d_max.cuda);
 
     print_CUDA_error_if_any(cudaMemcpy(h_max,d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw),
                                        cudaMemcpyDeviceToHost),222);
@@ -895,7 +957,7 @@ void FC_FUNC_ (check_norm_strain_from_device,
     max_eps = MAX(max_eps,max);
 
     // determines max for: epsilondev_yy_crust_mantle
-    get_maximum_scalar_kernel<<<grid,threads>>>(mp->d_epsilondev_yy_crust_mantle.cuda,size,d_max.cuda);
+    get_maximum_scalar_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_epsilondev_yy_crust_mantle.cuda,size,d_max.cuda);
 
     print_CUDA_error_if_any(cudaMemcpy(h_max,d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw),
                                        cudaMemcpyDeviceToHost),223);
@@ -906,7 +968,7 @@ void FC_FUNC_ (check_norm_strain_from_device,
     max_eps = MAX(max_eps,max);
 
     // determines max for: epsilondev_xy_crust_mantle
-    get_maximum_scalar_kernel<<<grid,threads>>>(mp->d_epsilondev_xy_crust_mantle.cuda,size,d_max.cuda);
+    get_maximum_scalar_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_epsilondev_xy_crust_mantle.cuda,size,d_max.cuda);
 
     print_CUDA_error_if_any(cudaMemcpy(h_max,d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw),
                                        cudaMemcpyDeviceToHost),224);
@@ -917,7 +979,7 @@ void FC_FUNC_ (check_norm_strain_from_device,
     max_eps = MAX(max_eps,max);
 
     // determines max for: epsilondev_xz_crust_mantle
-    get_maximum_scalar_kernel<<<grid,threads>>>(mp->d_epsilondev_xz_crust_mantle.cuda,size,d_max.cuda);
+    get_maximum_scalar_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_epsilondev_xz_crust_mantle.cuda,size,d_max.cuda);
 
     print_CUDA_error_if_any(cudaMemcpy(h_max,d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw),
                                        cudaMemcpyDeviceToHost),225);
@@ -928,7 +990,7 @@ void FC_FUNC_ (check_norm_strain_from_device,
     max_eps = MAX(max_eps,max);
 
     // determines max for: epsilondev_yz_crust_mantle
-    get_maximum_scalar_kernel<<<grid,threads>>>(mp->d_epsilondev_yz_crust_mantle.cuda,size,d_max.cuda);
+    get_maximum_scalar_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_epsilondev_yz_crust_mantle.cuda,size,d_max.cuda);
 
     print_CUDA_error_if_any(cudaMemcpy(h_max,d_max.cuda,num_blocks_x*num_blocks_y*sizeof(realw),
                                        cudaMemcpyDeviceToHost),226);

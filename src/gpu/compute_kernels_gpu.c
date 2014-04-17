@@ -30,9 +30,9 @@
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_kernels_cm_gpu,
-               COMPUTE_KERNELS_CM_OCL) (long *Mesh_pointer, realw *deltat_f) {
+               COMPUTE_KERNELS_CM_GPU) (long *Mesh_pointer, realw *deltat_f) {
 
-  TRACE ("compute_cm_ocl");
+  TRACE ("compute_cm_gpu");
   // debug
   DEBUG_BACKWARD_KERNEL ();
 
@@ -41,6 +41,7 @@ void FC_FUNC_ (compute_kernels_cm_gpu,
   int blocksize = NGLL3;
   realw deltat = *deltat_f;
 
+  // blocks
   int num_blocks_x, num_blocks_y;
   get_blocks_xy (mp->NSPEC_CRUST_MANTLE, &num_blocks_x, &num_blocks_y);
 
@@ -71,19 +72,23 @@ void FC_FUNC_ (compute_kernels_cm_gpu,
 
   if (run_cuda) {
     // density kernel
-    compute_rho_kernel<<<grid,threads>>>(mp->d_ibool_crust_mantle.cuda,
-                                         mp->d_accel_crust_mantle.cuda,
-                                         mp->d_b_displ_crust_mantle.cuda,
-                                         mp->d_rho_kl_crust_mantle.cuda,
-                                         mp->NSPEC_CRUST_MANTLE,
-                                         deltat);
+    compute_rho_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_ibool_crust_mantle.cuda,
+                                                              mp->d_accel_crust_mantle.cuda,
+                                                              mp->d_b_displ_crust_mantle.cuda,
+                                                              mp->d_rho_kl_crust_mantle.cuda,
+                                                              mp->NSPEC_CRUST_MANTLE,
+                                                              deltat);
   }
 #endif
   // checks if strain is available
   if (mp->undo_attenuation) {
-    exit_on_error ("compute_cm_ocl not implemented yet for UNDO_ATTENUATION");
+    // checks strain array size
+    if(mp->NSPEC_CRUST_MANTLE_STRAIN_ONLY == 1) {
+      exit_on_error("compute_kernels_cm_cuda NSPEC_CRUST_MANTLE_STRAIN_ONLY invalid with undo_att");
+    }
   }
-
+  
+  // computes strain locally based on current backward/reconstructed (b_displ) wavefield
 #ifdef USE_OPENCL
   if (run_opencl) {
     if (! mp->anisotropic_kl) {
@@ -143,7 +148,7 @@ void FC_FUNC_ (compute_kernels_cm_gpu,
   if (run_cuda) {
     if(! mp->anisotropic_kl){
       // isotropic kernels
-      compute_iso_kernel<<<grid,threads>>>(mp->d_epsilondev_xx_crust_mantle.cuda,
+      compute_iso_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_epsilondev_xx_crust_mantle.cuda,
                                            mp->d_epsilondev_yy_crust_mantle.cuda,
                                            mp->d_epsilondev_xy_crust_mantle.cuda,
                                            mp->d_epsilondev_xz_crust_mantle.cuda,
@@ -161,7 +166,7 @@ void FC_FUNC_ (compute_kernels_cm_gpu,
                                            deltat);
     }else{
       // anisotropic kernels
-      compute_ani_kernel<<<grid,threads>>>(mp->d_epsilondev_xx_crust_mantle.cuda,
+      compute_ani_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_epsilondev_xx_crust_mantle.cuda,
                                            mp->d_epsilondev_yy_crust_mantle.cuda,
                                            mp->d_epsilondev_xy_crust_mantle.cuda,
                                            mp->d_epsilondev_xz_crust_mantle.cuda,
@@ -180,7 +185,7 @@ void FC_FUNC_ (compute_kernels_cm_gpu,
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("compute_cm_ocl");
+  exit_on_gpu_error ("compute_cm_gpu");
 #endif
 }
 
@@ -192,9 +197,11 @@ void FC_FUNC_ (compute_kernels_cm_gpu,
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_kernels_ic_gpu,
-               COMPUTE_KERNELS_IC_OCL) (long *Mesh_pointer, realw *deltat_f) {
+               COMPUTE_KERNELS_IC_GPU) (long *Mesh_pointer, realw *deltat_f) {
 
-  TRACE ("compute_ic_ocl");
+  TRACE("compute_kernels_ic_gpu");
+  // debug
+  DEBUG_BACKWARD_KERNEL();
 
   Mesh *mp = (Mesh *) *Mesh_pointer;   //get mesh pointer out of fortran integer container
 
@@ -231,7 +238,7 @@ void FC_FUNC_ (compute_kernels_ic_gpu,
   dim3 threads(blocksize,1,1);
 
   if (run_cuda) {
-    compute_rho_kernel<<<grid,threads>>>(mp->d_ibool_inner_core.cuda,
+    compute_rho_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_ibool_inner_core.cuda,
                                          mp->d_accel_inner_core.cuda,
                                          mp->d_b_displ_inner_core.cuda,
                                          mp->d_rho_kl_inner_core.cuda,
@@ -242,7 +249,10 @@ void FC_FUNC_ (compute_kernels_ic_gpu,
 
   // checks if strain is available
   if (mp->undo_attenuation) {
-    exit_on_error ("compute_ic_ocl not implemented yet for UNDO_ATTENUATION");
+    // checks strain array size
+    if(mp->NSPEC_CRUST_MANTLE_STRAIN_ONLY == 1) {
+      exit_on_error("compute_kernels_cm_cuda NSPEC_CRUST_MANTLE_STRAIN_ONLY invalid with undo_att");
+    }
   }
 
   // isotropic kernels (shear, bulk)
@@ -276,7 +286,7 @@ void FC_FUNC_ (compute_kernels_ic_gpu,
 #endif
 #ifdef USE_CUDA
   if (run_cuda) {
-    compute_iso_kernel<<<grid,threads>>>(mp->d_epsilondev_xx_inner_core.cuda,
+    compute_iso_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_epsilondev_xx_inner_core.cuda,
                                          mp->d_epsilondev_yy_inner_core.cuda,
                                          mp->d_epsilondev_xy_inner_core.cuda,
                                          mp->d_epsilondev_xz_inner_core.cuda,
@@ -295,15 +305,15 @@ void FC_FUNC_ (compute_kernels_ic_gpu,
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("compute_ic_ocl");
+  exit_on_gpu_error ("compute_ic_gpu");
 #endif
 }
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_kernels_oc_gpu,
-               COMPUTE_KERNELS_OC_OCL) (long *Mesh_pointer, realw *deltat_f) {
+               COMPUTE_KERNELS_OC_GPU) (long *Mesh_pointer, realw *deltat_f) {
 
-  TRACE ("compute_oc_ocl");
+  TRACE ("compute_kernels_oc_gpu");
 
   Mesh *mp = (Mesh *) *Mesh_pointer;   //get mesh pointer out of fortran integer container
 
@@ -353,7 +363,7 @@ void FC_FUNC_ (compute_kernels_oc_gpu,
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(blocksize,1,1);
 
-    compute_acoustic_kernel<<<grid,threads>>>(mp->d_ibool_outer_core.cuda,
+    compute_acoustic_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_ibool_outer_core.cuda,
                                               mp->d_rhostore_outer_core.cuda,
                                               mp->d_kappavstore_outer_core.cuda,
                                               mp->d_hprime_xx.cuda,
@@ -376,7 +386,7 @@ void FC_FUNC_ (compute_kernels_oc_gpu,
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("compute_oc_kernel");
+  exit_on_gpu_error ("compute_kernels_oc_kernel");
 #endif
 }
 
@@ -437,7 +447,7 @@ void FC_FUNC_ (compute_kernels_strgth_noise_gpu,
                                        cudaMemcpyHostToDevice),90900);
 
     // calculates noise strength kernel
-    compute_strength_noise_kernel<<<grid,threads>>>(mp->d_displ_crust_mantle.cuda,
+    compute_strength_noise_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_displ_crust_mantle.cuda,
                                                     mp->d_ibelm_top_crust_mantle.cuda,
                                                     mp->d_ibool_crust_mantle.cuda,
                                                     mp->d_noise_surface_movie.cuda,
@@ -456,9 +466,9 @@ void FC_FUNC_ (compute_kernels_strgth_noise_gpu,
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_kernels_hess_gpu,
-               COMPUTE_KERNELS_HESS_OCL) (long *Mesh_pointer,
+               COMPUTE_KERNELS_HESS_GPU) (long *Mesh_pointer,
                                           realw *deltat_f) {
-  TRACE ("compute_hess_kernel_ocl");
+  TRACE ("compute_hess_kernel_gpu");
 
   Mesh *mp = (Mesh *) *Mesh_pointer;   //get mesh pointer out of fortran integer container
 
@@ -499,7 +509,7 @@ void FC_FUNC_ (compute_kernels_hess_gpu,
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(blocksize,1,1);
 
-    compute_hess_kernel<<<grid,threads>>>(mp->d_ibool_crust_mantle.cuda,
+    compute_hess_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_ibool_crust_mantle.cuda,
                                           mp->d_accel_crust_mantle.cuda,
                                           mp->d_b_accel_crust_mantle.cuda,
                                           mp->d_hess_kl_crust_mantle.cuda,
@@ -508,6 +518,6 @@ void FC_FUNC_ (compute_kernels_hess_gpu,
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("compute_hess_kernel_ocl");
+  exit_on_gpu_error ("compute_hess_kernel_gpu");
 #endif
 }

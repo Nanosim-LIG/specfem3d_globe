@@ -148,8 +148,9 @@ skipexec:
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(blocksize,1,1);
 
-    if( FORWARD_OR_ADJOINT == 1 ){
-      outer_core_impl_kernel<<<grid,threads>>>(nb_blocks_to_compute,
+    if (FORWARD_OR_ADJOINT == 1) {
+      // forward wavefields -> FORWARD_OR_ADJOINT == 1
+      outer_core_impl_kernel<<<grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
                                                mp->NGLOB_OUTER_CORE,
                                                d_ibool.cuda,
                                                mp->d_phase_ispec_inner_outer_core.cuda,
@@ -177,10 +178,11 @@ skipexec:
                                                d_B_array_rotation.cuda,
                                                mp->NSPEC_OUTER_CORE);
     }else if( FORWARD_OR_ADJOINT == 3 ){
+      // backward/reconstructed wavefields -> FORWARD_OR_ADJOINT == 3
       // debug
       DEBUG_BACKWARD_FORCES();
 
-      outer_core_impl_kernel<<<grid,threads>>>(nb_blocks_to_compute,
+      outer_core_impl_kernel<<<grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
                                                mp->NGLOB_OUTER_CORE,
                                                d_ibool.cuda,
                                                mp->d_phase_ispec_inner_outer_core.cuda,
@@ -217,18 +219,18 @@ skipexec:
 
 /*----------------------------------------------------------------------------------------------- */
 
-// main compute_forces_outer_core OCL routine
+// main compute_forces_outer_core GPU routine
 
 /*----------------------------------------------------------------------------------------------- */
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_forces_outer_core_gpu,
-               COMPUTE_FORCES_OUTER_CORE_OCL) (long *Mesh_pointer_f,
+               COMPUTE_FORCES_OUTER_CORE_GPU) (long *Mesh_pointer_f,
                                                int *iphase,
                                                realw *time_f,
                                                int *FORWARD_OR_ADJOINT_f) {
 
-  TRACE ("compute_forces_outer_core_ocl");
+  TRACE ("compute_forces_outer_core_gpu");
 
   Mesh *mp = (Mesh *) (*Mesh_pointer_f);   // get Mesh from fortran integer wrapper
   realw time = *time_f;
@@ -393,6 +395,6 @@ void FC_FUNC_ (compute_forces_outer_core_gpu,
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
   //double end_time = get_time ();
   //printf ("Elapsed time: %e\n", end_time-start_time);
-  exit_on_gpu_error ("compute_forces_outer_core_ocl");
+  exit_on_gpu_error ("compute_forces_outer_core_gpu");
 #endif
 }

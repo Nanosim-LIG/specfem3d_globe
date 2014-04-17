@@ -28,6 +28,42 @@
 
 #include "mesh_constants_gpu.h"
 
+#ifdef USE_CUDA
+#ifdef USE_TEXTURES_FIELDS
+//forward
+realw_texture d_displ_cm_tex;
+realw_texture d_accel_cm_tex;
+//backward/reconstructed
+realw_texture d_b_displ_cm_tex;
+realw_texture d_b_accel_cm_tex;
+
+//note: texture variables are implicitly static, and cannot be passed as arguments to cuda kernels;
+//      thus, 1) we thus use if-statements (FORWARD_OR_ADJOINT) to determine from which texture to fetch from
+//            2) we use templates
+//      since if-statements are a bit slower as the variable is only known at runtime, we use option 2)
+
+// templates definitions
+template<int FORWARD_OR_ADJOINT> __device__ float texfetch_displ_cm(int x);
+template<int FORWARD_OR_ADJOINT> __device__ float texfetch_accel_cm(int x);
+
+// templates for texture fetching
+// FORWARD_OR_ADJOINT == 1 <- forward arrays
+template<> __device__ float texfetch_displ_cm<1>(int x) { return tex1Dfetch(d_displ_cm_tex, x); }
+template<> __device__ float texfetch_accel_cm<1>(int x) { return tex1Dfetch(d_accel_cm_tex, x); }
+// FORWARD_OR_ADJOINT == 3 <- backward/reconstructed arrays
+template<> __device__ float texfetch_displ_cm<3>(int x) { return tex1Dfetch(d_b_displ_cm_tex, x); }
+template<> __device__ float texfetch_accel_cm<3>(int x) { return tex1Dfetch(d_b_accel_cm_tex, x); }
+#endif
+
+#ifdef USE_TEXTURES_CONSTANTS
+realw_texture d_hprime_xx_tex;
+__constant__ size_t d_hprime_xx_tex_offset;
+// weighted
+realw_texture d_hprimewgll_xx_tex;
+__constant__ size_t d_hprimewgll_xx_tex_offset;
+#endif
+#endif
+
 void crust_mantle (int nb_blocks_to_compute, Mesh *mp,
                    int iphase,
                    gpu_int_mem d_ibool,
@@ -255,9 +291,11 @@ skipexec:
     dim3 threads(blocksize,1,1);
 
     if( FORWARD_OR_ADJOINT == 1 ){
-      crust_mantle_impl_kernel<<<grid,threads>>>(nb_blocks_to_compute,
-                                                 mp->NGLOB_CRUST_MANTLE,
-                                                 d_ibool.cuda,
+      // forward wavefields -> FORWARD_OR_ADJOINT == 1
+#ifdef BUG
+      crust_mantle_impl_kernel<<<grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
+                                                                      mp->NGLOB_CRUST_MANTLE,
+                                                                      d_ibool.cuda,
                                                  d_ispec_is_tiso.cuda,
                                                  mp->d_phase_ispec_inner_crust_mantle.cuda,
                                                  mp->num_phase_ispec_crust_mantle,
@@ -265,7 +303,6 @@ skipexec:
                                                  mp->deltat,
                                                  mp->use_mesh_coloring_gpu,
                                                  mp->d_displ_crust_mantle.cuda,
-                                                 mp->d_veloc_crust_mantle.cuda,
                                                  mp->d_accel_crust_mantle.cuda,
                                                  d_xix.cuda, d_xiy.cuda, d_xiz.cuda,
                                                  d_etax.cuda, d_etay.cuda, d_etaz.cuda,
@@ -276,7 +313,7 @@ skipexec:
                                                  d_kappavstore.cuda, d_muvstore.cuda,
                                                  d_kappahstore.cuda, d_muhstore.cuda,
                                                  d_eta_anisostore.cuda,
-                                                 mp->compute_and_store_strain,
+                                                                      mp->compute_and_store_strain,
                                                  d_epsilondev_xx.cuda,d_epsilondev_yy.cuda,d_epsilondev_xy.cuda,
                                                  d_epsilondev_xz.cuda,d_epsilondev_yz.cuda,
                                                  d_epsilon_trace_over_3.cuda,
@@ -301,12 +338,13 @@ skipexec:
                                                  mp->d_density_table.cuda,
                                                  mp->d_wgll_cube.cuda,
                                                  mp->NSPEC_CRUST_MANTLE_STRAIN_ONLY);
+#endif 
     }else if( FORWARD_OR_ADJOINT == 3 ){
+    // backward/reconstructed wavefields -> FORWARD_OR_ADJOINT == 3
       // debug
       DEBUG_BACKWARD_FORCES();
-
-      crust_mantle_impl_kernel<<< grid,threads>>>(nb_blocks_to_compute,
-                                                  mp->NGLOB_CRUST_MANTLE,
+#ifdef BUG
+      crust_mantle_impl_kernel<<< grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
                                                   d_ibool.cuda,
                                                   d_ispec_is_tiso.cuda,
                                                   mp->d_phase_ispec_inner_crust_mantle.cuda,
@@ -315,7 +353,6 @@ skipexec:
                                                   mp->b_deltat,
                                                   mp->use_mesh_coloring_gpu,
                                                   mp->d_b_displ_crust_mantle.cuda,
-                                                  mp->d_b_veloc_crust_mantle.cuda,
                                                   mp->d_b_accel_crust_mantle.cuda,
                                                   d_xix.cuda, d_xiy.cuda, d_xiz.cuda,
                                                   d_etax.cuda, d_etay.cuda, d_etaz.cuda,
@@ -351,6 +388,7 @@ skipexec:
                                                   mp->d_density_table.cuda,
                                                   mp->d_wgll_cube.cuda,
                                                   mp->NSPEC_CRUST_MANTLE_STRAIN_ONLY);
+#endif
     }
   }
 #endif
@@ -364,11 +402,11 @@ skipexec:
 
 extern EXTERN_LANG
 void FC_FUNC_ (compute_forces_crust_mantle_gpu,
-               COMPUTE_FORCES_CRUST_MANTLE_OCL) (long *Mesh_pointer_f,
+               COMPUTE_FORCES_CRUST_MANTLE_GPU) (long *Mesh_pointer_f,
                                                  int *iphase,
                                                  int *FORWARD_OR_ADJOINT_f) {
 
-  TRACE ("compute_forces_crust_mantle_ocl");
+  TRACE ("compute_forces_crust_mantle_gpu");
 
   // get Mesh from fortran integer wrapper
   Mesh *mp = (Mesh *) *Mesh_pointer_f;

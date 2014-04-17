@@ -515,7 +515,7 @@
     endif
 
     ! initializes GPU and outputs info to files for all processes
-    call initialize_cuda_device(myrank,ncuda_devices)
+    call initialize_gpu_device(GPU_RUNTIME, GPU_PLATFORM, GPU_DEVICE, myrank,ncuda_devices)
   endif
 
   ! collects min/max of local devices found for statistics

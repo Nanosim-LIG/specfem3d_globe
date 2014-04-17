@@ -148,6 +148,13 @@ boast_kernels :
 ### compilation
 ###
 
+ifeq ($(CUDA5),yes)
+
+$(cuda_specfem3D_DEVICE_OBJ): $(cuda_OBJECTS)
+	${NVCCLINK} -o $(cuda_specfem3D_DEVICE_OBJ) $(cuda_OBJECTS)
+
+endif
+
 $O/%.cuda-ocl.o: $O/%.cuda.o
 	cd $O && cp $(shell basename $<) $(shell basename $@)
 
@@ -157,3 +164,5 @@ $O/%.ocl.o: $S/%.c ${SETUP}/config.h $S/mesh_constants_gpu.h $S/prepare_constant
 $O/%.cuda.o: $S/%.c ${SETUP}/config.h $S/mesh_constants_gpu.h $S/prepare_constants_gpu.h
 	$(NVCC) -c $< -o $@ $(NVCC_CFLAGS) -I${SETUP} -I$(BOAST_DIR) $(SELECTOR_CFLAG)
 
+print-%:
+	@echo '$*=$($*)'

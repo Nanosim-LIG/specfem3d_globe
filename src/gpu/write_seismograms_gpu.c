@@ -81,24 +81,40 @@ void write_seismograms_transfer_from_device (Mesh *mp,
 #endif
 #if USE_CUDA
   if (run_cuda) {
+    // waits for previous copy call to be finished
+    if( GPU_ASYNC_COPY ){
+      cudaStreamSynchronize(mp->copy_stream);
+    }
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(blocksize,1,1);
 
     // prepare field transfer array on device
-    write_seismograms_transfer_from_device_kernel<<<grid,threads>>>(mp->d_number_receiver_global.cuda,
-                                                                    d_ispec_selected->cuda,
-                                                                    mp->d_ibool_crust_mantle.cuda,
-                                                                    mp->d_station_seismo_field.cuda,
-                                                                    d_field->cuda,
-                                                                    mp->nrec_local);
+    write_seismograms_transfer_from_device_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_number_receiver_global.cuda,
+                                                                                         d_ispec_selected->cuda,
+                                                                                         mp->d_ibool_crust_mantle.cuda,
+                                                                                         mp->d_station_seismo_field.cuda,
+                                                                                         d_field->cuda,
+                                                                                         mp->nrec_local);
 
-    // copies array to CPU
-    cudaMemcpy(mp->h_station_seismo_field,mp->d_station_seismo_field.cuda,
-               3*NGLL3*(mp->nrec_local)*sizeof(realw),cudaMemcpyDeviceToHost);
+ // copies array to CPU
+  if( GPU_ASYNC_COPY ){
+    // waits for previous compute call to be finished
+    cudaStreamSynchronize(mp->compute_stream);
 
+    // asynchronuous copy
+    // note: we need to update the host array in a subsequent call to transfer_seismo_from_device_async() routine
+    cudaMemcpyAsync(mp->h_station_seismo_field,mp->d_station_seismo_field.cuda,
+                    3*NGLL3*(mp->nrec_local)*sizeof(realw),
+                    cudaMemcpyDeviceToHost,mp->copy_stream);
+  }else{
+    // synchronuous copy
+    print_CUDA_error_if_any(cudaMemcpy(mp->h_station_seismo_field,mp->d_station_seismo_field.cuda,
+                                       3*NGLL3*(mp->nrec_local)*sizeof(realw),cudaMemcpyDeviceToHost),77000);
+
+	}
   }
 #endif
-
+if(!GPU_ASYNC_COPY ){
   for (irec_local = 0; irec_local < mp->nrec_local; irec_local++) {
     irec = number_receiver_global[irec_local] - 1;
     ispec = h_ispec_selected[irec] - 1;
@@ -110,7 +126,7 @@ void write_seismograms_transfer_from_device (Mesh *mp,
       h_field[2+3*iglob] = mp->h_station_seismo_field[2+3*i+irec_local*NGLL3*3];
     }
   }
-
+}
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
   exit_on_gpu_error ("write_seismograms_transfer_from_device");
 #endif
@@ -118,7 +134,7 @@ void write_seismograms_transfer_from_device (Mesh *mp,
 
 /*----------------------------------------------------------------------------------------------- */
 
-void write_seismograms_transfer_scalar_from_device (Mesh *mp,
+void write_seismograms_transfer_strain_from_device (Mesh *mp,
                                                     gpu_realw_mem *d_field,
                                                     realw *h_field,
                                                     int *number_receiver_global,
@@ -126,7 +142,7 @@ void write_seismograms_transfer_scalar_from_device (Mesh *mp,
                                                     int *h_ispec_selected,
                                                     int *ibool) {
 
-  TRACE ("write_seismograms_transfer_scalar_from_device");
+  TRACE ("write_seismograms_transfer_strain_from_device");
 
   int irec_local, irec;
   int ispec, iglob, i;
@@ -167,35 +183,37 @@ void write_seismograms_transfer_scalar_from_device (Mesh *mp,
                                   mp->h_station_seismo_field, 0, NULL, NULL));
   }
 #endif
-#if USE_CUDA
+#ifdef USE_CUDA
   if (run_cuda) {
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(blocksize,1,1);
 
     // prepare field transfer array on device
-    write_seismograms_transfer_scalar_from_device_kernel<<<grid,threads>>>(mp->d_number_receiver_global.cuda,
-                                                                           d_ispec_selected->cuda,
-                                                                           mp->d_ibool_crust_mantle.cuda,
-                                                                           mp->d_station_seismo_field.cuda,
-                                                                           d_field->cuda,
-                                                                           mp->nrec_local);
+    write_seismograms_transfer_scalar_from_device_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_number_receiver_global.cuda,
+                                                                                                d_ispec_selected->cuda,
+                                                                                                mp->d_ibool_crust_mantle.cuda,
+                                                                                                mp->d_station_strain_field.cuda,
+                                                                                                d_field->cuda,
+                                                                                                mp->nrec_local);
 
     // copies array to CPU
-    cudaMemcpy(mp->h_station_seismo_field,mp->d_station_seismo_field.cuda,
-               NGLL3*(mp->nrec_local)*sizeof(realw),cudaMemcpyDeviceToHost);
+    // synchronuous copy
+    print_CUDA_error_if_any(cudaMemcpy(mp->h_station_strain_field,mp->d_station_strain_field.cuda,
+                                       NGLL3*(mp->nrec_local)*sizeof(realw),cudaMemcpyDeviceToHost),77001);
   }
 #endif
+  // updates host array
   for (irec_local = 0; irec_local < mp->nrec_local; irec_local++) {
     irec = number_receiver_global[irec_local] - 1;
     ispec = h_ispec_selected[irec] - 1;
     for (i = 0; i < NGLL3; i++) {
       iglob = ibool[i+NGLL3*ispec] - 1;
-      h_field[iglob] = mp->h_station_seismo_field[i+irec_local*NGLL3];
+      h_field[iglob] = mp->h_station_strain_field[i+irec_local*NGLL3];
     }
   }
 
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("write_seismograms_transfer_scalar_from_device");
+  exit_on_gpu_error ("write_seismograms_transfer_strain_from_device");
 #endif
 }
 
@@ -203,7 +221,7 @@ void write_seismograms_transfer_scalar_from_device (Mesh *mp,
 
 extern EXTERN_LANG
 void FC_FUNC_ (write_seismograms_transfer_gpu,
-               WRITE_SEISMOGRAMS_TRANSFER_OCL) (long *Mesh_pointer_f,
+               WRITE_SEISMOGRAMS_TRANSFER_GPU) (long *Mesh_pointer_f,
                                                 realw *displ,
                                                 realw *b_displ,
                                                 realw *eps_trace_over_3,
@@ -216,16 +234,15 @@ void FC_FUNC_ (write_seismograms_transfer_gpu,
                                                 int *ispec_selected_rec,
                                                 int *ispec_selected_source,
                                                 int *ibool) {
-  TRACE ("write_seismograms_transfer_ocl");
+  TRACE ("write_seismograms_transfer_gpu");
 
   //get Mesh from fortran integer wrapper
   Mesh *mp = (Mesh *) *Mesh_pointer_f;
 
   //checks if anything to do
+  if (mp->nrec_local == 0) return;
 
-  if (mp->nrec_local == 0)
-    return;
-
+  // transfers displacement values in receiver elements from GPU to CPU
   switch (mp->simulation_type) {
   case 1:
     write_seismograms_transfer_from_device (mp,
@@ -246,42 +263,42 @@ void FC_FUNC_ (write_seismograms_transfer_gpu,
                                             ispec_selected_source,
                                             ibool);
 
-    write_seismograms_transfer_scalar_from_device (mp,
+    write_seismograms_transfer_strain_from_device (mp,
                                                    &mp->d_eps_trace_over_3_crust_mantle,
                                                    eps_trace_over_3,
                                                    number_receiver_global,
                                                    &mp->d_ispec_selected_source,
                                                    ispec_selected_source,
                                                    ibool);
-    write_seismograms_transfer_scalar_from_device (mp,
+    write_seismograms_transfer_strain_from_device (mp,
                                                    &mp->d_epsilondev_xx_crust_mantle,
                                                    epsilondev_xx,
                                                    number_receiver_global,
                                                    &mp->d_ispec_selected_source,
                                                    ispec_selected_source,
                                                    ibool);
-    write_seismograms_transfer_scalar_from_device (mp,
+    write_seismograms_transfer_strain_from_device (mp,
                                                    &mp->d_epsilondev_yy_crust_mantle,
                                                    epsilondev_yy,
                                                    number_receiver_global,
                                                    &mp->d_ispec_selected_source,
                                                    ispec_selected_source,
                                                    ibool);
-    write_seismograms_transfer_scalar_from_device (mp,
+    write_seismograms_transfer_strain_from_device (mp,
                                                    &mp->d_epsilondev_xy_crust_mantle,
                                                    epsilondev_xy,
                                                    number_receiver_global,
                                                    &mp->d_ispec_selected_source,
                                                    ispec_selected_source,
                                                    ibool);
-    write_seismograms_transfer_scalar_from_device (mp,
+    write_seismograms_transfer_strain_from_device (mp,
                                                    &mp->d_epsilondev_xz_crust_mantle,
                                                    epsilondev_xz,
                                                    number_receiver_global,
                                                    &mp->d_ispec_selected_source,
                                                    ispec_selected_source,
                                                    ibool);
-    write_seismograms_transfer_scalar_from_device (mp,
+    write_seismograms_transfer_strain_from_device (mp,
                                                    &mp->d_epsilondev_yz_crust_mantle,
                                                    epsilondev_yz,
                                                    number_receiver_global,
@@ -300,4 +317,76 @@ void FC_FUNC_ (write_seismograms_transfer_gpu,
                                             ibool);
     break;
   }
+}
+
+/* ----------------------------------------------------------------------------------------------- */
+
+// data transfer to CPU host
+
+/* ----------------------------------------------------------------------------------------------- */
+
+extern "C"
+void FC_FUNC_(transfer_seismo_from_device_async,
+              TRANSFER_SEISMO_FROM_DEVICE_ASYNC)(long* Mesh_pointer_f,
+                                                 realw* displ,
+                                                 realw* b_displ,
+                                                 int* number_receiver_global,
+                                                 int* ispec_selected_rec,
+                                                 int* ispec_selected_source,
+                                                 int* ibool) {
+
+  TRACE("transfer_seismo_from_device_async");
+
+  Mesh* mp = (Mesh*)(*Mesh_pointer_f); // get Mesh from fortran integer wrapper
+
+  int irec,ispec,iglob,i;
+  realw* h_field;
+  int* h_ispec_selected;
+
+  // checks if anything to do
+  if( mp->nrec_local == 0 ) return;
+
+  // checks async-memcpy
+  if( GPU_ASYNC_COPY == 0 ){
+    exit_on_error("transfer_seismo_from_device_async must be called with GPU_ASYNC_COPY == 1, please check mesh_constants_cuda.h");
+  }
+
+  // waits for previous copy call to be finished
+  cudaStreamSynchronize(mp->copy_stream);
+
+  // transfers displacements
+  // select target array on host
+  switch( mp->simulation_type ){
+    case 1:
+      // forward simulation
+      h_field = displ;
+      h_ispec_selected = ispec_selected_rec;
+      break;
+
+    case 2:
+      // adjoint simulation
+      h_field = displ;
+      h_ispec_selected = ispec_selected_source;
+      break;
+
+    case 3:
+      // kernel simulation
+      h_field = b_displ;
+      h_ispec_selected = ispec_selected_rec;
+      break;
+  }
+
+  // updates corresponding array on CPU
+  for(int irec_local = 0 ; irec_local < mp->nrec_local; irec_local++) {
+    irec = number_receiver_global[irec_local] - 1;
+    ispec = h_ispec_selected[irec] - 1;
+
+    for(i = 0; i < NGLL3; i++) {
+      iglob = ibool[i+NGLL3*ispec] - 1;
+      h_field[0+3*iglob] = mp->h_station_seismo_field[0+3*i+irec_local*NGLL3*3];
+      h_field[1+3*iglob] = mp->h_station_seismo_field[1+3*i+irec_local*NGLL3*3];
+      h_field[2+3*iglob] = mp->h_station_seismo_field[2+3*i+irec_local*NGLL3*3];
+    }
+  }
+
 }

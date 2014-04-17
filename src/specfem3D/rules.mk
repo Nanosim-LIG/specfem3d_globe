@@ -152,45 +152,17 @@ specfem3D_SHARED_OBJECTS = \
 	$(EMPTY_MACRO)
 
 ###
-### CUDA
+### GPU
 ###
 
-cuda_specfem3D_OBJECTS = \
-	$O/assemble_MPI_scalar_cuda.cuda.o \
-	$O/assemble_MPI_vector_cuda.cuda.o \
-	$O/check_fields_cuda.cuda.o \
-	$O/compute_add_sources_elastic_cuda.cuda.o \
-	$O/compute_coupling_cuda.cuda.o \
-	$O/compute_forces_crust_mantle_cuda.cuda.o \
-	$O/compute_forces_inner_core_cuda.cuda.o \
-	$O/compute_forces_outer_core_cuda.cuda.o \
-	$O/compute_kernels_cuda.cuda.o \
-	$O/compute_stacey_acoustic_cuda.cuda.o \
-	$O/compute_stacey_elastic_cuda.cuda.o \
-	$O/initialize_cuda.cuda.o \
-	$O/noise_tomography_cuda.cuda.o \
-	$O/prepare_mesh_constants_cuda.cuda.o \
-	$O/transfer_fields_cuda.cuda.o \
-	$O/update_displacement_cuda.cuda.o \
-	$O/write_seismograms_cuda.cuda.o \
-	$O/save_and_compare_cpu_vs_gpu.cudacc.o \
+gpu_STUBS = \
+	$O/specfem3D_gpu___gpu___method_stubs.o \
 	$(EMPTY_MACRO)
 
-cuda_specfem3D_STUBS = \
-	$O/specfem3D_gpu_cuda_method_stubs.cudacc.o \
-	$(EMPTY_MACRO)
-
-cuda_specfem3D_DEVICE_OBJ = \
-	$O/cuda_device_obj.o \
-	$(EMPTY_MACRO)
-
-ifeq ($(CUDA),yes)
-specfem3D_OBJECTS += $(cuda_specfem3D_OBJECTS)
-ifeq ($(CUDA5),yes)
-specfem3D_OBJECTS += $(cuda_specfem3D_DEVICE_OBJ)
-endif
+ifdef NO_GPU  
+specfem3D_OBJECTS += $(gpu_STUBS)
 else
-specfem3D_OBJECTS += $(cuda_specfem3D_STUBS)
+specfem3D_OBJECTS += $(gpu_OBJECTS)
 endif
 
 ###
@@ -260,44 +232,23 @@ endif
 #### rules for executables
 ####
 
-ifeq ($(CUDA),yes)
-## cuda version
+specfem3D_ALL_OBJECTS = $(specfem3D_OBJECTS) $(specfem3D_SHARED_OBJECTS)
 
-ifeq ($(CUDA5),yes)
-
-## cuda 5 version
-${E}/xspecfem3D: $(specfem3D_OBJECTS) $(specfem3D_SHARED_OBJECTS)
+${E}/xspecfem3D: $(specfem3D_ALL_OBJECTS)
 	@echo ""
-	@echo "building xspecfem3D with CUDA 5 support"
+	@echo "building xspecfem3D $(BUILD_VERSION_TXT)"
 	@echo ""
-	${FCLINK} -o ${E}/xspecfem3D $(specfem3D_OBJECTS) $(specfem3D_SHARED_OBJECTS) $(LDFLAGS) $(MPILIBS) $(CUDA_LINK) $(LIBS)
-	@echo ""
-
-else
-
-## cuda 4 version
-${E}/xspecfem3D: $(specfem3D_OBJECTS) $(specfem3D_SHARED_OBJECTS)
-	@echo ""
-	@echo "building xspecfem3D with CUDA 4 support"
-	@echo ""
-	${FCLINK} -o ${E}/xspecfem3D $(specfem3D_OBJECTS) $(specfem3D_SHARED_OBJECTS) $(LDFLAGS) $(MPILIBS) $(CUDA_LINK) $(LIBS)
-	@echo ""
-
+ifeq ($(HAS_GPU),yes)
+	@make $(gpu_OBJECTS)
 endif
-
-else
-
-## non-cuda version
-${E}/xspecfem3D: $(specfem3D_OBJECTS) $(specfem3D_SHARED_OBJECTS)
-	@echo ""
-	@echo "building xspecfem3D without CUDA support"
-	@echo ""
+ifeq ($(CUDA),yes)
+	${FCLINK} -o ${E}/xspecfem3D $(specfem3D_ALL_OBJECTS) $(LDFLAGS) $(MPILIBS) $(CUDA_LINK) $(LIBS)	
+else # non cuda (non-gpu or opencl)
 ## use MPI here
 ## DK DK add OpenMP compiler flag here if needed
-#	${MPIFCCOMPILE_CHECK} -qsmp=omp -o ${E}/xspecfem3D $(specfem3D_OBJECTS) $(specfem3D_SHARED_OBJECTS) $(LDFLAGS) $(MPILIBS) $(LIBS)
-	${MPIFCCOMPILE_CHECK} -o ${E}/xspecfem3D $(specfem3D_OBJECTS) $(specfem3D_SHARED_OBJECTS) $(LDFLAGS) $(MPILIBS) $(LIBS)
+#	${MPIFCCOMPILE_CHECK} -qsmp=omp -o ${E}/xspecfem3D $(specfem3D_ALL_OBJECTS) $(LDFLAGS) $(MPILIBS) $(LIBS)
+	${MPIFCCOMPILE_CHECK} -o ${E}/xspecfem3D $(specfem3D_ALL_OBJECTS) $(LDFLAGS) $(MPILIBS) $(LIBS)
 	@echo ""
-
 endif
 
 #######################################
@@ -350,13 +301,6 @@ $O/%.cc.o: $S/%.c ${SETUP}/config.h
 	${CC} -c $(CPPFLAGS) $(CFLAGS) -o $@ $< 
 
 ###
-### CUDA 5 only
-###
-
-$(cuda_specfem3D_DEVICE_OBJ): $(cuda_OBJECTS)
-	${NVCCLINK} -o $(cuda_specfem3D_DEVICE_OBJ) $(cuda_OBJECTS)
-
-###
 ### VTK compilation
 ###
 
@@ -366,3 +310,19 @@ $O/%.visualcc.o: $S/%.cpp ${SETUP}/config.h
 $O/%.visualc.o: $S/%.c ${SETUP}/config.h
 	${CC} -c $(CPPFLAGS) $(MPI_INCLUDES) -o $@ $<
 
+#######################################
+
+prepare-example:
+	${S_TOP}/run_example.sh ${S_TOP} prepare
+
+build-example:
+	${S_TOP}/run_example.sh ${S_TOP} build
+
+run-example:
+	${S_TOP}/run_example.sh ${S_TOP} run
+
+diff-example:
+	${S_TOP}/diff_example.sh ${S_TOP}
+
+clean-example:
+	rm -rf DATABASES_MPI OUTPUT_FILES DATA .mesh_created

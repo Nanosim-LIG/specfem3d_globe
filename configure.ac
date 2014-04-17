@@ -55,6 +55,12 @@ AC_ARG_WITH([cuda],
 AM_CONDITIONAL([COND_CUDA], [test x"$want_cuda" != xno])
 AM_CONDITIONAL([COND_CUDA5], [test x"$want_cuda" = xcuda5])
 
+AC_ARG_WITH([opencl],
+ [AC_HELP_STRING([--with-opencl], [build opencl GPU enabled version @<:@default=no@:>@])],
+    [want_ocl="$withval"],
+    [want_ocl=no])
+AM_CONDITIONAL([COND_OCL], [test "$want_ocl" != no])
+
 ###
 ### VTK
 ###

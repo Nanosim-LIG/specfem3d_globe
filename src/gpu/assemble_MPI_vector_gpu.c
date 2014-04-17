@@ -28,15 +28,21 @@
 
 #include "mesh_constants_gpu.h"
 
+/* ----------------------------------------------------------------------------------------------- */
+// MPI transfer
+/* ----------------------------------------------------------------------------------------------- */
+
+
 // prepares and transfers the inter-element edge-nodes to the host to be MPI'd
 // (elements on boundary)
+
 extern EXTERN_LANG
-void FC_FUNC_ (transfer_boun_accel_from_device,
-               TRANSFER_BOUN_ACCEL_FROM_DEVICE) (long *Mesh_pointer_f,
+void FC_FUNC_(transfer_boun_from_device,
+              TRANSFER_BOUN_FROM_DEVICE)(long *Mesh_pointer_f,
                                                  realw *send_accel_buffer,
                                                  int *IREGION,
                                                  int *FORWARD_OR_ADJOINT) {
-  TRACE ("transfer_boun_accel_from_device");
+  TRACE("transfer_boun_from_device");
 
   int blocksize, size_padded;
   int num_blocks_x, num_blocks_y;
@@ -48,13 +54,16 @@ void FC_FUNC_ (transfer_boun_accel_from_device,
 #ifdef USE_CUDA
   dim3 grid,threads;
 #endif
+  int size_mpi_buffer;
 
   //get mesh pointer out of fortran integer container
   Mesh *mp = (Mesh *) *Mesh_pointer_f;
 
   // crust/mantle region
   if (*IREGION == IREGION_CRUST_MANTLE) {
-    if (mp->num_interfaces_crust_mantle > 0) {
+    size_mpi_buffer = NDIM*mp->max_nibool_interfaces_cm*mp->num_interfaces_crust_mantle;
+
+    if( size_mpi_buffer > 0 ){
 
       blocksize = BLOCKSIZE_TRANSFER;
       size_padded = ((int) ceil (((double) mp->max_nibool_interfaces_cm) / ((double) blocksize))) * blocksize;
@@ -110,7 +119,7 @@ void FC_FUNC_ (transfer_boun_accel_from_device,
         threads = dim3(blocksize,1,1);
 
         if(*FORWARD_OR_ADJOINT == 1) {
-          prepare_boundary_accel_on_device<<<grid,threads>>>(mp->d_accel_crust_mantle.cuda,
+          prepare_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_accel_crust_mantle.cuda,
                                                              mp->d_send_accel_buffer_crust_mantle.cuda,
                                                              mp->num_interfaces_crust_mantle,
                                                              mp->max_nibool_interfaces_cm,
@@ -118,26 +127,40 @@ void FC_FUNC_ (transfer_boun_accel_from_device,
                                                              mp->d_ibool_interfaces_crust_mantle.cuda);
 
           // copies buffer to CPU
-          print_CUDA_error_if_any(cudaMemcpy(send_accel_buffer,mp->d_send_accel_buffer_crust_mantle.cuda,
-                                             NDIM*mp->max_nibool_interfaces_cm*mp->num_interfaces_crust_mantle*sizeof(realw),
-                                             cudaMemcpyDeviceToHost),41000);
-
-        }
-        else if(*FORWARD_OR_ADJOINT == 3) {
+          if( GPU_ASYNC_COPY ){
+            // waits until kernel is finished before starting async memcpy
+            cudaStreamSynchronize(mp->compute_stream);
+            // copies buffer to CPU
+            cudaMemcpyAsync(mp->h_send_accel_buffer_cm,mp->d_send_accel_buffer_crust_mantle.cuda,size_mpi_buffer*sizeof(realw),
+                            cudaMemcpyDeviceToHost,mp->copy_stream);
+          }else{
+            // synchronuous copy
+            print_CUDA_error_if_any(cudaMemcpy(send_accel_buffer,mp->d_send_accel_buffer_crust_mantle.cuda,size_mpi_buffer*sizeof(realw),
+                                               cudaMemcpyDeviceToHost),41000);
+          }
+        } else if(*FORWARD_OR_ADJOINT == 3) {
           // debug
           DEBUG_BACKWARD_ASSEMBLY();
 
-          prepare_boundary_accel_on_device<<<grid,threads>>>(mp->d_b_accel_crust_mantle.cuda,
+          prepare_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_accel_crust_mantle.cuda,
                                                              mp->d_b_send_accel_buffer_crust_mantle.cuda,
                                                              mp->num_interfaces_crust_mantle,
                                                              mp->max_nibool_interfaces_cm,
                                                              mp->d_nibool_interfaces_crust_mantle.cuda,
                                                              mp->d_ibool_interfaces_crust_mantle.cuda);
           // copies buffer to CPU
-          print_CUDA_error_if_any(cudaMemcpy(send_accel_buffer,mp->d_b_send_accel_buffer_crust_mantle.cuda,
-                                             NDIM*mp->max_nibool_interfaces_cm*mp->num_interfaces_crust_mantle*sizeof(realw),
-                                             cudaMemcpyDeviceToHost),41001);
-
+          if (GPU_ASYNC_COPY) {
+            // waits until kernel is finished before starting async memcpy
+            cudaStreamSynchronize(mp->compute_stream);
+            // copies buffer to CPU
+            cudaMemcpyAsync(mp->h_b_send_accel_buffer_cm,mp->d_b_send_accel_buffer_crust_mantle.cuda,size_mpi_buffer*sizeof(realw),
+                            cudaMemcpyDeviceToHost,mp->copy_stream);
+          } else {
+            // synchronuous copy
+            print_CUDA_error_if_any(cudaMemcpy(send_accel_buffer,mp->d_b_send_accel_buffer_crust_mantle.cuda,size_mpi_buffer*sizeof(realw),
+                                               cudaMemcpyDeviceToHost),41001);
+            
+          }
         }
       }
 #endif
@@ -146,7 +169,9 @@ void FC_FUNC_ (transfer_boun_accel_from_device,
 
   // inner core region
   if (*IREGION == IREGION_INNER_CORE) {
-    if (mp->num_interfaces_inner_core > 0) {
+    size_mpi_buffer = NDIM*mp->max_nibool_interfaces_ic*mp->num_interfaces_inner_core;
+
+    if( size_mpi_buffer > 0 ){
 
       blocksize = BLOCKSIZE_TRANSFER;
       size_padded = ((int) ceil (((double) mp->max_nibool_interfaces_ic) / ((double) blocksize))) * blocksize;
@@ -206,41 +231,55 @@ void FC_FUNC_ (transfer_boun_accel_from_device,
         threads = dim3(blocksize,1,1);
 
         if(*FORWARD_OR_ADJOINT == 1) {
-          prepare_boundary_accel_on_device<<<grid,threads>>>(mp->d_accel_inner_core.cuda,
-                                                             mp->d_send_accel_buffer_inner_core.cuda,
-                                                             mp->num_interfaces_inner_core,
-                                                             mp->max_nibool_interfaces_ic,
-                                                             mp->d_nibool_interfaces_inner_core.cuda,
-                                                             mp->d_ibool_interfaces_inner_core.cuda);
+          prepare_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_accel_inner_core.cuda,
+                                                                                  mp->d_send_accel_buffer_inner_core.cuda,
+                                                                                  mp->num_interfaces_inner_core,
+                                                                                  mp->max_nibool_interfaces_ic,
+                                                                                  mp->d_nibool_interfaces_inner_core.cuda,
+                                                                                  mp->d_ibool_interfaces_inner_core.cuda);
 
           // copies buffer to CPU
-          print_CUDA_error_if_any(cudaMemcpy(send_accel_buffer,mp->d_send_accel_buffer_inner_core.cuda,
-                                             NDIM*mp->max_nibool_interfaces_ic*mp->num_interfaces_inner_core*sizeof(realw),
-                                             cudaMemcpyDeviceToHost),41000);
-
-        }
-        else if(*FORWARD_OR_ADJOINT == 3) {
+          if( GPU_ASYNC_COPY ){
+            // waits until kernel is finished before starting async memcpy
+            cudaStreamSynchronize(mp->compute_stream);
+            // copies buffer to CPU
+            cudaMemcpyAsync(mp->h_send_accel_buffer_ic,mp->d_send_accel_buffer_inner_core.cuda,size_mpi_buffer*sizeof(realw),
+                            cudaMemcpyDeviceToHost,mp->copy_stream);
+          }else{
+            // synchronuous copy
+            print_CUDA_error_if_any(cudaMemcpy(send_accel_buffer,mp->d_send_accel_buffer_inner_core.cuda,size_mpi_buffer*sizeof(realw),
+                                               cudaMemcpyDeviceToHost),41000);
+            
+          }
+        } else if (*FORWARD_OR_ADJOINT == 3) {
           // debug
           DEBUG_BACKWARD_ASSEMBLY();
-
-          prepare_boundary_accel_on_device<<<grid,threads>>>(mp->d_b_accel_inner_core.cuda,
-                                                             mp->d_b_send_accel_buffer_inner_core.cuda,
-                                                             mp->num_interfaces_inner_core,
-                                                             mp->max_nibool_interfaces_ic,
-                                                             mp->d_nibool_interfaces_inner_core.cuda,
-                                                             mp->d_ibool_interfaces_inner_core.cuda);
+          
+          prepare_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_accel_inner_core.cuda,
+                                                                                  mp->d_b_send_accel_buffer_inner_core.cuda,
+                                                                                  mp->num_interfaces_inner_core,
+                                                                                  mp->max_nibool_interfaces_ic,
+                                                                                  mp->d_nibool_interfaces_inner_core.cuda,
+                                                                                  mp->d_ibool_interfaces_inner_core.cuda);
           // copies buffer to CPU
-          print_CUDA_error_if_any(cudaMemcpy(send_accel_buffer,mp->d_b_send_accel_buffer_inner_core.cuda,
-                                             NDIM*mp->max_nibool_interfaces_ic*mp->num_interfaces_inner_core*sizeof(realw),
-                                             cudaMemcpyDeviceToHost),41001);
+          if( GPU_ASYNC_COPY ){
+            // waits until kernel is finished before starting async memcpy
+            cudaStreamSynchronize(mp->compute_stream);
+            // copies buffer to CPU
+            cudaMemcpyAsync(mp->h_b_send_accel_buffer_ic,mp->d_b_send_accel_buffer_inner_core.cuda,size_mpi_buffer*sizeof(realw),
+                            cudaMemcpyDeviceToHost,mp->copy_stream);
+          }else{
+            // synchronuous copy
+            print_CUDA_error_if_any(cudaMemcpy(send_accel_buffer,mp->d_b_send_accel_buffer_inner_core.cuda,size_mpi_buffer*sizeof(realw),
+                                               cudaMemcpyDeviceToHost),41001);
+          }
         }
       }
 #endif
     }
   }
-
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
-  exit_on_gpu_error ("transfer_boun_accel_from_device");
+  exit_on_gpu_error ("transfer_boun_from_device");
 #endif
 }
 
@@ -255,7 +294,8 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
 
   int blocksize, size_padded;
   int num_blocks_x, num_blocks_y;
-
+  int size_mpi_buffer;
+  
 #ifdef USE_OPENCL
   size_t global_work_size[2];
   size_t local_work_size[2];
@@ -268,7 +308,9 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
 
   // crust/mantle region
   if (*IREGION == IREGION_CRUST_MANTLE) {
-    if (mp->num_interfaces_crust_mantle > 0) {
+    size_mpi_buffer = NDIM*(mp->max_nibool_interfaces_cm)*(mp->num_interfaces_crust_mantle);
+
+    if( size_mpi_buffer > 0 ){
       // assembles values
       blocksize = BLOCKSIZE_TRANSFER;
       size_padded = ((int) ceil (((double) mp->max_nibool_interfaces_cm) / ((double) blocksize))) * blocksize;
@@ -327,13 +369,19 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
         threads = dim3(blocksize,1,1);
 
         if(*FORWARD_OR_ADJOINT == 1) {
+        // asynchronuous copy
+        if( GPU_ASYNC_COPY ){
+          // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
+          cudaStreamSynchronize(mp->copy_stream);
+        }else{
+          // (cudaMemcpy implicitly synchronizes all other cuda operations)
           // copies vector buffer values to GPU
-          print_CUDA_error_if_any(cudaMemcpy(mp->d_send_accel_buffer_crust_mantle.cuda, buffer_recv_vector,
-                                             NDIM*(mp->max_nibool_interfaces_cm)*(mp->num_interfaces_crust_mantle)*sizeof(realw),
+          print_CUDA_error_if_any(cudaMemcpy(mp->d_send_accel_buffer_crust_mantle.cuda,buffer_recv_vector,size_mpi_buffer*sizeof(realw),
                                              cudaMemcpyHostToDevice),41000);
+        }
 
           //assemble forward accel
-          assemble_boundary_accel_on_device<<<grid,threads>>>(mp->d_accel_crust_mantle.cuda,
+          assemble_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_accel_crust_mantle.cuda,
                                                               mp->d_send_accel_buffer_crust_mantle.cuda,
                                                               mp->num_interfaces_crust_mantle,
                                                               mp->max_nibool_interfaces_cm,
@@ -344,13 +392,20 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
           // debug
           DEBUG_BACKWARD_ASSEMBLY();
 
+        // asynchronuous copy
+        if( GPU_ASYNC_COPY ){
+          // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
+          cudaStreamSynchronize(mp->copy_stream);
+        }else{
+          // (cudaMemcpy implicitly synchronizes all other cuda operations)
           // copies vector buffer values to GPU
           print_CUDA_error_if_any(cudaMemcpy(mp->d_b_send_accel_buffer_crust_mantle.cuda, buffer_recv_vector,
                                              NDIM*(mp->max_nibool_interfaces_cm)*(mp->num_interfaces_crust_mantle)*sizeof(realw),
                                              cudaMemcpyHostToDevice),41000);
+        }
 
           //assemble adjoint accel
-          assemble_boundary_accel_on_device<<<grid,threads>>>(mp->d_b_accel_crust_mantle.cuda,
+          assemble_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_accel_crust_mantle.cuda,
                                                               mp->d_b_send_accel_buffer_crust_mantle.cuda,
                                                               mp->num_interfaces_crust_mantle,
                                                               mp->max_nibool_interfaces_cm,
@@ -368,7 +423,9 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
 
   // inner core region
   if (*IREGION == IREGION_INNER_CORE) {
-    if (mp->num_interfaces_inner_core > 0) {
+    size_mpi_buffer = NDIM*(mp->max_nibool_interfaces_ic)*(mp->num_interfaces_inner_core);
+
+    if( size_mpi_buffer > 0 ){
       // assembles values
       blocksize = BLOCKSIZE_TRANSFER;
       size_padded = ((int) ceil (((double) mp->max_nibool_interfaces_ic) / ((double) blocksize))) * blocksize;
@@ -428,13 +485,18 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
         threads = dim3(blocksize,1,1);
 
         if(*FORWARD_OR_ADJOINT == 1) {
+        if( GPU_ASYNC_COPY ){
+          // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
+          cudaStreamSynchronize(mp->copy_stream);
+        }else{
+          // (cudaMemcpy implicitly synchronizes all other cuda operations)
           // copies buffer values to GPU
-          print_CUDA_error_if_any(cudaMemcpy(mp->d_send_accel_buffer_inner_core.cuda, buffer_recv_vector,
-                                             NDIM*(mp->max_nibool_interfaces_ic)*(mp->num_interfaces_inner_core)*sizeof(realw),
+          print_CUDA_error_if_any(cudaMemcpy(mp->d_send_accel_buffer_inner_core.cuda,buffer_recv_vector,size_mpi_buffer*sizeof(realw),
                                              cudaMemcpyHostToDevice),41001);
+        }
 
           //assemble forward accel
-          assemble_boundary_accel_on_device<<<grid,threads>>>(mp->d_accel_inner_core.cuda,
+          assemble_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_accel_inner_core.cuda,
                                                               mp->d_send_accel_buffer_inner_core.cuda,
                                                               mp->num_interfaces_inner_core,
                                                               mp->max_nibool_interfaces_ic,
@@ -445,13 +507,18 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
           // debug
           DEBUG_BACKWARD_ASSEMBLY();
 
+        if( GPU_ASYNC_COPY ){
+          // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
+          cudaStreamSynchronize(mp->copy_stream);
+        }else{
+          // (cudaMemcpy implicitly synchronizes all other cuda operations)
           // copies buffer values to GPU
-          print_CUDA_error_if_any(cudaMemcpy(mp->d_b_send_accel_buffer_inner_core.cuda, buffer_recv_vector,
-                                             NDIM*(mp->max_nibool_interfaces_ic)*(mp->num_interfaces_inner_core)*sizeof(realw),
+          print_CUDA_error_if_any(cudaMemcpy(mp->d_b_send_accel_buffer_inner_core.cuda,buffer_recv_vector,size_mpi_buffer*sizeof(realw),
                                              cudaMemcpyHostToDevice),41001);
+        }
 
           //assemble adjoint accel
-          assemble_boundary_accel_on_device<<<grid,threads>>>(mp->d_b_accel_inner_core.cuda,
+          assemble_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_accel_inner_core.cuda,
                                                               mp->d_b_send_accel_buffer_inner_core.cuda,
                                                               mp->num_interfaces_inner_core,
                                                               mp->max_nibool_interfaces_ic,
