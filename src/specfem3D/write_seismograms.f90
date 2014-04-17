@@ -35,7 +35,7 @@
   ! note: this routine gets called if( nrec_local > 0 .or. ( WRITE_SEISMOGRAMS_BY_MASTER .and. myrank == 0 ) )
 
   ! update position in seismograms
-  seismo_current = seismo_current + 1
+  seismo_gpurrent = seismo_gpurrent + 1
 
   ! compute & store the seismograms only if there is at least one receiver located in this slice
   if (nrec_local > 0) then
@@ -67,7 +67,7 @@
     select case( SIMULATION_TYPE )
     case( 1 )
       call compute_seismograms(NGLOB_CRUST_MANTLE,displ_crust_mantle, &
-                               seismo_current,seismograms)
+                               seismo_gpurrent,seismograms)
     case( 2 )
       call compute_seismograms_adjoint(displ_crust_mantle, &
                                        eps_trace_over_3_crust_mantle, &
@@ -78,13 +78,13 @@
                                        seismograms)
     case( 3 )
       call compute_seismograms(NGLOB_CRUST_MANTLE_ADJOINT,b_displ_crust_mantle, &
-                               seismo_current,seismograms)
+                               seismo_gpurrent,seismograms)
     end select
 
   endif ! nrec_local
 
   ! write the current or final seismograms
-  if(seismo_current == NTSTEP_BETWEEN_OUTPUT_SEISMOS .or. it == it_end) then
+  if(seismo_gpurrent == NTSTEP_BETWEEN_OUTPUT_SEISMOS .or. it == it_end) then
 
     ! writes out seismogram files
     if (SIMULATION_TYPE == 1 .or. SIMULATION_TYPE == 3) then
@@ -105,8 +105,8 @@
     endif
 
     ! resets current seismogram position
-    seismo_offset = seismo_offset + seismo_current
-    seismo_current = 0
+    seismo_offset = seismo_offset + seismo_gpurrent
+    seismo_gpurrent = 0
 
   endif
 
@@ -125,7 +125,7 @@
           NPROCTOT_VAL,myrank,nrec,nrec_local, &
           number_receiver_global,seismograms, &
           islice_selected_rec, &
-          seismo_offset,seismo_current, &
+          seismo_offset,seismo_gpurrent, &
           OUTPUT_SEISMOS_ASCII_TEXT, &
           OUTPUT_SEISMOS_ASDF, DT, &
           NTSTEP_BETWEEN_OUTPUT_SEISMOS, &
@@ -308,7 +308,7 @@
              ! receives info from slave processes
              call recv_singlei(irec,sender,itag)
              if(irec < 1 .or. irec > nrec) call exit_MPI(myrank,'error while receiving global receiver number')
-             call recv_cr(one_seismogram,NDIM*seismo_current,sender,itag)
+             call recv_cr(one_seismogram,NDIM*seismo_gpurrent,sender,itag)
            endif
 
            total_seismos = total_seismos + 1
@@ -342,7 +342,7 @@
           call send_singlei(irec,receiver,itag)
 
           one_seismogram(:,:) = seismograms(:,irec_local,:)
-          call send_cr(one_seismogram,NDIM*seismo_current,receiver,itag)
+          call send_cr(one_seismogram,NDIM*seismo_gpurrent,receiver,itag)
         enddo
       endif
     endif
@@ -374,7 +374,7 @@
           myrank, &
           station_name,network_name,stlat,stlon, &
           DT, &
-          seismo_current, &
+          seismo_gpurrent, &
           OUTPUT_SEISMOS_ASCII_TEXT,OUTPUT_SEISMOS_SAC_ALPHANUM,OUTPUT_SEISMOS_ASDF,&
           OUTPUT_SEISMOS_SAC_BINARY,ROTATE_SEISMOGRAMS_RT,NTSTEP_BETWEEN_OUTPUT_SEISMOS
 
@@ -461,19 +461,19 @@
       ! BS BS do the rotation of the components and put result in
       ! new variable seismogram_tmp
       if (iorientation == 4) then ! radial component
-         do isample = 1,seismo_current
+         do isample = 1,seismo_gpurrent
             seismogram_tmp(iorientation,isample) = &
                cphi * one_seismogram(1,isample) + sphi * one_seismogram(2,isample)
          enddo
       else if (iorientation == 5) then ! transverse component
-         do isample = 1,seismo_current
+         do isample = 1,seismo_gpurrent
             seismogram_tmp(iorientation,isample) = &
             -1*sphi * one_seismogram(1,isample) + cphi * one_seismogram(2,isample)
          enddo
       endif
 
     else ! keep NEZ components
-      do isample = 1,seismo_current
+      do isample = 1,seismo_gpurrent
         seismogram_tmp(iorientation,isample) = one_seismogram(iorientation,isample)
       enddo
 

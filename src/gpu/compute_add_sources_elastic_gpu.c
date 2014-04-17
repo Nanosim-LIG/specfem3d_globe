@@ -107,7 +107,14 @@ void FC_FUNC_ (compute_add_sources_gpu,
 /*----------------------------------------------------------------------------------------------- */
 // backward sources
 /*----------------------------------------------------------------------------------------------- */
-
+__global__ void compute_add_sources_adjoint_cuda_kernel(realw* accel,
+                                                        int nrec,
+                                                        realw* adj_sourcearrays,
+                                                        int* ibool,
+                                                        int* ispec_selected_rec,
+                                                        int* pre_computed_irec,
+                                                        int nadj_rec_local) {
+}
 extern EXTERN_LANG
 void FC_FUNC_ (compute_add_sources_backward_gpu,
                COMPUTE_ADD_SOURCES_BACKWARD_GPU) (long *Mesh_pointer_f,
@@ -162,11 +169,10 @@ void FC_FUNC_ (compute_add_sources_backward_gpu,
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(NGLLX,NGLLX,NGLLX);
     
-#ifdef BUG
     // copies source time function buffer values to GPU
-    print_CUDA_error_if_any(cudaMemcpy(mp->d_stf_pre_compute.cuda,h_stf_pre_compute.cuda,
+    print_CUDA_error_if_any(cudaMemcpy(mp->d_stf_pre_compute.cuda,h_stf_pre_compute,
                                        NSOURCES*sizeof(double),cudaMemcpyHostToDevice),71019);
-#endif
+    
     compute_add_sources_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_accel_crust_mantle.cuda,
                                                  mp->d_ibool_crust_mantle.cuda,
                                                  mp->d_sourcearrays.cuda,
@@ -221,15 +227,14 @@ void FC_FUNC_ (compute_add_sources_adjoint_gpu,
 
     dim3 grid(num_blocks_x,num_blocks_y,1);
     dim3 threads(NGLLX,NGLLX,NGLLX);
-#ifdef BUG
-    compute_add_sources_adjoint_cuda_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_accel_crust_mantle,
+
+    compute_add_sources_adjoint_cuda_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_accel_crust_mantle.cuda,
                                                                                    nrec,
-                                                                                   mp->d_adj_sourcearrays,
-                                                                                   mp->d_ibool_crust_mantle,
-                                                                                   mp->d_ispec_selected_rec,
-                                                                                   mp->d_pre_computed_irec,
+                                                                                   mp->d_adj_sourcearrays.cuda,
+                                                                                   mp->d_ibool_crust_mantle.cuda,
+                                                                                   mp->d_ispec_selected_rec.cuda,
+                                                                                   mp->d_pre_computed_irec.cuda,
                                                                                    mp->nadj_rec_local);
-#endif
   }
 #endif
 #if USE_OPENCL

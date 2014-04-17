@@ -60,7 +60,7 @@
 
   ! initialize variables for writing seismograms
   seismo_offset = it_begin-1
-  seismo_current = 0
+  seismo_gpurrent = 0
 
   ! get MPI starting time
   time_start = wtime()

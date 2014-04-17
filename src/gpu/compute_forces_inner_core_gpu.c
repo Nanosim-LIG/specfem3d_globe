@@ -49,6 +49,52 @@ template<> __device__ float texfetch_accel_ic<3>(int x) { return tex1Dfetch(d_b_
 #endif
 #endif
 
+template<int FORWARD_OR_ADJOINT> __global__ void
+#ifdef USE_LAUNCH_BOUNDS
+// adds compiler specification
+__launch_bounds__(NGLL3_PADDED,LAUNCH_MIN_BLOCKS)
+#endif
+// main kernel
+inner_core_impl_kernel_tmp(int nb_blocks_to_compute,
+                                         const int* d_ibool,
+                                         const int* d_idoubling,
+                                         const int* d_phase_ispec_inner,
+                                         const int num_phase_ispec,
+                                         const int d_iphase,
+                                         realw deltat,
+                                         const int use_mesh_coloring_gpu,
+                                         realw_const_p d_displ,
+                                         realw_p d_accel,
+                                         realw_const_p d_xix, realw_const_p d_xiy, realw_const_p d_xiz,
+                                         realw_const_p d_etax, realw_const_p d_etay, realw_const_p d_etaz,
+                                         realw_const_p d_gammax, realw_const_p d_gammay, realw_const_p d_gammaz,
+                                         realw_const_p d_hprime_xx,
+                                         realw_const_p d_hprimewgll_xx,
+                                         realw_const_p d_wgllwgll_xy,realw_const_p d_wgllwgll_xz,realw_const_p d_wgllwgll_yz,
+                                         realw_const_p d_kappav,
+                                         realw_const_p d_muv,
+                                         const int COMPUTE_AND_STORE_STRAIN,
+                                         realw_p epsilondev_xx,realw_p epsilondev_yy,realw_p epsilondev_xy,
+                                         realw_p epsilondev_xz,realw_p epsilondev_yz,
+                                         realw_p epsilon_trace_over_3,
+                                         const int ATTENUATION,
+                                         const int PARTIAL_PHYS_DISPERSION_ONLY,
+                                         const int USE_3D_ATTENUATION_ARRAYS,
+                                         realw_const_p one_minus_sum_beta,realw_const_p factor_common,
+                                         realw_p R_xx, realw_p R_yy, realw_p R_xy, realw_p R_xz, realw_p R_yz,
+                                         realw_const_p alphaval,realw_const_p betaval,realw_const_p gammaval,
+                                         const int ANISOTROPY,
+                                         realw_const_p d_c11store,realw_const_p d_c12store,realw_const_p d_c13store,
+                                         realw_const_p d_c33store,realw_const_p d_c44store,
+                                         const int GRAVITY,
+                                         realw_const_p d_xstore,realw_const_p d_ystore,realw_const_p d_zstore,
+                                         realw_const_p d_minus_gravity_table,
+                                         realw_const_p d_minus_deriv_gravity_table,
+                                         realw_const_p d_density_table,
+                                         realw_const_p wgll_cube,
+                                         const int NSPEC_INNER_CORE_STRAIN_ONLY,
+                         const int NSPEC_INNER_CORE){}
+
 void inner_core (int nb_blocks_to_compute, Mesh *mp,
                  int iphase,
                  gpu_int_mem d_ibool,
@@ -246,9 +292,7 @@ skipexec:
     dim3 threads(blocksize,1,1);
 
     if( FORWARD_OR_ADJOINT == 1 ){
-#ifdef BUG
-      inner_core_impl_kernel<<<grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
-                                               mp->NGLOB_INNER_CORE,
+      inner_core_impl_kernel_tmp<1><<<grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
                                                d_ibool.cuda,
                                                d_idoubling.cuda,
                                                mp->d_phase_ispec_inner_inner_core.cuda,
@@ -290,14 +334,11 @@ skipexec:
                                                mp->d_wgll_cube.cuda,
                                                mp->NSPEC_INNER_CORE_STRAIN_ONLY,
                                                mp->NSPEC_INNER_CORE);
-#endif
     }else if( FORWARD_OR_ADJOINT == 3 ){
       // backward/reconstructed wavefields -> FORWARD_OR_ADJOINT == 3
       // debug
       DEBUG_BACKWARD_FORCES();
-#ifdef BUG
-      inner_core_impl_kernel<<< grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
-                                                mp->NGLOB_INNER_CORE,
+      inner_core_impl_kernel_tmp<3><<< grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
                                                 d_ibool.cuda,
                                                 d_idoubling.cuda,
                                                 mp->d_phase_ispec_inner_inner_core.cuda,
@@ -339,7 +380,6 @@ skipexec:
                                                 mp->d_wgll_cube.cuda,
                                                 mp->NSPEC_INNER_CORE_STRAIN_ONLY,
                                                 mp->NSPEC_INNER_CORE);
-#endif
     }
   }
 #endif

@@ -36,7 +36,7 @@
   implicit none
 
   ! local parameters
-  integer :: it_temp,seismo_current_temp
+  integer :: it_temp,seismo_gpurrent_temp
   integer :: i,j,ier
   real(kind=CUSTOM_REAL), dimension(:,:,:), allocatable :: b_displ_crust_mantle_store_buffer
   real(kind=CUSTOM_REAL), dimension(:,:,:), allocatable :: b_displ_inner_core_store_buffer
@@ -92,7 +92,7 @@
 
   ! initialize variables for writing seismograms
   seismo_offset = it_begin-1
-  seismo_current = 0
+  seismo_gpurrent = 0
 
   ! get MPI starting time
   time_start = wtime()
@@ -118,9 +118,9 @@
       ! computes strain based on current backward/reconstructed wavefield
       if(COMPUTE_AND_STORE_STRAIN) call itu_compute_strain_att_backward()
 
-      ! intermediate storage of it and seismo_current positions
+      ! intermediate storage of it and seismo_gpurrent positions
       it_temp = it
-      seismo_current_temp = seismo_current
+      seismo_gpurrent_temp = seismo_gpurrent
     endif
 
     ! time loop within this iteration subset
@@ -224,7 +224,7 @@
       enddo ! subset loop
 
       it = it_temp
-      seismo_current = seismo_current_temp
+      seismo_gpurrent = seismo_gpurrent_temp
 
       ! computes strain based on current adjoint wavefield
       if(COMPUTE_AND_STORE_STRAIN) call itu_compute_strain_att()

@@ -141,7 +141,7 @@
   character(len=150) :: OUTPUT_FILES
   character(len=2) :: bic
 
-  integer :: nrec_SUBSET_current_size,irec_in_this_subset,irec_already_done
+  integer :: nrec_SUBSET_gpurrent_size,irec_in_this_subset,irec_already_done
   double precision, allocatable, dimension(:) :: x_found_subset,y_found_subset,z_found_subset
   double precision, allocatable, dimension(:) :: final_distance_subset
   integer, allocatable, dimension(:) :: ispec_selected_rec_subset
@@ -561,30 +561,30 @@
 
     ! the size of the subset can be the maximum size, or less (if we are in the last subset,
     ! or if there are fewer sources than the maximum size of a subset)
-    nrec_SUBSET_current_size = min(nrec_SUBSET_MAX, nrec - irec_already_done)
+    nrec_SUBSET_gpurrent_size = min(nrec_SUBSET_MAX, nrec - irec_already_done)
 
     ! allocate arrays specific to each subset
-    allocate(ispec_selected_rec_subset(nrec_SUBSET_current_size), &
-             xi_receiver_subset(nrec_SUBSET_current_size), &
-             eta_receiver_subset(nrec_SUBSET_current_size), &
-             gamma_receiver_subset(nrec_SUBSET_current_size), &
-             x_found_subset(nrec_SUBSET_current_size), &
-             y_found_subset(nrec_SUBSET_current_size), &
-             z_found_subset(nrec_SUBSET_current_size), &
-             final_distance_subset(nrec_SUBSET_current_size),stat=ier)
+    allocate(ispec_selected_rec_subset(nrec_SUBSET_gpurrent_size), &
+             xi_receiver_subset(nrec_SUBSET_gpurrent_size), &
+             eta_receiver_subset(nrec_SUBSET_gpurrent_size), &
+             gamma_receiver_subset(nrec_SUBSET_gpurrent_size), &
+             x_found_subset(nrec_SUBSET_gpurrent_size), &
+             y_found_subset(nrec_SUBSET_gpurrent_size), &
+             z_found_subset(nrec_SUBSET_gpurrent_size), &
+             final_distance_subset(nrec_SUBSET_gpurrent_size),stat=ier)
     if( ier /= 0 ) call exit_MPI(myrank,'error allocating temporary receiver arrays')
 
     ! gather arrays
     if( myrank == 0 ) then
       ! only master process needs full arrays allocated
-      allocate(ispec_selected_rec_all(nrec_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               xi_receiver_all(nrec_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               eta_receiver_all(nrec_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               gamma_receiver_all(nrec_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               x_found_all(nrec_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               y_found_all(nrec_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               z_found_all(nrec_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               final_distance_all(nrec_SUBSET_current_size,0:NPROCTOT_VAL-1),stat=ier)
+      allocate(ispec_selected_rec_all(nrec_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               xi_receiver_all(nrec_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               eta_receiver_all(nrec_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               gamma_receiver_all(nrec_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               x_found_all(nrec_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               y_found_all(nrec_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               z_found_all(nrec_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               final_distance_all(nrec_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1),stat=ier)
       if( ier /= 0 ) call exit_MPI(myrank,'error allocating temporary gather receiver arrays')
     else
       ! dummy arrays
@@ -604,7 +604,7 @@
     final_distance_subset(:) = HUGEVAL
 
     ! loop over the stations within this subset
-    do irec_in_this_subset = 1,nrec_SUBSET_current_size
+    do irec_in_this_subset = 1,nrec_SUBSET_gpurrent_size
 
       ! mapping from station number in current subset to real station number in all the subsets
       irec = irec_in_this_subset + irec_already_done
@@ -741,8 +741,8 @@
     ! for MPI version, gather information from all the nodes
     ispec_selected_rec_all(:,:) = -1
 
-    call gather_all_i(ispec_selected_rec_subset,nrec_SUBSET_current_size, &
-                      ispec_selected_rec_all,nrec_SUBSET_current_size,NPROCTOT_VAL)
+    call gather_all_i(ispec_selected_rec_subset,nrec_SUBSET_gpurrent_size, &
+                      ispec_selected_rec_all,nrec_SUBSET_gpurrent_size,NPROCTOT_VAL)
 
     ! this is executed by main process only
     if(myrank == 0) then
@@ -750,19 +750,19 @@
       if(any(ispec_selected_rec_all(:,:) == -1)) call exit_MPI(myrank,'gather operation failed for receivers')
     endif
 
-    call gather_all_dp(xi_receiver_subset,nrec_SUBSET_current_size,xi_receiver_all,nrec_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(eta_receiver_subset,nrec_SUBSET_current_size,eta_receiver_all,nrec_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(gamma_receiver_subset,nrec_SUBSET_current_size,gamma_receiver_all,nrec_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(final_distance_subset,nrec_SUBSET_current_size,final_distance_all,nrec_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(x_found_subset,nrec_SUBSET_current_size,x_found_all,nrec_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(y_found_subset,nrec_SUBSET_current_size,y_found_all,nrec_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(z_found_subset,nrec_SUBSET_current_size,z_found_all,nrec_SUBSET_current_size,NPROCTOT_VAL)
+    call gather_all_dp(xi_receiver_subset,nrec_SUBSET_gpurrent_size,xi_receiver_all,nrec_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(eta_receiver_subset,nrec_SUBSET_gpurrent_size,eta_receiver_all,nrec_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(gamma_receiver_subset,nrec_SUBSET_gpurrent_size,gamma_receiver_all,nrec_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(final_distance_subset,nrec_SUBSET_gpurrent_size,final_distance_all,nrec_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(x_found_subset,nrec_SUBSET_gpurrent_size,x_found_all,nrec_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(y_found_subset,nrec_SUBSET_gpurrent_size,y_found_all,nrec_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(z_found_subset,nrec_SUBSET_gpurrent_size,z_found_all,nrec_SUBSET_gpurrent_size,NPROCTOT_VAL)
 
     ! this is executed by main process only
     if(myrank == 0) then
 
       ! MPI loop on all the results to determine the best slice
-      do irec_in_this_subset = 1,nrec_SUBSET_current_size
+      do irec_in_this_subset = 1,nrec_SUBSET_gpurrent_size
 
         ! mapping from station number in current subset to real station number in all the subsets
         irec = irec_in_this_subset + irec_already_done

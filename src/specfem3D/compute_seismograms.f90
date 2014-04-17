@@ -26,7 +26,7 @@
 !=====================================================================
 
 
-  subroutine compute_seismograms(nglob,displ,seismo_current,seismograms)
+  subroutine compute_seismograms(nglob,displ,seismo_gpurrent,seismograms)
 
   use constants_solver,only: &
     CUSTOM_REAL,SIZE_REAL,ZERO,NGLLX,NGLLY,NGLLZ, &
@@ -46,7 +46,7 @@
   integer,intent(in) :: nglob
   real(kind=CUSTOM_REAL), dimension(NDIM,nglob),intent(in) :: displ
 
-  integer,intent(in) :: seismo_current
+  integer,intent(in) :: seismo_gpurrent
 
   real(kind=CUSTOM_REAL), dimension(NDIM,nrec_local,NTSTEP_BETWEEN_OUTPUT_SEISMOS),intent(out) :: &
     seismograms
@@ -86,10 +86,10 @@
 
     ! distinguish between single and double precision for reals
     if(CUSTOM_REAL == SIZE_REAL) then
-      seismograms(:,irec_local,seismo_current) = sngl(scale_displ*(nu(:,1,irec)*uxd + &
+      seismograms(:,irec_local,seismo_gpurrent) = sngl(scale_displ*(nu(:,1,irec)*uxd + &
            nu(:,2,irec)*uyd + nu(:,3,irec)*uzd))
     else
-      seismograms(:,irec_local,seismo_current) = scale_displ*(nu(:,1,irec)*uxd + &
+      seismograms(:,irec_local,seismo_gpurrent) = scale_displ*(nu(:,1,irec)*uxd + &
            nu(:,2,irec)*uyd + nu(:,3,irec)*uzd)
     endif
 
@@ -327,7 +327,7 @@
 !  use specfem_par,only: CUSTOM_REAL,NDIM, &
 !    NT_DUMP_ATTENUATION,NTSTEP_BETWEEN_OUTPUT_SEISMOS, &
 !    nrec_local,myrank, &
-!    seismo_current,seismograms
+!    seismo_gpurrent,seismograms
 !
 !  implicit none
 !
@@ -341,7 +341,7 @@
 !  if(mod(NT_DUMP_ATTENUATION,2) == 0)then
 !
 !    do irec_local = 1,nrec_local
-!      do i = 1,seismo_current/NT_DUMP_ATTENUATION
+!      do i = 1,seismo_gpurrent/NT_DUMP_ATTENUATION
 !        do j = 1,NT_DUMP_ATTENUATION/2
 !          do k = 1,NDIM
 !            seismograms_temp(k) = seismograms(k,irec_local,(i-1)*NT_DUMP_ATTENUATION + j)
@@ -358,7 +358,7 @@
 !  else
 !
 !    do irec_local = 1,nrec_local
-!      do i = 1,seismo_current/NT_DUMP_ATTENUATION
+!      do i = 1,seismo_gpurrent/NT_DUMP_ATTENUATION
 !        do j = 1,(NT_DUMP_ATTENUATION-1)/2
 !          do k = 1,NDIM
 !            seismograms_temp(k) = seismograms(k,irec_local,(i-1)*NT_DUMP_ATTENUATION + j)

@@ -106,7 +106,7 @@ subroutine store_asdf_data(asdf_container, seismogram_tmp, irec_local, &
   use specfem_par,only: &
           station_name,network_name,stlat,stlon,stele,stbur,                   &
           DT,t0,                                                               &
-          seismo_offset,seismo_current,it_end,                                 &
+          seismo_offset,seismo_gpurrent,it_end,                                 &
           NTSTEP_BETWEEN_OUTPUT_SEISMOS,                                       &
           yr=>yr_SAC,jda=>jda_SAC,ho=>ho_SAC,mi=>mi_SAC,sec=>sec_SAC,          &
           tshift_cmt=>t_cmt_SAC,t_shift=>t_shift_SAC,                          &
@@ -129,7 +129,7 @@ subroutine store_asdf_data(asdf_container, seismogram_tmp, irec_local, &
   integer :: ier, i
 
   i = (irec_local-1)*(3) + (iorientation)
-  asdf_container%npoints(i) = seismo_current
+  asdf_container%npoints(i) = seismo_gpurrent
   asdf_container%gmt_year(i) = yr
   asdf_container%gmt_day(i) = jda
   asdf_container%gmt_hour(i) = ho
@@ -163,9 +163,9 @@ subroutine store_asdf_data(asdf_container, seismogram_tmp, irec_local, &
   asdf_container%component_array(i) = chn
   asdf_container%receiver_id_array(i) = ""
 
-  allocate (asdf_container%records(i)%record(seismo_current), STAT=ier)
+  allocate (asdf_container%records(i)%record(seismo_gpurrent), STAT=ier)
   if (ier /= 0) print *, 'Allocate failed. status = ', ier
-  asdf_container%records(i)%record(1:seismo_current) = seismogram_tmp(iorientation, 1:seismo_current)
+  asdf_container%records(i)%record(1:seismo_gpurrent) = seismogram_tmp(iorientation, 1:seismo_gpurrent)
 
 end subroutine store_asdf_data
 

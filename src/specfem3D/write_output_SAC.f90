@@ -36,7 +36,7 @@
           ANGULAR_WIDTH_XI_IN_DEGREES,NEX_XI, &
           station_name,network_name,stlat,stlon,stele,stbur, &
           DT,t0, &
-          seismo_offset,seismo_current,it_end, &
+          seismo_offset,seismo_gpurrent,it_end, &
           OUTPUT_SEISMOS_SAC_ALPHANUM,OUTPUT_SEISMOS_SAC_BINARY, &
           NTSTEP_BETWEEN_OUTPUT_SEISMOS, &
           MODEL,OUTPUT_FILES
@@ -441,7 +441,7 @@
     ! now write data - with five values per row:
     ! ---------------
 
-    do isample = 1+5,seismo_current+1,5
+    do isample = 1+5,seismo_gpurrent+1,5
 
       value1 = dble(seismogram_tmp(iorientation,isample-5))
       value2 = dble(seismogram_tmp(iorientation,isample-4))
@@ -621,11 +621,11 @@
     ! BS BS write whole time series at once (hope to increase I/O performance
     ! compared to using a loop on it)
     if (CUSTOM_REAL == SIZE_REAL) then
-      tmp(1:seismo_current) = seismogram_tmp(iorientation,1:seismo_current)
+      tmp(1:seismo_gpurrent) = seismogram_tmp(iorientation,1:seismo_gpurrent)
     else if (CUSTOM_REAL == SIZE_DOUBLE) then
-      tmp(1:seismo_current) = real(seismogram_tmp(iorientation,1:seismo_current))
+      tmp(1:seismo_gpurrent) = real(seismogram_tmp(iorientation,1:seismo_gpurrent))
     endif
-    call write_n_real(tmp(1:seismo_current),seismo_current)
+    call write_n_real(tmp(1:seismo_gpurrent),seismo_gpurrent)
 
     call close_file()
 

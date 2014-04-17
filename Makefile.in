@@ -198,7 +198,7 @@ SUBDIRS = \
 	auxiliaries
 
 ifeq ($(HAS_GPU),yes)
-  SUBDIRS += gpu
+  SUBDIRS := gpu $(SUBDIRS)
 endif
 
 # default targets

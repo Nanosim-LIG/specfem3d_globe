@@ -240,7 +240,7 @@ void FC_FUNC_(compute_kernels_ic_gpu,
 void FC_FUNC_(compute_kernels_oc_gpu,
               COMPUTE_KERNELS_OC_GPU)(long* Mesh_pointer,realw* deltat_f) {}
 
-void FC_FUNC_(compute_kernels_strgth_noise_cu,
+void FC_FUNC_(compute_kernels_strgth_noise_gpu,
               COMPUTE_KERNELS_STRGTH_NOISE_CU)(long* Mesh_pointer,
                                                realw* h_noise_surface_movie,
                                                realw* deltat_f) {}
@@ -379,7 +379,7 @@ void FC_FUNC_(prepare_fields_gravity_device,
                                              realw* minus_gravity_table,
                                              realw* minus_deriv_gravity_table,
                                              realw* density_table,
-                                             realw* h_wgll_cube,
+                                             realw* h_wgll_gpube,
                                              int* NRAD_GRAVITY,
                                              realw* minus_g_icb,
                                              realw* minus_g_cmb,

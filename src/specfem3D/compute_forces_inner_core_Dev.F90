@@ -50,7 +50,7 @@
 
   use specfem_par,only: &
     hprime_xx,hprime_xxT,hprimewgll_xx,hprimewgll_xxT, &
-    wgll_cube, &
+    wgll_gpube, &
     minus_gravity_table,density_table,minus_deriv_gravity_table, &
     COMPUTE_AND_STORE_STRAIN,USE_LDDRK
 
@@ -517,7 +517,7 @@
             sigma_zy = sigma_zy - sngl(sz_l * gyl)
 
             ! precompute vector
-            factor = dble(jacobianl) * wgll_cube(INDEX_IJK)
+            factor = dble(jacobianl) * wgll_gpube(INDEX_IJK)
             rho_s_H(INDEX_IJK,1) = sngl(factor * (sx_l * Hxxl + sy_l * Hxyl + sz_l * Hxzl))
             rho_s_H(INDEX_IJK,2) = sngl(factor * (sx_l * Hxyl + sy_l * Hyyl + sz_l * Hyzl))
             rho_s_H(INDEX_IJK,3) = sngl(factor * (sx_l * Hxzl + sy_l * Hyzl + sz_l * Hzzl))
@@ -544,7 +544,7 @@
             sigma_zy = sigma_zy - sz_l * gyl
 
             ! precompute vector
-            factor = jacobianl * wgll_cube(INDEX_IJK)
+            factor = jacobianl * wgll_gpube(INDEX_IJK)
             rho_s_H(INDEX_IJK,1) = factor * (sx_l * Hxxl + sy_l * Hxyl + sz_l * Hxzl)
             rho_s_H(INDEX_IJK,2) = factor * (sx_l * Hxyl + sy_l * Hyyl + sz_l * Hyzl)
             rho_s_H(INDEX_IJK,3) = factor * (sx_l * Hxzl + sy_l * Hyzl + sz_l * Hzzl)

@@ -1810,7 +1810,7 @@
   integer :: i,j,k,ispec,ispec2D,ipoin,iglob
   real :: free_mb,used_mb,total_mb
   ! dummy custom_real variables to convert from double precision
-  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable:: cr_wgll_cube
+  real(kind=CUSTOM_REAL),dimension(:,:,:),allocatable:: cr_wgll_gpube
   real(kind=CUSTOM_REAL),dimension(:),allocatable:: &
     cr_d_ln_density_dr_table,cr_minus_rho_g_over_kappa_fluid, &
     cr_minus_gravity_table,cr_minus_deriv_gravity_table, &
@@ -1871,7 +1871,7 @@
 
   ! prepares arrays related to gravity
   ! note: GPU will use only single-precision (or double precision) for all calculations
-  !          we convert to wgll_cube to custom real (by default single-precision),
+  !          we convert to wgll_gpube to custom real (by default single-precision),
   !          using implicit conversion
   if(myrank == 0 ) write(IMAIN,*) "  loading non-gravity/gravity arrays"
 
@@ -1883,8 +1883,8 @@
            stat=ier)
   if( ier /= 0 ) stop 'error allocating cr_minus_rho_g_over_kappa_fluid, etc...'
 
-  allocate(cr_wgll_cube(NGLLX,NGLLY,NGLLZ),stat=ier)
-  if( ier /= 0 ) stop 'error allocating cr_wgll_cube'
+  allocate(cr_wgll_gpube(NGLLX,NGLLY,NGLLZ),stat=ier)
+  if( ier /= 0 ) stop 'error allocating cr_wgll_gpube'
 
   if(CUSTOM_REAL == SIZE_REAL) then
     ! d_ln_density_dr_table needed for no gravity case
@@ -1894,7 +1894,7 @@
     cr_minus_gravity_table(:) = sngl(minus_gravity_table(:))
     cr_minus_deriv_gravity_table(:) = sngl(minus_deriv_gravity_table(:))
     cr_density_table(:) = sngl(density_table(:))
-    cr_wgll_cube(:,:,:) = sngl(wgll_cube(:,:,:))
+    cr_wgll_gpube(:,:,:) = sngl(wgll_gpube(:,:,:))
   else
     ! d_ln_density_dr_table needed for no gravity case
     cr_d_ln_density_dr_table(:) = d_ln_density_dr_table(:)
@@ -1903,7 +1903,7 @@
     cr_minus_gravity_table(:) = minus_gravity_table(:)
     cr_minus_deriv_gravity_table(:) = minus_deriv_gravity_table(:)
     cr_density_table(:) = density_table(:)
-    cr_wgll_cube(:,:,:) = wgll_cube(:,:,:)
+    cr_wgll_gpube(:,:,:) = wgll_gpube(:,:,:)
   endif
 
   ! prepares on GPU
@@ -1913,7 +1913,7 @@
                                     cr_minus_gravity_table, &
                                     cr_minus_deriv_gravity_table, &
                                     cr_density_table, &
-                                    cr_wgll_cube, &
+                                    cr_wgll_gpube, &
                                     NRAD_GRAVITY, &
                                     minus_g_icb,minus_g_cmb, &
                                     RHO_BOTTOM_OC,RHO_TOP_OC)
@@ -1921,7 +1921,7 @@
   deallocate(cr_d_ln_density_dr_table,cr_minus_rho_g_over_kappa_fluid, &
             cr_minus_gravity_table,cr_minus_deriv_gravity_table, &
             cr_density_table)
-  deallocate(cr_wgll_cube)
+  deallocate(cr_wgll_gpube)
 
   ! prepares attenuation arrays
   if( ATTENUATION_VAL ) then

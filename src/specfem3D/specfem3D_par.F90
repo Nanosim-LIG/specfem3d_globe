@@ -61,7 +61,7 @@ module specfem_par
   double precision, dimension(NGLLZ) :: zigll,wzgll
 
   ! product of weights for gravity term
-  double precision, dimension(NGLLX,NGLLY,NGLLZ) :: wgll_cube
+  double precision, dimension(NGLLX,NGLLY,NGLLZ) :: wgll_gpube
 
   ! array with derivatives of Lagrange polynomials and precalculated products
   real(kind=CUSTOM_REAL), dimension(NGLLX,NGLLX) :: hprime_xx,hprimewgll_xx
@@ -192,7 +192,7 @@ module specfem_par
   ! seismograms
   integer :: it_begin,it_end,nit_written
   real(kind=CUSTOM_REAL), dimension(:,:,:), allocatable :: seismograms
-  integer :: seismo_offset, seismo_current
+  integer :: seismo_offset, seismo_gpurrent
 
   ! for SAC headers for seismograms
   integer :: yr_SAC,jda_SAC,ho_SAC,mi_SAC

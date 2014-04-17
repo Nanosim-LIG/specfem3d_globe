@@ -64,6 +64,65 @@ __constant__ size_t d_hprimewgll_xx_tex_offset;
 #endif
 #endif
 
+template<int FORWARD_OR_ADJOINT> __global__ void
+#ifdef USE_LAUNCH_BOUNDS
+// adds compiler specification
+__launch_bounds__(NGLL3_PADDED,LAUNCH_MIN_BLOCKS)
+#endif
+// main kernel
+crust_mantle_impl_kernel_tmp( int nb_blocks_to_compute,
+                            const int* d_ibool,
+                            const int* d_ispec_is_tiso,
+                            const int* d_phase_ispec_inner,
+                            int num_phase_ispec,
+                            const int d_iphase,
+                            realw deltat,
+                            const int use_mesh_coloring_gpu,
+                            realw_const_p d_displ,
+                            realw_p d_accel,
+                            realw_const_p d_xix, realw_const_p d_xiy, realw_const_p d_xiz,
+                            realw_const_p d_etax, realw_const_p d_etay, realw_const_p d_etaz,
+                            realw_const_p d_gammax, realw_const_p d_gammay, realw_const_p d_gammaz,
+                            realw_const_p d_hprime_xx,
+                            realw_const_p d_hprimewgll_xx,
+                            realw_const_p d_wgllwgll_xy,
+                            realw_const_p d_wgllwgll_xz,
+                            realw_const_p d_wgllwgll_yz,
+                            realw_const_p d_kappavstore,
+                            realw_const_p d_muvstore,
+                            realw_const_p d_kappahstore,
+                            realw_const_p d_muhstore,
+                            realw_const_p d_eta_anisostore,
+                            const int COMPUTE_AND_STORE_STRAIN,
+                            realw_p epsilondev_xx,realw_p epsilondev_yy,realw_p epsilondev_xy,
+                            realw_p epsilondev_xz,realw_p epsilondev_yz,
+                            realw_p epsilon_trace_over_3,
+                            const int ATTENUATION,
+                            const int PARTIAL_PHYS_DISPERSION_ONLY,
+                            const int USE_3D_ATTENUATION_ARRAYS,
+                            realw_const_p one_minus_sum_beta,
+                            realw_const_p factor_common,
+                            realw_p R_xx, realw_p R_yy, realw_p R_xy, realw_p R_xz, realw_p R_yz,
+                            realw_const_p alphaval,
+                            realw_const_p betaval,
+                            realw_const_p gammaval,
+                            const int ANISOTROPY,
+                            realw_const_p d_c11store,realw_const_p d_c12store,realw_const_p d_c13store,
+                            realw_const_p d_c14store,realw_const_p d_c15store,realw_const_p d_c16store,
+                            realw_const_p d_c22store,realw_const_p d_c23store,realw_const_p d_c24store,
+                            realw_const_p d_c25store,realw_const_p d_c26store,realw_const_p d_c33store,
+                            realw_const_p d_c34store,realw_const_p d_c35store,realw_const_p d_c36store,
+                            realw_const_p d_c44store,realw_const_p d_c45store,realw_const_p d_c46store,
+                            realw_const_p d_c55store,realw_const_p d_c56store,realw_const_p d_c66store,
+                            const int GRAVITY,
+                            realw_const_p d_xstore,realw_const_p d_ystore,realw_const_p d_zstore,
+                            realw_const_p d_minus_gravity_table,
+                            realw_const_p d_minus_deriv_gravity_table,
+                            realw_const_p d_density_table,
+                            realw_const_p wgll_cube,
+                            const int NSPEC_CRUST_MANTLE_STRAIN_ONLY ){
+}
+
 void crust_mantle (int nb_blocks_to_compute, Mesh *mp,
                    int iphase,
                    gpu_int_mem d_ibool,
@@ -290,61 +349,57 @@ skipexec:
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(blocksize,1,1);
 
-    if( FORWARD_OR_ADJOINT == 1 ){
+    if (FORWARD_OR_ADJOINT == 1) {
       // forward wavefields -> FORWARD_OR_ADJOINT == 1
-#ifdef BUG
-      crust_mantle_impl_kernel<<<grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
-                                                                      mp->NGLOB_CRUST_MANTLE,
+      crust_mantle_impl_kernel_tmp<1><<<grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
                                                                       d_ibool.cuda,
-                                                 d_ispec_is_tiso.cuda,
-                                                 mp->d_phase_ispec_inner_crust_mantle.cuda,
-                                                 mp->num_phase_ispec_crust_mantle,
-                                                 iphase,
-                                                 mp->deltat,
-                                                 mp->use_mesh_coloring_gpu,
-                                                 mp->d_displ_crust_mantle.cuda,
-                                                 mp->d_accel_crust_mantle.cuda,
-                                                 d_xix.cuda, d_xiy.cuda, d_xiz.cuda,
-                                                 d_etax.cuda, d_etay.cuda, d_etaz.cuda,
-                                                 d_gammax.cuda, d_gammay.cuda, d_gammaz.cuda,
-                                                 mp->d_hprime_xx.cuda,
-                                                 mp->d_hprimewgll_xx.cuda,
-                                                 mp->d_wgllwgll_xy.cuda, mp->d_wgllwgll_xz.cuda, mp->d_wgllwgll_yz.cuda,
-                                                 d_kappavstore.cuda, d_muvstore.cuda,
-                                                 d_kappahstore.cuda, d_muhstore.cuda,
-                                                 d_eta_anisostore.cuda,
+                                                                      d_ispec_is_tiso.cuda,
+                                                                      mp->d_phase_ispec_inner_crust_mantle.cuda,
+                                                                      mp->num_phase_ispec_crust_mantle,
+                                                                      iphase,
+                                                                      mp->deltat,
+                                                                      mp->use_mesh_coloring_gpu,
+                                                                      mp->d_displ_crust_mantle.cuda,
+                                                                      mp->d_accel_crust_mantle.cuda,
+                                                                      d_xix.cuda, d_xiy.cuda, d_xiz.cuda,
+                                                                      d_etax.cuda, d_etay.cuda, d_etaz.cuda,
+                                                                      d_gammax.cuda, d_gammay.cuda, d_gammaz.cuda,
+                                                                      mp->d_hprime_xx.cuda,
+                                                                      mp->d_hprimewgll_xx.cuda,
+                                                                      mp->d_wgllwgll_xy.cuda, mp->d_wgllwgll_xz.cuda, mp->d_wgllwgll_yz.cuda,
+                                                                      d_kappavstore.cuda, d_muvstore.cuda,
+                                                                      d_kappahstore.cuda, d_muhstore.cuda,
+                                                                      d_eta_anisostore.cuda,
                                                                       mp->compute_and_store_strain,
-                                                 d_epsilondev_xx.cuda,d_epsilondev_yy.cuda,d_epsilondev_xy.cuda,
-                                                 d_epsilondev_xz.cuda,d_epsilondev_yz.cuda,
-                                                 d_epsilon_trace_over_3.cuda,
-                                                 mp->attenuation,
-                                                 mp->partial_phys_dispersion_only,
-                                                 mp->use_3d_attenuation_arrays,
-                                                 d_one_minus_sum_beta.cuda,d_factor_common.cuda,
-                                                 d_R_xx.cuda,d_R_yy.cuda,d_R_xy.cuda,d_R_xz.cuda,d_R_yz.cuda,
-                                                 mp->d_alphaval.cuda,mp->d_betaval.cuda,mp->d_gammaval.cuda,
-                                                 mp->anisotropic_3D_mantle,
-                                                 d_c11store.cuda,d_c12store.cuda,d_c13store.cuda,
-                                                 d_c14store.cuda,d_c15store.cuda,d_c16store.cuda,
-                                                 d_c22store.cuda,d_c23store.cuda,d_c24store.cuda,
-                                                 d_c25store.cuda,d_c26store.cuda,d_c33store.cuda,
-                                                 d_c34store.cuda,d_c35store.cuda,d_c36store.cuda,
-                                                 d_c44store.cuda,d_c45store.cuda,d_c46store.cuda,
-                                                 d_c55store.cuda,d_c56store.cuda,d_c66store.cuda,
-                                                 mp->gravity,
-                                                 mp->d_xstore_crust_mantle.cuda,mp->d_ystore_crust_mantle.cuda,mp->d_zstore_crust_mantle.cuda,
-                                                 mp->d_minus_gravity_table.cuda,
-                                                 mp->d_minus_deriv_gravity_table.cuda,
-                                                 mp->d_density_table.cuda,
-                                                 mp->d_wgll_cube.cuda,
-                                                 mp->NSPEC_CRUST_MANTLE_STRAIN_ONLY);
-#endif 
-    }else if( FORWARD_OR_ADJOINT == 3 ){
-    // backward/reconstructed wavefields -> FORWARD_OR_ADJOINT == 3
+                                                                      d_epsilondev_xx.cuda,d_epsilondev_yy.cuda,d_epsilondev_xy.cuda,
+                                                                      d_epsilondev_xz.cuda,d_epsilondev_yz.cuda,
+                                                                      d_epsilon_trace_over_3.cuda,
+                                                                      mp->attenuation,
+                                                                      mp->partial_phys_dispersion_only,
+                                                                      mp->use_3d_attenuation_arrays,
+                                                                      d_one_minus_sum_beta.cuda,d_factor_common.cuda,
+                                                                      d_R_xx.cuda,d_R_yy.cuda,d_R_xy.cuda,d_R_xz.cuda,d_R_yz.cuda,
+                                                                      mp->d_alphaval.cuda,mp->d_betaval.cuda,mp->d_gammaval.cuda,
+                                                                      mp->anisotropic_3D_mantle,
+                                                                      d_c11store.cuda,d_c12store.cuda,d_c13store.cuda,
+                                                                      d_c14store.cuda,d_c15store.cuda,d_c16store.cuda,
+                                                                      d_c22store.cuda,d_c23store.cuda,d_c24store.cuda,
+                                                                      d_c25store.cuda,d_c26store.cuda,d_c33store.cuda,
+                                                                      d_c34store.cuda,d_c35store.cuda,d_c36store.cuda,
+                                                                      d_c44store.cuda,d_c45store.cuda,d_c46store.cuda,
+                                                                      d_c55store.cuda,d_c56store.cuda,d_c66store.cuda,
+                                                                      mp->gravity,
+                                                                      mp->d_xstore_crust_mantle.cuda,mp->d_ystore_crust_mantle.cuda,mp->d_zstore_crust_mantle.cuda,
+                                                                      mp->d_minus_gravity_table.cuda,
+                                                                      mp->d_minus_deriv_gravity_table.cuda,
+                                                                      mp->d_density_table.cuda,
+                                                                      mp->d_wgll_cube.cuda,
+                                                                      mp->NSPEC_CRUST_MANTLE_STRAIN_ONLY);
+    } else if (FORWARD_OR_ADJOINT == 3) {
+      // backward/reconstructed wavefields -> FORWARD_OR_ADJOINT == 3
       // debug
       DEBUG_BACKWARD_FORCES();
-#ifdef BUG
-      crust_mantle_impl_kernel<<< grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
+      crust_mantle_impl_kernel_tmp<3><<< grid,threads,0,mp->compute_stream>>>(nb_blocks_to_compute,
                                                   d_ibool.cuda,
                                                   d_ispec_is_tiso.cuda,
                                                   mp->d_phase_ispec_inner_crust_mantle.cuda,
@@ -388,7 +443,6 @@ skipexec:
                                                   mp->d_density_table.cuda,
                                                   mp->d_wgll_cube.cuda,
                                                   mp->NSPEC_CRUST_MANTLE_STRAIN_ONLY);
-#endif
     }
   }
 #endif

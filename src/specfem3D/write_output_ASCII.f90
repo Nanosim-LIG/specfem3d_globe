@@ -37,7 +37,7 @@
 
   use specfem_par,only: &
     DT,t0,NSTEP, &
-    seismo_offset,seismo_current, &
+    seismo_offset,seismo_gpurrent, &
     NTSTEP_BETWEEN_OUTPUT_SEISMOS,OUTPUT_FILES,SIMULATION_TYPE, &
     SAVE_ALL_SEISMOS_IN_ONE_FILE,USE_BINARY_FOR_LARGE_FILE, &
     myrank
@@ -81,7 +81,7 @@
   endif
 
   ! subtract half duration of the source to make sure travel time is correct
-  do isample = 1,seismo_current
+  do isample = 1,seismo_gpurrent
 
     ! seismogram value
     value = dble(seismogram_tmp(iorientation,isample))

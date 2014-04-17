@@ -36,7 +36,7 @@
 
   use specfem_par,only: &
     hprime_xx,hprime_yy,hprime_zz,hprimewgll_xx,hprimewgll_yy,hprimewgll_zz, &
-    wgllwgll_xy,wgllwgll_xz,wgllwgll_yz,wgll_cube, &
+    wgllwgll_xy,wgllwgll_xz,wgllwgll_yz,wgll_gpube, &
     minus_rho_g_over_kappa_fluid,d_ln_density_dr_table, &
     MOVIE_VOLUME, &
     USE_LDDRK,istage
@@ -280,12 +280,12 @@
             if(CUSTOM_REAL == SIZE_REAL) then
               gravity_term(i,j,k) = &
                 sngl(minus_rho_g_over_kappa_fluid(int_radius) * &
-                dble(jacobianl) * wgll_cube(i,j,k) * &
+                dble(jacobianl) * wgll_gpube(i,j,k) * &
                (dble(dpotentialdx_with_rot) * gxl + &
                 dble(dpotentialdy_with_rot) * gyl + dble(dpotentialdzl) * gzl))
             else
               gravity_term(i,j,k) = minus_rho_g_over_kappa_fluid(int_radius) * &
-                 jacobianl * wgll_cube(i,j,k) * (dpotentialdx_with_rot * gxl + &
+                 jacobianl * wgll_gpube(i,j,k) * (dpotentialdx_with_rot * gxl + &
                  dpotentialdy_with_rot * gyl + dpotentialdzl * gzl)
             endif
 

@@ -49,7 +49,7 @@
 
   use specfem_par,only: &
     hprime_xx,hprime_xxT,hprimewgll_xx,hprimewgll_xxT, &
-    wgll_cube, &
+    wgll_gpube, &
     minus_gravity_table,density_table,minus_deriv_gravity_table, &
     COMPUTE_AND_STORE_STRAIN,USE_LDDRK
 
@@ -190,7 +190,7 @@
                                   minus_gravity_table,density_table,minus_deriv_gravity_table, &
                                   xstore,ystore,zstore, &
                                   xix,xiy,xiz,etax,etay,etaz,gammax,gammay,gammaz, &
-                                  wgll_cube, &
+                                  wgll_gpube, &
                                   c11store,c12store,c13store,c14store,c15store,c16store,c22store, &
                                   c23store,c24store,c25store,c26store,c33store,c34store,c35store, &
                                   c36store,c44store,c45store,c46store,c55store,c56store,c66store, &
@@ -208,7 +208,7 @@
                                    minus_gravity_table,density_table,minus_deriv_gravity_table, &
                                    xstore,ystore,zstore, &
                                    xix,xiy,xiz,etax,etay,etaz,gammax,gammay,gammaz, &
-                                   wgll_cube, &
+                                   wgll_gpube, &
                                    kappavstore,muvstore, &
                                    ibool, &
                                    R_xx,R_yy,R_xy,R_xz,R_yz, &
@@ -223,7 +223,7 @@
                                      minus_gravity_table,density_table,minus_deriv_gravity_table, &
                                      xstore,ystore,zstore, &
                                      xix,xiy,xiz,etax,etay,etaz,gammax,gammay,gammaz, &
-                                     wgll_cube, &
+                                     wgll_gpube, &
                                      kappavstore,kappahstore,muvstore,muhstore,eta_anisostore, &
                                      ibool, &
                                      R_xx,R_yy,R_xy,R_xz,R_yz, &

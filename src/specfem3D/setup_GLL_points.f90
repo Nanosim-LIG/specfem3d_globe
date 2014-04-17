@@ -38,7 +38,7 @@
   call define_derivation_matrices(xigll,yigll,zigll,wxgll,wygll,wzgll, &
                                  hprime_xx,hprime_yy,hprime_zz, &
                                  hprimewgll_xx,hprimewgll_yy,hprimewgll_zz, &
-                                 wgllwgll_xy,wgllwgll_xz,wgllwgll_yz,wgll_cube)
+                                 wgllwgll_xy,wgllwgll_xz,wgllwgll_yz,wgll_gpube)
 
   ! define a 3D extension in order to be able to force vectorization in the compute_forces_**_Dev routines
   do k = 1,NGLLZ

@@ -28,7 +28,7 @@
   subroutine define_derivation_matrices(xigll,yigll,zigll,wxgll,wygll,wzgll, &
          hprime_xx,hprime_yy,hprime_zz, &
          hprimewgll_xx,hprimewgll_yy,hprimewgll_zz, &
-         wgllwgll_xy,wgllwgll_xz,wgllwgll_yz,wgll_cube)
+         wgllwgll_xy,wgllwgll_xz,wgllwgll_yz,wgll_gpube)
 
   use constants
 
@@ -48,7 +48,7 @@
   real(kind=CUSTOM_REAL), dimension(NGLLY,NGLLZ) :: wgllwgll_yz
 
 ! array with all the weights in the cube
-  double precision, dimension(NGLLX,NGLLY,NGLLZ) :: wgll_cube
+  double precision, dimension(NGLLX,NGLLY,NGLLZ) :: wgll_gpube
 
 ! function for calculating derivatives of Lagrange polynomials
   double precision, external :: lagrange_deriv_GLL
@@ -110,7 +110,7 @@
   do i=1,NGLLX
     do j=1,NGLLY
       do k=1,NGLLZ
-        wgll_cube(i,j,k) = wxgll(i)*wygll(j)*wzgll(k)
+        wgll_gpube(i,j,k) = wxgll(i)*wygll(j)*wzgll(k)
       enddo
     enddo
   enddo
@@ -162,7 +162,7 @@
   do i=1,NGLLX
     do j=1,NGLLY
       do k=1,NGLLZ
-        wgll_cube(i,j,k) = wxgll(i)*wygll(j)*wzgll(k)
+        wgll_gpube(i,j,k) = wxgll(i)*wygll(j)*wzgll(k)
       enddo
     enddo
   enddo

@@ -115,7 +115,7 @@
   double precision :: distmin
 
   integer :: ix_initial_guess_source,iy_initial_guess_source,iz_initial_guess_source
-  integer :: NSOURCES_SUBSET_current_size
+  integer :: NSOURCES_SUBSET_gpurrent_size
 
   logical :: located_target
 
@@ -192,29 +192,29 @@
 
     ! the size of the subset can be the maximum size, or less (if we are in the last subset,
     ! or if there are fewer sources than the maximum size of a subset)
-    NSOURCES_SUBSET_current_size = min(NSOURCES_SUBSET_MAX, NSOURCES - isources_already_done)
+    NSOURCES_SUBSET_gpurrent_size = min(NSOURCES_SUBSET_MAX, NSOURCES - isources_already_done)
 
     ! allocate arrays specific to each subset
-    allocate(final_distance_source_subset(NSOURCES_SUBSET_current_size), &
-             ispec_selected_source_subset(NSOURCES_SUBSET_current_size), &
-             xi_source_subset(NSOURCES_SUBSET_current_size), &
-             eta_source_subset(NSOURCES_SUBSET_current_size), &
-             gamma_source_subset(NSOURCES_SUBSET_current_size), &
-             x_found_source(NSOURCES_SUBSET_current_size), &
-             y_found_source(NSOURCES_SUBSET_current_size), &
-             z_found_source(NSOURCES_SUBSET_current_size),stat=ier)
+    allocate(final_distance_source_subset(NSOURCES_SUBSET_gpurrent_size), &
+             ispec_selected_source_subset(NSOURCES_SUBSET_gpurrent_size), &
+             xi_source_subset(NSOURCES_SUBSET_gpurrent_size), &
+             eta_source_subset(NSOURCES_SUBSET_gpurrent_size), &
+             gamma_source_subset(NSOURCES_SUBSET_gpurrent_size), &
+             x_found_source(NSOURCES_SUBSET_gpurrent_size), &
+             y_found_source(NSOURCES_SUBSET_gpurrent_size), &
+             z_found_source(NSOURCES_SUBSET_gpurrent_size),stat=ier)
     if( ier /= 0 ) call exit_MPI(myrank,'error allocating temporary source arrays')
 
     ! arrays to collect data
     if( myrank == 0 ) then
-      allocate(ispec_selected_source_all(NSOURCES_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               xi_source_all(NSOURCES_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               eta_source_all(NSOURCES_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               gamma_source_all(NSOURCES_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               final_distance_source_all(NSOURCES_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               x_found_source_all(NSOURCES_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               y_found_source_all(NSOURCES_SUBSET_current_size,0:NPROCTOT_VAL-1), &
-               z_found_source_all(NSOURCES_SUBSET_current_size,0:NPROCTOT_VAL-1),stat=ier)
+      allocate(ispec_selected_source_all(NSOURCES_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               xi_source_all(NSOURCES_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               eta_source_all(NSOURCES_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               gamma_source_all(NSOURCES_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               final_distance_source_all(NSOURCES_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               x_found_source_all(NSOURCES_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               y_found_source_all(NSOURCES_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1), &
+               z_found_source_all(NSOURCES_SUBSET_gpurrent_size,0:NPROCTOT_VAL-1),stat=ier)
       if( ier /= 0 ) call exit_MPI(myrank,'error allocating temporary source arrays for gather')
     else
       ! dummy arrays
@@ -237,7 +237,7 @@
     final_distance_source_all(:,:) = HUGEVAL
 
     ! loop over sources within this subset
-    do isource_in_this_subset = 1,NSOURCES_SUBSET_current_size
+    do isource_in_this_subset = 1,NSOURCES_SUBSET_gpurrent_size
 
       ! mapping from source number in current subset to real source number in all the subsets
       isource = isource_in_this_subset + isources_already_done
@@ -567,38 +567,38 @@
     call synchronize_all()
 
     ! now gather information from all the nodes
-    call gather_all_i(ispec_selected_source_subset,NSOURCES_SUBSET_current_size, &
-      ispec_selected_source_all,NSOURCES_SUBSET_current_size,NPROCTOT_VAL)
+    call gather_all_i(ispec_selected_source_subset,NSOURCES_SUBSET_gpurrent_size, &
+      ispec_selected_source_all,NSOURCES_SUBSET_gpurrent_size,NPROCTOT_VAL)
 
     ! checks that the gather operation went well
     if(myrank == 0) then
       if(minval(ispec_selected_source_all(:,:)) <= 0) then
-        print*,'error ispec all: procs = ',NPROCTOT_VAL,'sources subset size = ',NSOURCES_SUBSET_current_size
+        print*,'error ispec all: procs = ',NPROCTOT_VAL,'sources subset size = ',NSOURCES_SUBSET_gpurrent_size
         print*,ispec_selected_source_all(:,:)
         call exit_MPI(myrank,'gather operation failed for source')
       endif
     endif
 
-    call gather_all_dp(xi_source_subset,NSOURCES_SUBSET_current_size, &
-      xi_source_all,NSOURCES_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(eta_source_subset,NSOURCES_SUBSET_current_size, &
-      eta_source_all,NSOURCES_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(gamma_source_subset,NSOURCES_SUBSET_current_size, &
-      gamma_source_all,NSOURCES_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(final_distance_source_subset,NSOURCES_SUBSET_current_size, &
-      final_distance_source_all,NSOURCES_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(x_found_source,NSOURCES_SUBSET_current_size, &
-      x_found_source_all,NSOURCES_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(y_found_source,NSOURCES_SUBSET_current_size, &
-      y_found_source_all,NSOURCES_SUBSET_current_size,NPROCTOT_VAL)
-    call gather_all_dp(z_found_source,NSOURCES_SUBSET_current_size, &
-      z_found_source_all,NSOURCES_SUBSET_current_size,NPROCTOT_VAL)
+    call gather_all_dp(xi_source_subset,NSOURCES_SUBSET_gpurrent_size, &
+      xi_source_all,NSOURCES_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(eta_source_subset,NSOURCES_SUBSET_gpurrent_size, &
+      eta_source_all,NSOURCES_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(gamma_source_subset,NSOURCES_SUBSET_gpurrent_size, &
+      gamma_source_all,NSOURCES_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(final_distance_source_subset,NSOURCES_SUBSET_gpurrent_size, &
+      final_distance_source_all,NSOURCES_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(x_found_source,NSOURCES_SUBSET_gpurrent_size, &
+      x_found_source_all,NSOURCES_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(y_found_source,NSOURCES_SUBSET_gpurrent_size, &
+      y_found_source_all,NSOURCES_SUBSET_gpurrent_size,NPROCTOT_VAL)
+    call gather_all_dp(z_found_source,NSOURCES_SUBSET_gpurrent_size, &
+      z_found_source_all,NSOURCES_SUBSET_gpurrent_size,NPROCTOT_VAL)
 
     ! this is executed by main process only
     if(myrank == 0) then
 
       ! loop on all the sources within subsets
-      do isource_in_this_subset = 1,NSOURCES_SUBSET_current_size
+      do isource_in_this_subset = 1,NSOURCES_SUBSET_gpurrent_size
 
         ! mapping from source number in current subset to real source number in all the subsets
         isource = isources_already_done + isource_in_this_subset

@@ -3257,7 +3257,37 @@ void FC_FUNC_ (prepare_cleanup_device,
     }
   }
 
+  if( mp->num_interfaces_crust_mantle > 0 ){
+    if( GPU_ASYNC_COPY){
+      cudaFreeHost(mp->h_send_accel_buffer_cm);
+      cudaFreeHost(mp->h_recv_accel_buffer_cm);
+      if( mp->simulation_type == 3 ){
+        cudaFreeHost(mp->h_b_send_accel_buffer_cm);
+        cudaFreeHost(mp->h_b_recv_accel_buffer_cm);
+      }
+    }
+  }
+  if( mp->num_interfaces_inner_core > 0 ){
+     if( GPU_ASYNC_COPY){
+      cudaFreeHost(mp->h_send_accel_buffer_ic);
+      cudaFreeHost(mp->h_recv_accel_buffer_ic);
+      if( mp->simulation_type == 3 ){
+        cudaFreeHost(mp->h_b_send_accel_buffer_ic);
+        cudaFreeHost(mp->h_b_recv_accel_buffer_ic);
+      }
+    }
+  }
 
+  if( mp->num_interfaces_outer_core > 0 ){
+    if( GPU_ASYNC_COPY){
+      cudaFreeHost(mp->h_send_accel_buffer_oc);
+      cudaFreeHost(mp->h_recv_accel_buffer_oc);
+      if( mp->simulation_type == 3 ){
+        cudaFreeHost(mp->h_b_send_accel_buffer_oc);
+        cudaFreeHost(mp->h_b_recv_accel_buffer_oc);
+      }
+    }
+  }
   //------------------------------------------
   // sources
   //------------------------------------------
@@ -3924,9 +3954,7 @@ void FC_FUNC_ (prepare_cleanup_device,
       }
       
     }
-#ifdef BUG
-    FINISH CUDA FREE HOST
-#endif
+
     //------------------------------------------
     // mpi buffers
     //------------------------------------------
@@ -4057,7 +4085,7 @@ void FC_FUNC_ (prepare_cleanup_device,
     if(mp->approximate_hess_kl){ cudaFree(mp->d_hess_kl_crust_mantle.cuda);}
   }
 
-    //------------------------------------------
+   //------------------------------------------
     // outer_core
     //------------------------------------------
     cudaFree(mp->d_xix_outer_core.cuda);
