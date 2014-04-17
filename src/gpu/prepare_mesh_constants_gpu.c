@@ -3257,6 +3257,7 @@ void FC_FUNC_ (prepare_cleanup_device,
     }
   }
 
+#ifdef USE_CUDA
   if( mp->num_interfaces_crust_mantle > 0 ){
     if( GPU_ASYNC_COPY){
       cudaFreeHost(mp->h_send_accel_buffer_cm);
@@ -3268,7 +3269,7 @@ void FC_FUNC_ (prepare_cleanup_device,
     }
   }
   if( mp->num_interfaces_inner_core > 0 ){
-     if( GPU_ASYNC_COPY){
+    if( GPU_ASYNC_COPY){
       cudaFreeHost(mp->h_send_accel_buffer_ic);
       cudaFreeHost(mp->h_recv_accel_buffer_ic);
       if( mp->simulation_type == 3 ){
@@ -3277,7 +3278,6 @@ void FC_FUNC_ (prepare_cleanup_device,
       }
     }
   }
-
   if( mp->num_interfaces_outer_core > 0 ){
     if( GPU_ASYNC_COPY){
       cudaFreeHost(mp->h_send_accel_buffer_oc);
@@ -3288,6 +3288,7 @@ void FC_FUNC_ (prepare_cleanup_device,
       }
     }
   }
+#endif
   //------------------------------------------
   // sources
   //------------------------------------------

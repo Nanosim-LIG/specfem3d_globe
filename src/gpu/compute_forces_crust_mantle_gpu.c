@@ -62,7 +62,7 @@ __constant__ size_t d_hprime_xx_tex_offset;
 realw_texture d_hprimewgll_xx_tex;
 __constant__ size_t d_hprimewgll_xx_tex_offset;
 #endif
-#endif
+
 
 template<int FORWARD_OR_ADJOINT> __global__ void
 #ifdef USE_LAUNCH_BOUNDS
@@ -122,6 +122,7 @@ crust_mantle_impl_kernel_tmp( int nb_blocks_to_compute,
                             realw_const_p wgll_cube,
                             const int NSPEC_CRUST_MANTLE_STRAIN_ONLY ){
 }
+#endif
 
 void crust_mantle (int nb_blocks_to_compute, Mesh *mp,
                    int iphase,
@@ -342,7 +343,7 @@ void crust_mantle (int nb_blocks_to_compute, Mesh *mp,
 
     clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.crust_mantle_impl_kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
   }
-skipexec:
+skipexec: ;
 #endif
 #ifdef USE_CUDA
   if (run_cuda) {

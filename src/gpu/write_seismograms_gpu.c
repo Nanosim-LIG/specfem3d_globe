@@ -325,7 +325,7 @@ void FC_FUNC_ (write_seismograms_transfer_gpu,
 
 /* ----------------------------------------------------------------------------------------------- */
 
-extern "C"
+extern EXTERN_LANG
 void FC_FUNC_(transfer_seismo_from_device_async,
               TRANSFER_SEISMO_FROM_DEVICE_ASYNC)(long* Mesh_pointer_f,
                                                  realw* displ,
@@ -352,7 +352,9 @@ void FC_FUNC_(transfer_seismo_from_device_async,
   }
 
   // waits for previous copy call to be finished
+#ifdef USE_CUDA
   cudaStreamSynchronize(mp->copy_stream);
+#endif
 
   // transfers displacements
   // select target array on host
@@ -377,7 +379,8 @@ void FC_FUNC_(transfer_seismo_from_device_async,
   }
 
   // updates corresponding array on CPU
-  for(int irec_local = 0 ; irec_local < mp->nrec_local; irec_local++) {
+  int irec_local;
+  for(irec_local = 0 ; irec_local < mp->nrec_local; irec_local++) {
     irec = number_receiver_global[irec_local] - 1;
     ispec = h_ispec_selected[irec] - 1;
 

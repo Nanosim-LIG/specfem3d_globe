@@ -26,8 +26,9 @@
   !=====================================================================
 */
 
-#include "mesh_constants_gpu.h"
+#include <string.h>
 
+#include "mesh_constants_gpu.h"
 /* ----------------------------------------------------------------------------------------------- */
 // MPI transfer
 /* ----------------------------------------------------------------------------------------------- */
@@ -540,7 +541,7 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
 // Asynchronuous memory copy for mpi buffers
 /* ----------------------------------------------------------------------------------------------- */
 
-extern "C"
+extern EXTERN_LANG
 void FC_FUNC_(transfer_buffer_to_device_async,
               TRANSFER_BUFFER_TO_DEVICE_ASYNC)(long* Mesh_pointer,
                                              realw* buffer,
@@ -569,9 +570,11 @@ void FC_FUNC_(transfer_buffer_to_device_async,
         // copy on host memory
         memcpy(mp->h_recv_accel_buffer_cm,buffer,size_mpi_buffer*sizeof(realw));
 
+#ifdef USE_CUDA
         // asynchronous copy to GPU using copy_stream
         cudaMemcpyAsync(mp->d_send_accel_buffer_crust_mantle.cuda, mp->h_recv_accel_buffer_cm,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+#endif
 
       } else if(*FORWARD_OR_ADJOINT == 3) {
         // debug
@@ -581,8 +584,10 @@ void FC_FUNC_(transfer_buffer_to_device_async,
         memcpy(mp->h_b_recv_accel_buffer_cm,buffer,size_mpi_buffer*sizeof(realw));
 
         // asynchronous copy to GPU using copy_stream
+#ifdef USE_CUDA
         cudaMemcpyAsync(mp->d_b_send_accel_buffer_crust_mantle.cuda,mp->h_b_recv_accel_buffer_cm,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+#endif
       }
     }
   } else if( *IREGION == IREGION_INNER_CORE ){
@@ -596,8 +601,10 @@ void FC_FUNC_(transfer_buffer_to_device_async,
         memcpy(mp->h_recv_accel_buffer_ic,buffer,size_mpi_buffer*sizeof(realw));
 
         // asynchronous copy to GPU using copy_stream
+#ifdef USE_CUDA
         cudaMemcpyAsync(mp->d_send_accel_buffer_inner_core.cuda,mp->h_recv_accel_buffer_ic,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+#endif
 
       }else if (*FORWARD_OR_ADJOINT == 3) {
         // debug
@@ -607,8 +614,10 @@ void FC_FUNC_(transfer_buffer_to_device_async,
         memcpy(mp->h_b_recv_accel_buffer_ic,buffer,size_mpi_buffer*sizeof(realw));
 
         // asynchronous copy to GPU using copy_stream
+#ifdef USE_CUDA
         cudaMemcpyAsync(mp->d_b_send_accel_buffer_inner_core.cuda, mp->h_b_recv_accel_buffer_ic,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+#endif
       }
     }
   } else if( *IREGION == IREGION_OUTER_CORE ){
@@ -622,8 +631,10 @@ void FC_FUNC_(transfer_buffer_to_device_async,
         memcpy(mp->h_recv_accel_buffer_oc,buffer,size_mpi_buffer*sizeof(realw));
 
         // asynchronous copy to GPU using copy_stream
+#ifdef USE_CUDA
         cudaMemcpyAsync(mp->d_send_accel_buffer_outer_core.cuda, mp->h_recv_accel_buffer_oc,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+#endif
 
       } else if(*FORWARD_OR_ADJOINT == 3) {
         // debug
@@ -633,8 +644,10 @@ void FC_FUNC_(transfer_buffer_to_device_async,
         memcpy(mp->h_b_recv_accel_buffer_oc,buffer,size_mpi_buffer*sizeof(realw));
 
         // asynchronous copy to GPU using copy_stream
+#ifdef USE_CUDA
         cudaMemcpyAsync(mp->d_b_send_accel_buffer_outer_core.cuda, mp->h_b_recv_accel_buffer_oc,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+#endif
       }
     }
   }
@@ -643,7 +656,7 @@ void FC_FUNC_(transfer_buffer_to_device_async,
 
 /* ----------------------------------------------------------------------------------------------- */
 
-extern "C"
+extern EXTERN_LANG
 void FC_FUNC_(sync_copy_from_device,
               SYNC_copy_FROM_DEVICE)(long* Mesh_pointer,
                                      int* iphase,
@@ -676,8 +689,9 @@ void FC_FUNC_(sync_copy_from_device,
 
     if (size_mpi_buffer > 0) {
       // waits for asynchronous copy to finish
+#ifdef USE_CUDA
       cudaStreamSynchronize(mp->copy_stream);
-
+#endif
       if(*FORWARD_OR_ADJOINT == 1) {
         // There have been problems using the pinned-memory with MPI, so
         // we copy the buffer into a non-pinned region.
@@ -694,7 +708,9 @@ void FC_FUNC_(sync_copy_from_device,
 
     if (size_mpi_buffer > 0 ){
       // waits for asynchronous copy to finish
+#ifdef USE_CUDA
       cudaStreamSynchronize(mp->copy_stream);
+#endif
 
       if (*FORWARD_OR_ADJOINT == 1) {
         // There have been problems using the pinned-memory with MPI, so
@@ -712,7 +728,9 @@ void FC_FUNC_(sync_copy_from_device,
 
     if( size_mpi_buffer > 0 ){
       // waits for asynchronous copy to finish
+#ifdef USE_CUDA
       cudaStreamSynchronize(mp->copy_stream);
+#endif
 
       if(*FORWARD_OR_ADJOINT == 1) {
         // There have been problems using the pinned-memory with MPI, so

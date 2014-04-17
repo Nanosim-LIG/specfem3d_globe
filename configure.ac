@@ -193,13 +193,20 @@ CONFIGURE_FLAGS="FC=$FC FCFLAGS=$FCFLAGS"
 AC_SUBST([CONFIGURE_FLAGS])
 
 ###
-### CUDA
+### GPU
 ###
 
 AS_IF([test x"$want_cuda" != xno], [
     AS_BOX([CUDA])
     AC_ARG_VAR(CUDA_FLAGS, [Cuda compiler flags])
     CIT_CUDA_CONFIG
+])
+
+AS_IF([test x"$want_opencl" != xno], [
+    AS_BOX([OCL])
+    AC_ARG_VAR(OCL_GPU_FLAGS, [OpenCL GPU compiler flags])
+    AC_ARG_VAR(OCL_CPU_FLAGS, [OpenCL CPU compiler flags])
+    CIT_OPENCL_CONFIG
 ])
 
 ###

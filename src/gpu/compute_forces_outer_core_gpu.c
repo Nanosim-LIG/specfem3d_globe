@@ -141,7 +141,7 @@ void outer_core (int nb_blocks_to_compute, Mesh *mp,
                                      global_work_size, local_work_size, 0, NULL, NULL));
 
   }
-skipexec:
+skipexec: ;
 #endif
 #ifdef USE_CUDA
   if (run_cuda) {

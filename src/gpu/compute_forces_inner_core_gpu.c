@@ -47,7 +47,6 @@ template<> __device__ float texfetch_accel_ic<1>(int x) { return tex1Dfetch(d_ac
 template<> __device__ float texfetch_displ_ic<3>(int x) { return tex1Dfetch(d_b_displ_ic_tex, x); }
 template<> __device__ float texfetch_accel_ic<3>(int x) { return tex1Dfetch(d_b_accel_ic_tex, x); }
 #endif
-#endif
 
 template<int FORWARD_OR_ADJOINT> __global__ void
 #ifdef USE_LAUNCH_BOUNDS
@@ -92,8 +91,9 @@ inner_core_impl_kernel_tmp(int nb_blocks_to_compute,
                                          realw_const_p d_minus_deriv_gravity_table,
                                          realw_const_p d_density_table,
                                          realw_const_p wgll_cube,
-                                         const int NSPEC_INNER_CORE_STRAIN_ONLY,
-                         const int NSPEC_INNER_CORE){}
+                           const int NSPEC_INNER_CORE_STRAIN_ONLY,
+                           const int NSPEC_INNER_CORE){}
+#endif
 
 void inner_core (int nb_blocks_to_compute, Mesh *mp,
                  int iphase,
@@ -284,7 +284,7 @@ void inner_core (int nb_blocks_to_compute, Mesh *mp,
 
     clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.inner_core_impl_kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
   }
-skipexec:
+skipexec: ;
 #endif
 #ifdef USE_CUDA
   if (run_cuda) {

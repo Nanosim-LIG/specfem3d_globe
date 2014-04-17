@@ -311,11 +311,11 @@ void synchronize_mpi () {
 #endif
 }
 
+#ifdef USE_CUDA
 /*----------------------------------------------------------------------------------------------- */
-
 // Timing helper functions
-
 /* ----------------------------------------------------------------------------------------------- */
+
 
 void start_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop){
   // creates & starts event
@@ -338,11 +338,10 @@ void stop_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop, char* info_str){
   printf("%s: Execution Time = %f ms\n",info_str,time);
 }
 
+#endif
 
 /* ----------------------------------------------------------------------------------------------- */
-
-// CUDA kernel setup functions
-
+// GPU kernel setup functions
 /* ----------------------------------------------------------------------------------------------- */
 
 void get_blocks_xy (int num_blocks, int *num_blocks_x, int *num_blocks_y) {

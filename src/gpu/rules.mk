@@ -75,28 +75,15 @@ BOAST_DIR := ${S}/${BOAST_DIR_NAME}
 ### variables
 ###
 
-### environment initial values
-
-_GPU_HOST_CFLAGS := ${GPU_HOST_CFLAGS}
-_GPU_CFLAGS := ${GPU_CFLAGS}
-
-### local values
-
-_GPU_HOST_CFLAGS += -g -O0
-_GPU_CFLAGS += -O3
-
-###
-
-NVCC = /usr/local/cuda-5.5/bin/nvcc
 NVCC_ARCHFLAGS := -arch sm_20 
-NVCC_CFLAGS := -x cu $(_GPU_CFLAGS) --compiler-options "$(_GPU_HOST_CFLAGS)" $(NVCC_ARCHFLAGS)
+NVCC_CFLAGS := -x cu $(CUDA_FLAGS)  $(NVCC_ARCHFLAGS)
 
 BUILD_VERSION_TXT := with
 SELECTOR_CFLAG :=
 
 ifeq ($(CUDA),yes)
 BUILD_VERSION_TXT += Cuda
-CUDA_LINK = -L/usr/local/cuda-5.5/lib64/ -lcudart -lstdc++ 
+CUDA_LINK = -lcudart -lstdc++ 
 SELECTOR_CFLAG += -DUSE_CUDA
 
 ifeq ($(CUDA5),yes)
@@ -121,24 +108,6 @@ BUILD_VERSION_TXT += support
 ### building rules
 ###
 
-help-gpu:
-	@echo Configured values: OCL=$(OCL) CUDA=$(CUDA) CUDA5=$(CUDA5)
-
-clean-gpu:
-	rm bin/xspecfem3D $(gpu_OBJECTS) -f 
-
-cuda:
-	rm bin/xspecfem3D -f
-	make OCL=no CUDA=yes CUDA5=yes
-
-opencl:
-	rm bin/xspecfem3D -f
-	make OCL=yes CUDA=no 
-
-opencl_cuda:
-	rm bin/xspecfem3D -f
-	make OCL=yes CUDA=yes CUDA5=yes
-
 boast_kernels :
 	cd $S/boast ;\
 	mkdir ../$(BOAST_DIR_NAME) -p ;\
@@ -159,7 +128,7 @@ $O/%.cuda-ocl.o: $O/%.cuda.o
 	cd $O && cp $(shell basename $<) $(shell basename $@)
 
 $O/%.ocl.o: $S/%.c ${SETUP}/config.h $S/mesh_constants_gpu.h $S/prepare_constants_gpu.h
-	${CC} -c $< -o $@ -I${SETUP} -I$(BOAST_DIR) $(_GPU_HOST_CFLAGS) $(SELECTOR_CFLAG) -DGPU_CFLAGS=$(_GPU_CFLAGS)
+	${CC} -c $< -o $@ -I${SETUP} -I$(BOAST_DIR) $(OCL_CPU_CFLAGS) $(SELECTOR_CFLAG) -DOCL_GPU_CFLAGS=$(OCL_GPU_CFLAGS)
 
 $O/%.cuda.o: $S/%.c ${SETUP}/config.h $S/mesh_constants_gpu.h $S/prepare_constants_gpu.h
 	$(NVCC) -c $< -o $@ $(NVCC_CFLAGS) -I${SETUP} -I$(BOAST_DIR) $(SELECTOR_CFLAG)

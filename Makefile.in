@@ -56,8 +56,7 @@ FCLINK = $(MPIFCCOMPILE_CHECK)
 ####
 #### GPU
 #### with configure: ./configure --with-cuda=cuda5 CUDA_FLAGS=.. CUDA_LIB=.. CUDA_INC=.. MPI_INC=.. ..
-#### with configure: ./configure --with-opencl CUDA_FLAGS=.. CUDA_LIB=.. CUDA_INC=.. MPI_INC=.. ..
-
+#### with configure: ./configure --with-opencl OCL_GPU_FLAGS=.. OCL_LIB=.. OCL_INC=.. MPI_INC=.. ..
 ####
 #######################################
 

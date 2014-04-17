@@ -107,14 +107,17 @@ void FC_FUNC_ (compute_add_sources_gpu,
 /*----------------------------------------------------------------------------------------------- */
 // backward sources
 /*----------------------------------------------------------------------------------------------- */
+#ifdef USE_CUDA
 __global__ void compute_add_sources_adjoint_cuda_kernel(realw* accel,
                                                         int nrec,
                                                         realw* adj_sourcearrays,
                                                         int* ibool,
                                                         int* ispec_selected_rec,
                                                         int* pre_computed_irec,
-                                                        int nadj_rec_local) {
-}
+                                                        int nadj_rec_local) {}
+
+#endif
+
 extern EXTERN_LANG
 void FC_FUNC_ (compute_add_sources_backward_gpu,
                COMPUTE_ADD_SOURCES_BACKWARD_GPU) (long *Mesh_pointer_f,
@@ -248,7 +251,7 @@ void FC_FUNC_ (compute_add_sources_adjoint_gpu,
 
 
     clCheck (clSetKernelArg (mocl.kernels.compute_add_sources_adjoint_kernel, 0, sizeof (gpu_realw_mem), (void *) &mp->d_accel_crust_mantle.ocl));
-    clCheck (clSetKernelArg (mocl.kernels.compute_add_sources_adjoint_kernel, 1, sizeof (int), (void *) nrec));
+    clCheck (clSetKernelArg (mocl.kernels.compute_add_sources_adjoint_kernel, 1, sizeof (int), (void *) &nrec));
     clCheck (clSetKernelArg (mocl.kernels.compute_add_sources_adjoint_kernel, 2, sizeof (gpu_realw_mem), (void *) &mp->d_adj_sourcearrays.ocl));
     clCheck (clSetKernelArg (mocl.kernels.compute_add_sources_adjoint_kernel, 3, sizeof (gpu_int_mem), (void *) &mp->d_ibool_crust_mantle.ocl));
     clCheck (clSetKernelArg (mocl.kernels.compute_add_sources_adjoint_kernel, 4, sizeof (gpu_int_mem), (void *) &mp->d_ispec_selected_rec.ocl));
@@ -305,10 +308,10 @@ void FC_FUNC_(transfer_adj_to_device,
   //   adj_sourcearrays is (NDIM,NGLLX,NGLLY,NGLLZ,nadj_rec_local,NTSTEP_BETWEEN_READ_ADJSRC)
   // passed as function argument here is pointer to slice at time iadj_vec(it)
   //    which has dimension (NDIM,NGLLX,NGLLY,NGLLZ,nadj_rec_local)
-  int i,j,k,irec_local;
+  int i,j,k,irec,irec_local;
 
   irec_local = 0;
-  for(int irec = 0; irec < nrec; irec++) {
+  for(irec = 0; irec < nrec; irec++) {
     if(mp->myrank == h_islice_selected_rec[irec]) {
       // takes only local sources
       for (k = 0; k < NGLLX; k++) {
@@ -356,7 +359,7 @@ void FC_FUNC_(transfer_adj_to_device,
 /* ----------------------------------------------------------------------------------------------- */
 
 
-extern "C"
+extern EXTERN_LANG
 void FC_FUNC_(transfer_adj_to_device_async,
               TRANSFER_ADJ_TO_DEVICE_ASYNC)(long *Mesh_pointer,
                                             int *h_nrec,
@@ -392,9 +395,9 @@ please check mesh_constants_cuda.h");
   //   adj_sourcearrays is (NDIM,NGLLX,NGLLY,NGLLZ,nadj_rec_local,NTSTEP_BETWEEN_READ_ADJSRC)
   // passed as function argument here is pointer to slice at time iadj_vec(it)
   //    which has dimension (NDIM,NGLLX,NGLLY,NGLLZ,nadj_rec_local)
-  int i,j,k,irec_local;
+
 #if USE_OPENCL
-  ADAPT  THIS FUNCTUI
+  
 #endif
 #if USE_CUDA
   if (run_cuda) {
@@ -402,9 +405,9 @@ please check mesh_constants_cuda.h");
     cudaStreamSynchronize(mp->copy_stream);
   }
 #endif
-
+  int i,j,k,irec,irec_local;
   irec_local = 0;
-  for(int irec = 0; irec < nrec; irec++) {
+  for(irec = 0; irec < nrec; irec++) {
     if(mp->myrank == h_islice_selected_rec[irec]) {
       // takes only local sources
       for(k=0;k<NGLLX;k++) {

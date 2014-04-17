@@ -83,7 +83,7 @@ void FC_FUNC_ (transfer_boun_pot_from_device,
 
       clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_send_accel_buffer_outer_core.ocl, CL_TRUE, 0,
                                     mp->max_nibool_interfaces_oc * mp->num_interfaces_outer_core * sizeof (realw),
-                                    send_potential_dot_dot_buffer, 0, NULL, NULL));
+                                    send_buffer, 0, NULL, NULL));
     }
     else if (*FORWARD_OR_ADJOINT == 3) {
       // debug
@@ -106,7 +106,7 @@ void FC_FUNC_ (transfer_boun_pot_from_device,
 
       clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_outer_core.ocl, CL_TRUE, 0,
                                     mp->max_nibool_interfaces_oc * mp->num_interfaces_outer_core * sizeof (realw),
-                                    send_potential_dot_dot_buffer, 0, NULL, NULL));
+                                    send_buffer, 0, NULL, NULL));
     }
   }
 #endif

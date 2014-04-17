@@ -1209,7 +1209,7 @@ void FC_FUNC_(transfer_b_rmemory_cm_to_device,
 
 // inner core
 
-extern "C"
+extern EXTERN_LANG
 void FC_FUNC_(transfer_rmemory_ic_from_device,
               TRANSFER_RMEMORY_IC_FROM_DEVICE)(long* Mesh_pointer,
                                                realw* R_xx,

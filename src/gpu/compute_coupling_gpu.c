@@ -82,7 +82,8 @@ void FC_FUNC_ (compute_coupling_fluid_cmb_gpu,
 
     clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.compute_coupling_fluid_CMB_kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
   }
-skip_exec:
+skip_exec:;
+  
 #endif
 #ifdef USE_CUDA
   if (run_cuda) {
@@ -174,7 +175,7 @@ void FC_FUNC_ (compute_coupling_fluid_icb_gpu,
 
     clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.compute_coupling_fluid_ICB_kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
   }
-skipexec:
+skipexec: ;
 #endif
 #ifdef USE_CUDA
   if (run_cuda) {
@@ -272,7 +273,7 @@ void FC_FUNC_ (compute_coupling_cmb_fluid_gpu,
     clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.compute_coupling_CMB_fluid_kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
 
   }
-skipexec:
+skipexec: ;
 #endif
 #ifdef USE_CUDA
   if (run_cuda) {
@@ -374,7 +375,7 @@ void FC_FUNC_ (compute_coupling_icb_fluid_gpu,
 
     clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.compute_coupling_ICB_fluid_kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
   }
-skipexec:
+skipexec: ;
 #endif
 #ifdef USE_CUDA
   if (run_cuda) {
@@ -480,7 +481,7 @@ void FC_FUNC_ (compute_coupling_ocean_gpu,
     clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.compute_coupling_ocean_kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
 
   }
-skipexec:
+skipexec: ;
 #endif
 #ifdef USE_CUDA
   if (run_cuda) {
