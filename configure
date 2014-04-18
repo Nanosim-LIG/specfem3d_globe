@@ -629,13 +629,13 @@ MPI_INC
 VTK_LIBS
 VTK_LDFLAGS
 VTK_INCLUDES
-OPENCL_LIBS
-OPENCL_LDFLAGS
-OPENCL_CPPFLAGS
-OPENCL_LIB
-OPENCL_INC
-OCL_CPU_FLAGS
+OCL_LIBS
+OCL_LDFLAGS
+OCL_CFLAGS
+OCL_LIB
+OCL_INC
 OCL_GPU_FLAGS
+OCL_CPU_FLAGS
 CUDA_LIBS
 CUDA_LDFLAGS
 CUDA_CPPFLAGS
@@ -775,10 +775,10 @@ CXX
 CXXFLAGS
 CCC
 CXXCPP
-OCL_GPU_FLAGS
 OCL_CPU_FLAGS
-OPENCL_INC
-OPENCL_LIB
+OCL_GPU_FLAGS
+OCL_INC
+OCL_LIB
 MPI_INC'
 
 
@@ -1403,7 +1403,7 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-cuda             build cuda GPU enabled version [default=no]
-  --with-opencl           build opencl GPU enabled version [default=no]
+  --with-opencl           build OpenCL GPU enabled version [default=no]
   --with-adios            build ADIOS enabled version [default=no]
   --with-vtk              The prefix where VTK is installed [default=/usr]
   --with-vtk-suffix       Suffix to append to VTK's include directory, e.g.,
@@ -1436,12 +1436,12 @@ Some influential environment variables:
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
   CXXCPP      C++ preprocessor
-  OCL_GPU_FLAGS
-              OpenCL GPU compiler flags
   OCL_CPU_FLAGS
               OpenCL CPU compiler flags
-  OPENCL_INC  Location of OpenCL include files
-  OPENCL_LIB  Location of Opencl library libopencl
+  OCL_GPU_FLAGS
+              OpenCL GPU compiler flags
+  OCL_INC     Location of OpenCL include files
+  OCL_LIB     Location of OpenCL library libOpenCL
   MPI_INC     Location of MPI include mpi.h, needed by CUDA/VTK (default:
               auto-detect)
 
@@ -6914,40 +6914,40 @@ if test x"$want_opencl" != xno; then :
 
 
 
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-  CPPFLAGS_save="$CPPFLAGS"
+  CFLAGS_save="$CFLAGS"
   LDFLAGS_save="$LDFLAGS"
   LIBS_save="$LIBS"
 
-    if test "x$OPENCL_INC" != "x"; then
-    OPENCL_CPPFLAGS="-I$OPENCL_INC"
-    CPPFLAGS="$OPENCL_CPPFLAGS $CPPFLAGS"
+    if test "x$OCL_INC" != "x"; then
+    OCL_CFLAGS="-I$OCL_INC"
+    CFLAGS="$OCL_CFLAGS $CFLAGS"
   fi
-  ac_fn_cxx_check_header_mongrel "$LINENO" "CL/cl.h" "ac_cv_header_CL_cl_h" "$ac_includes_default"
+  ac_fn_c_check_header_mongrel "$LINENO" "CL/cl.h" "ac_cv_header_CL_cl_h" "$ac_includes_default"
 if test "x$ac_cv_header_CL_cl_h" = xyes; then :
 
 else
 
-    as_fn_error $? "OpenCL header not found; try setting OPENCL_INC." "$LINENO" 5
+    as_fn_error $? "OpenCL header not found; try setting OCL_INC." "$LINENO" 5
 
 fi
 
 
 
-  if test "x$OPENCL_LIB" != "x"; then
-    OPENCL_LDFLAGS="-L$OPENCL_LIB"
-    LDFLAGS="$OPENCL_LDFLAGS $LDFLAGS"
+  if test "x$OCL_LIB" != "x"; then
+    OCL_LDFLAGS="-L$OCL_LIB"
+    LDFLAGS="$OCL_LDFLAGS $LDFLAGS"
   fi
-  OPENCL_LIBS="-lOpenCL"
-  LIBS="$OPENCL_LIBS $LIBS"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clCreateBuffer in -lopencl" >&5
-$as_echo_n "checking for clCreateBuffer in -lopencl... " >&6; }
+  OCL_LIBS="-lOpenCL"
+  LIBS="$OCL_LIBS $LIBS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for clCreateBuffer in -lOpenCL" >&5
+$as_echo_n "checking for clCreateBuffer in -lOpenCL... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <CL/cl.h>
@@ -6967,19 +6967,19 @@ clGetPlatformIDs(0, 0, 0);
   return 0;
 }
 _ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-     as_fn_error $? "OpenCL library not found; try setting OPENCL_LIB." "$LINENO" 5
+     as_fn_error $? "OpenCL library not found; try setting OCL_LIB." "$LINENO" 5
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-  CPPFLAGS="$CPPFLAGS_save"
+  CFLAGS="$CFLAGS_save"
   LDFLAGS="$LDFLAGS_save"
   LIBS="$LIBS_save"
   ac_ext=${ac_fc_srcext-f}

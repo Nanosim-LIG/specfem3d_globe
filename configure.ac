@@ -56,7 +56,7 @@ AM_CONDITIONAL([COND_CUDA], [test x"$want_cuda" != xno])
 AM_CONDITIONAL([COND_CUDA5], [test x"$want_cuda" = xcuda5])
 
 AC_ARG_WITH([opencl],
- [AC_HELP_STRING([--with-opencl], [build opencl GPU enabled version @<:@default=no@:>@])],
+ [AC_HELP_STRING([--with-opencl], [build OpenCL GPU enabled version @<:@default=no@:>@])],
     [want_ocl="$withval"],
     [want_ocl=no])
 AM_CONDITIONAL([COND_OCL], [test "$want_ocl" != no])
@@ -204,8 +204,8 @@ AS_IF([test x"$want_cuda" != xno], [
 
 AS_IF([test x"$want_opencl" != xno], [
     AS_BOX([OCL])
-    AC_ARG_VAR(OCL_GPU_FLAGS, [OpenCL GPU compiler flags])
     AC_ARG_VAR(OCL_CPU_FLAGS, [OpenCL CPU compiler flags])
+    AC_ARG_VAR(OCL_GPU_FLAGS, [OpenCL GPU compiler flags])
     CIT_OPENCL_CONFIG
 ])
 

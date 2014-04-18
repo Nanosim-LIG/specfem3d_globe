@@ -48,6 +48,12 @@ gpu_OBJECTS = \
 	$O/save_and_compare_cpu_vs_gpu.o \
 	$(EMPTY_MACRO)
 
+ifeq ($(CUDA),yes)
+cuda_specfem3D_DEVICE_OBJ = \
+	$O/cuda_device_obj.o \
+	$(EMPTY_MACRO)
+endif
+
 #######################################
 
 ifeq ($(GPU_CUDA_AND_OCL),yes)
@@ -63,6 +69,8 @@ gpu_OBJECTS:=$(subst .o,.cuda.o,${gpu_OBJECTS})
 endif
 endif
 
+gpu_OBJECTS += $(cuda_specfem3D_DEVICE_OBJ)
+
 ## compilation directories
 
 S := ${S_TOP}/src/gpu
@@ -75,15 +83,15 @@ BOAST_DIR := ${S}/${BOAST_DIR_NAME}
 ### variables
 ###
 
-NVCC_ARCHFLAGS := -arch sm_20 
-NVCC_CFLAGS := -x cu $(CUDA_FLAGS)  $(NVCC_ARCHFLAGS)
+NVCC_CFLAGS := ${NVCC_FLAGS} -x cu $(CUDA_FLAGS)
+
+CUDA_LINK += -lstdc++
 
 BUILD_VERSION_TXT := with
 SELECTOR_CFLAG :=
 
 ifeq ($(CUDA),yes)
 BUILD_VERSION_TXT += Cuda
-CUDA_LINK = -lcudart -lstdc++ 
 SELECTOR_CFLAG += -DUSE_CUDA
 
 ifeq ($(CUDA5),yes)
@@ -94,11 +102,13 @@ endif
 
 ifeq ($(OCL), yes)
 BUILD_VERSION_TXT += OpenCL
-LDFLAGS += -lOpenCL
+LDFLAGS += $(OCL_LINK)
 SELECTOR_CFLAG += -DUSE_OPENCL
 
 ifeq ($(CUDA),yes)
-CUDA_LINK += -lOpenCL
+CUDA_LINK += $(OCL_LINK)
+NVCC_CFLAGS += $(OCL_INC)
+NVCC_CFLAGS += -DOCL_GPU_CFLAGS=$(OCL_GPU_CFLAGS)
 endif
 endif
 
@@ -119,8 +129,8 @@ boast_kernels :
 
 ifeq ($(CUDA5),yes)
 
-$(cuda_specfem3D_DEVICE_OBJ): $(cuda_OBJECTS)
-	${NVCCLINK} -o $(cuda_specfem3D_DEVICE_OBJ) $(cuda_OBJECTS)
+$(cuda_specfem3D_DEVICE_OBJ): $(subst $(cuda_specfem3D_DEVICE_OBJ), ,$(gpu_OBJECTS))
+	${NVCCLINK} -o $@ $^
 
 endif
 

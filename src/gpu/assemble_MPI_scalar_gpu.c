@@ -80,10 +80,18 @@ void FC_FUNC_ (transfer_boun_pot_from_device,
 
       clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.prepare_boundary_potential_on_device, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
 
-
-      clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_send_accel_buffer_outer_core.ocl, CL_TRUE, 0,
-                                    mp->max_nibool_interfaces_oc * mp->num_interfaces_outer_core * sizeof (realw),
-                                    send_buffer, 0, NULL, NULL));
+      // copies buffer to CPU
+      if (GPU_ASYNC_COPY) {
+        clCheck(clFinish(mocl.command_queue));
+        
+        clCheck (clEnqueueReadBuffer (mocl.copy_queue, mp->d_send_accel_buffer_outer_core.ocl, CL_FALSE,
+                                      0, size_mpi_buffer * sizeof (realw),
+                                      send_buffer, 0, NULL, NULL));
+      } else {
+        clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_send_accel_buffer_outer_core.ocl, CL_TRUE,
+                                      0, size_mpi_buffer * sizeof (realw),
+                                      mp->h_send_accel_buffer_oc, 0, NULL, NULL));
+      }
     }
     else if (*FORWARD_OR_ADJOINT == 3) {
       // debug
@@ -103,10 +111,18 @@ void FC_FUNC_ (transfer_boun_pot_from_device,
 
       clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.prepare_boundary_potential_on_device, 2, NULL,
                                        global_work_size, local_work_size, 0, NULL, NULL));
-
-      clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_outer_core.ocl, CL_TRUE, 0,
-                                    mp->max_nibool_interfaces_oc * mp->num_interfaces_outer_core * sizeof (realw),
-                                    send_buffer, 0, NULL, NULL));
+      // copies buffer to CPU
+      if (GPU_ASYNC_COPY) {
+        clCheck(clFinish(mocl.command_queue));
+        
+        clCheck (clEnqueueReadBuffer (mocl.copy_queue, mp->d_b_send_accel_buffer_outer_core.ocl, CL_FALSE,
+                                      0, size_mpi_buffer * sizeof (realw),
+                                      send_buffer, 0, NULL, NULL));
+      } else {
+        clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_outer_core.ocl, CL_TRUE,
+                                      0, size_mpi_buffer * sizeof (realw),
+                                      mp->h_b_send_accel_buffer_oc, 0, NULL, NULL));
+      }
     }
   }
 #endif
@@ -202,13 +218,17 @@ void FC_FUNC_ (transfer_asmbl_pot_to_device,
     size_t global_work_size[2];
     size_t local_work_size[2];
 
-    if (*FORWARD_OR_ADJOINT == 1) {
-      // copies scalar buffer onto GPU
-      clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_send_accel_buffer_outer_core.ocl, CL_FALSE, 0,
-                                     mp->max_nibool_interfaces_oc * mp->num_interfaces_outer_core * sizeof (realw),
-                                     buffer_recv_scalar, 0, NULL, NULL));
+    if (*FORWARD_OR_ADJOINT == 1) {      
+      if (GPU_ASYNC_COPY) {
+        clCheck(clFinish(mocl.copy_queue));
+      } else {
+        // copies scalar buffer onto GPU
+        clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_send_accel_buffer_outer_core.ocl, CL_FALSE, 0,
+                                       mp->max_nibool_interfaces_oc * mp->num_interfaces_outer_core * sizeof (realw),
+                                       buffer_recv_scalar, 0, NULL, NULL));
+      }
+      
       //assemble forward field
-
       clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_potential_on_device, 0, sizeof (gpu_realw_mem), (void *) &mp->d_accel_outer_core));
       clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_potential_on_device, 1, sizeof (gpu_realw_mem), (void *) &mp->d_send_accel_buffer_outer_core));
       clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_potential_on_device, 2, sizeof (int), (void *) &mp->num_interfaces_outer_core));
@@ -229,9 +249,13 @@ void FC_FUNC_ (transfer_asmbl_pot_to_device,
       DEBUG_BACKWARD_ASSEMBLY ();
 
       // copies scalar buffer onto GPU
-      clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_outer_core.ocl, CL_FALSE, 0,
-                                     mp->max_nibool_interfaces_oc * mp->num_interfaces_outer_core * sizeof (realw),
-                                     buffer_recv_scalar, 0, NULL, NULL));
+      if (GPU_ASYNC_COPY) {
+        clCheck(clFinish(mocl.copy_queue));
+      } else {
+        clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_outer_core.ocl, CL_FALSE, 0,
+                                       mp->max_nibool_interfaces_oc * mp->num_interfaces_outer_core * sizeof (realw),
+                                       buffer_recv_scalar, 0, NULL, NULL));
+      }
       //assemble reconstructed/backward field
       clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_potential_on_device, 0, sizeof (gpu_realw_mem), (void *) &mp->d_b_accel_outer_core));
       clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_potential_on_device, 1, sizeof (gpu_realw_mem), (void *) &mp->d_b_send_accel_buffer_outer_core));

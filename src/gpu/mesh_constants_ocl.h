@@ -91,6 +91,7 @@ extern struct _mesh_opencl {
   struct mesh_programs_s programs;
   struct mesh_kernels_s kernels;
   cl_command_queue command_queue;
+  cl_command_queue copy_queue;
   cl_context context;
   cl_device_id device;
   cl_int nb_devices;

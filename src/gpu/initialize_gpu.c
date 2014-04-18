@@ -37,7 +37,7 @@
 #define STR(x) #x
 #define PASS(x) {#x, STR(x)}
 
-struct {
+static struct {
   const char *name;
   const char *value;
 } _macro_to_kernel[] = {
@@ -282,17 +282,22 @@ static void initialize_ocl_device(const char *platform_filter, const char *devic
   build_kernels();
 }
 
-#define DEFAULT_PARAMETERS "-cl-mad-enable -cl-fast-relaxed-math"
+#ifndef OCL_GPU_CFLAGS
+#define OCL_GPU_CFLAGS
+#endif
+#define _OCL_GPU_CFLAGS ""
+
 #define PARAMETER_STR_SIZE 80
 void build_kernels (void) {
   cl_int errcode;
-
-  static char parameters[PARAMETER_STR_SIZE] = DEFAULT_PARAMETERS;
+  
+  static char parameters[PARAMETER_STR_SIZE] = _OCL_GPU_CFLAGS;
+  /*
   char *pos = parameters;
   int len = PARAMETER_STR_SIZE;
   int i;
 
-  /*
+  
   
   for(i = 0; _macro_to_kernel[i].name != NULL; i++) {
     if (!strcmp(_macro_to_kernel[i].name, _macro_to_kernel[i].value)) {
@@ -518,6 +523,7 @@ void ocl_select_device(const char *platform_filter, const char *device_filter, i
    free(cdDevices);
 
    mocl.command_queue = clCreateCommandQueue(mocl.context, mocl.device, 0, clck_(&errcode));
+   mocl.copy_queue = clCreateCommandQueue(mocl.context, mocl.device, 0, clck_(&errcode));
 }
 #endif
 

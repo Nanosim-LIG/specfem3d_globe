@@ -89,9 +89,16 @@ void FC_FUNC_(transfer_boun_from_device,
           clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.prepare_boundary_accel_on_device, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
 
           // copies buffer to CPU
-          clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_send_accel_buffer_crust_mantle.ocl, CL_TRUE, 0,
-                                        NDIM * mp->max_nibool_interfaces_cm * mp->num_interfaces_crust_mantle * sizeof (realw),
-                                        send_accel_buffer, 0, NULL, NULL));
+          if (GPU_ASYNC_COPY) {
+            clCheck(clFinish(mocl.command_queue));
+            clCheck (clEnqueueReadBuffer (mocl.copy_queue, mp->d_send_accel_buffer_crust_mantle.ocl, CL_FALSE, 0,
+                                          size_mpi_buffer * sizeof (realw),
+                                          mp->h_send_accel_buffer_cm, 0, NULL, NULL));
+          } else {
+            clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_send_accel_buffer_crust_mantle.ocl, CL_TRUE, 0,
+                                          size_mpi_buffer * sizeof (realw),
+                                          send_accel_buffer, 0, NULL, NULL));
+          }
 
         } else if (*FORWARD_OR_ADJOINT == 3) {
           // debug
@@ -107,10 +114,16 @@ void FC_FUNC_(transfer_boun_from_device,
           clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.prepare_boundary_accel_on_device, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
 
           // copies buffer to CPU
-          clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_send_accel_buffer_crust_mantle.ocl, CL_TRUE, 0,
-                                        NDIM*mp->max_nibool_interfaces_cm*mp->num_interfaces_crust_mantle*sizeof (realw),
-                                        send_accel_buffer, 0, NULL, NULL));
-
+          if (GPU_ASYNC_COPY) {
+            clCheck(clFinish(mocl.command_queue));
+            clCheck (clEnqueueReadBuffer (mocl.copy_queue, mp->d_b_send_accel_buffer_crust_mantle.ocl, CL_TRUE, 0,
+                                          size_mpi_buffer * sizeof (realw),
+                                          mp->h_b_send_accel_buffer_cm, 0, NULL, NULL));
+          } else {
+            clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_send_accel_buffer_crust_mantle.ocl, CL_TRUE, 0,
+                                          size_mpi_buffer * sizeof (realw),
+                                          send_accel_buffer, 0, NULL, NULL));
+          }
         }
       }
 #endif
@@ -197,9 +210,16 @@ void FC_FUNC_(transfer_boun_from_device,
           clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.prepare_boundary_accel_on_device, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
 
           // copies buffer to CPU
-          clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_send_accel_buffer_inner_core.ocl, CL_TRUE, 0,
-                                        NDIM * mp->max_nibool_interfaces_ic * mp->num_interfaces_inner_core * sizeof (realw),
-                                        send_accel_buffer, 0, NULL, NULL));
+          if (GPU_ASYNC_COPY) {
+            clCheck(clFinish(mocl.command_queue));
+            clCheck (clEnqueueReadBuffer (mocl.copy_queue, mp->d_send_accel_buffer_inner_core.ocl, CL_TRUE, 0,
+                                          size_mpi_buffer * sizeof (realw),
+                                          mp->h_send_accel_buffer_ic, 0, NULL, NULL));
+          } else {
+            clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_send_accel_buffer_inner_core.ocl, CL_TRUE, 0,
+                                          size_mpi_buffer * sizeof (realw),
+                                          send_accel_buffer, 0, NULL, NULL));
+          }
 
         } else if (*FORWARD_OR_ADJOINT == 3) {
           // debug
@@ -220,9 +240,17 @@ void FC_FUNC_(transfer_boun_from_device,
           clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.prepare_boundary_accel_on_device, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
 
           // copies buffer to CPU
-          clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_inner_core.ocl, CL_TRUE, 0,
-                                        NDIM * mp->max_nibool_interfaces_ic * mp->num_interfaces_inner_core * sizeof (realw),
-                                        send_accel_buffer, 0, NULL, NULL));
+          if (GPU_ASYNC_COPY) {
+            clCheck(clFinish(mocl.command_queue));
+            clCheck (clEnqueueReadBuffer (mocl.copy_queue, mp->d_b_send_accel_buffer_inner_core.ocl, CL_FALSE, 0,
+                                          size_mpi_buffer * sizeof (realw),
+                                          mp->h_b_send_accel_buffer_ic, 0, NULL, NULL));
+          } else {
+            
+            clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_inner_core.ocl, CL_TRUE, 0,
+                                          size_mpi_buffer * sizeof (realw),
+                                          send_accel_buffer, 0, NULL, NULL));
+          }
         }
       }
 #endif
@@ -322,9 +350,13 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
       if (run_opencl) {
         if (*FORWARD_OR_ADJOINT == 1) {
           // copies vector buffer values to GPU
-          clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_send_accel_buffer_crust_mantle.ocl, CL_FALSE, 0,
-                                         NDIM * (mp->max_nibool_interfaces_cm) * (mp->num_interfaces_crust_mantle)*sizeof (realw),
-                                         buffer_recv_vector, 0, NULL, NULL));
+          if (GPU_ASYNC_COPY) {
+            clCheck(clFinish(mocl.copy_queue));
+          } else {
+            clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_send_accel_buffer_crust_mantle.ocl, CL_FALSE, 0,
+                                           NDIM * (mp->max_nibool_interfaces_cm) * (mp->num_interfaces_crust_mantle)*sizeof (realw),
+                                           buffer_recv_vector, 0, NULL, NULL));
+          }
           //assemble forward accel
           clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_accel_on_device, 0, sizeof (gpu_realw_mem), (void *) &mp->d_accel_crust_mantle.ocl));
           clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_accel_on_device, 1, sizeof (gpu_realw_mem), (void *) &mp->d_send_accel_buffer_crust_mantle.ocl));
@@ -342,11 +374,15 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
         } else if (*FORWARD_OR_ADJOINT == 3) {
           // debug
           DEBUG_BACKWARD_ASSEMBLY ();
-
-          // copies vector buffer values to GPU
-          clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_crust_mantle.ocl, CL_FALSE, 0,
-                                         NDIM * (mp->max_nibool_interfaces_cm) * (mp->num_interfaces_crust_mantle) * sizeof (realw),
-                                         buffer_recv_vector, 0, NULL, NULL));
+          
+          if (GPU_ASYNC_COPY) {
+            clCheck(clFinish(mocl.command_queue));
+          } else {
+            // copies vector buffer values to GPU
+            clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_crust_mantle.ocl, CL_FALSE, 0,
+                                           NDIM * (mp->max_nibool_interfaces_cm) * (mp->num_interfaces_crust_mantle) * sizeof (realw),
+                                           buffer_recv_vector, 0, NULL, NULL));
+          }
           //assemble adjoint accel
           clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_accel_on_device, 0, sizeof (gpu_realw_mem), (void *) &mp->d_b_accel_crust_mantle.ocl));
           clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_accel_on_device, 1, sizeof (gpu_realw_mem), (void *) &mp->d_b_send_accel_buffer_crust_mantle.ocl));
@@ -370,16 +406,16 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
         threads = dim3(blocksize,1,1);
 
         if(*FORWARD_OR_ADJOINT == 1) {
-        // asynchronuous copy
-        if( GPU_ASYNC_COPY ){
-          // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
-          cudaStreamSynchronize(mp->copy_stream);
-        }else{
-          // (cudaMemcpy implicitly synchronizes all other cuda operations)
-          // copies vector buffer values to GPU
-          print_CUDA_error_if_any(cudaMemcpy(mp->d_send_accel_buffer_crust_mantle.cuda,buffer_recv_vector,size_mpi_buffer*sizeof(realw),
-                                             cudaMemcpyHostToDevice),41000);
-        }
+          // asynchronuous copy
+          if( GPU_ASYNC_COPY ){
+            // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
+            cudaStreamSynchronize(mp->copy_stream);
+          }else{
+            // (cudaMemcpy implicitly synchronizes all other cuda operations)
+            // copies vector buffer values to GPU
+            print_CUDA_error_if_any(cudaMemcpy(mp->d_send_accel_buffer_crust_mantle.cuda,buffer_recv_vector,size_mpi_buffer*sizeof(realw),
+                                               cudaMemcpyHostToDevice),41000);
+          }
 
           //assemble forward accel
           assemble_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_accel_crust_mantle.cuda,
@@ -393,17 +429,17 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
           // debug
           DEBUG_BACKWARD_ASSEMBLY();
 
-        // asynchronuous copy
-        if( GPU_ASYNC_COPY ){
-          // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
-          cudaStreamSynchronize(mp->copy_stream);
-        }else{
-          // (cudaMemcpy implicitly synchronizes all other cuda operations)
-          // copies vector buffer values to GPU
-          print_CUDA_error_if_any(cudaMemcpy(mp->d_b_send_accel_buffer_crust_mantle.cuda, buffer_recv_vector,
-                                             NDIM*(mp->max_nibool_interfaces_cm)*(mp->num_interfaces_crust_mantle)*sizeof(realw),
-                                             cudaMemcpyHostToDevice),41000);
-        }
+          // asynchronuous copy
+          if( GPU_ASYNC_COPY ){
+            // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
+            cudaStreamSynchronize(mp->copy_stream);
+          }else{
+            // (cudaMemcpy implicitly synchronizes all other cuda operations)
+            // copies vector buffer values to GPU
+            print_CUDA_error_if_any(cudaMemcpy(mp->d_b_send_accel_buffer_crust_mantle.cuda, buffer_recv_vector,
+                                               NDIM*(mp->max_nibool_interfaces_cm)*(mp->num_interfaces_crust_mantle)*sizeof(realw),
+                                               cudaMemcpyHostToDevice),41000);
+          }
 
           //assemble adjoint accel
           assemble_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_accel_crust_mantle.cuda,
@@ -437,10 +473,13 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
       if (run_opencl) {
         if (*FORWARD_OR_ADJOINT == 1) {
           // copies buffer values to GPU
-          clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_send_accel_buffer_inner_core.ocl, CL_FALSE, 0,
-                                         NDIM * (mp->max_nibool_interfaces_ic) * (mp->num_interfaces_inner_core)*sizeof (realw),
-                                         buffer_recv_vector, 0, NULL, NULL));
-
+          if (GPU_ASYNC_COPY) {
+            clCheck(clFinish(mocl.copy_queue));
+          } else {
+            clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_send_accel_buffer_inner_core.ocl, CL_FALSE, 0,
+                                           NDIM * (mp->max_nibool_interfaces_ic) * (mp->num_interfaces_inner_core)*sizeof (realw),
+                                           buffer_recv_vector, 0, NULL, NULL));
+          }
           //assemble forward accel
           clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_accel_on_device, 0, sizeof (gpu_realw_mem), (void *) &mp->d_accel_inner_core.ocl));
           clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_accel_on_device, 1, sizeof (gpu_realw_mem), (void *) &mp->d_send_accel_buffer_inner_core.ocl));
@@ -458,11 +497,15 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
         } else if (*FORWARD_OR_ADJOINT == 3) {
           // debug
           DEBUG_BACKWARD_ASSEMBLY ();
-
-          // copies buffer values to GPU
-          clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_inner_core.ocl, CL_FALSE, 0,
-                                         NDIM * (mp->max_nibool_interfaces_ic) * (mp->num_interfaces_inner_core) * sizeof (realw),
-                                         buffer_recv_vector, 0, NULL, NULL));
+          
+          if (GPU_ASYNC_COPY) {
+            clCheck(clFinish(mocl.copy_queue));
+          } else {
+            // copies buffer values to GPU
+            clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_inner_core.ocl, CL_FALSE, 0,
+                                           NDIM * (mp->max_nibool_interfaces_ic) * (mp->num_interfaces_inner_core) * sizeof (realw),
+                                           buffer_recv_vector, 0, NULL, NULL));
+          }
           //assemble adjoint accel
           clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_accel_on_device, 0, sizeof (gpu_realw_mem), (void *) &mp->d_b_accel_inner_core.ocl));
           clCheck (clSetKernelArg (mocl.kernels.assemble_boundary_accel_on_device, 1, sizeof (gpu_realw_mem), (void *) &mp->d_b_send_accel_buffer_inner_core.ocl));
@@ -486,15 +529,15 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
         threads = dim3(blocksize,1,1);
 
         if(*FORWARD_OR_ADJOINT == 1) {
-        if( GPU_ASYNC_COPY ){
-          // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
-          cudaStreamSynchronize(mp->copy_stream);
-        }else{
-          // (cudaMemcpy implicitly synchronizes all other cuda operations)
-          // copies buffer values to GPU
-          print_CUDA_error_if_any(cudaMemcpy(mp->d_send_accel_buffer_inner_core.cuda,buffer_recv_vector,size_mpi_buffer*sizeof(realw),
-                                             cudaMemcpyHostToDevice),41001);
-        }
+          if( GPU_ASYNC_COPY ){
+            // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
+            cudaStreamSynchronize(mp->copy_stream);
+          }else{
+            // (cudaMemcpy implicitly synchronizes all other cuda operations)
+            // copies buffer values to GPU
+            print_CUDA_error_if_any(cudaMemcpy(mp->d_send_accel_buffer_inner_core.cuda,buffer_recv_vector,size_mpi_buffer*sizeof(realw),
+                                               cudaMemcpyHostToDevice),41001);
+          }
 
           //assemble forward accel
           assemble_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_accel_inner_core.cuda,
@@ -508,15 +551,15 @@ void FC_FUNC_ (transfer_asmbl_accel_to_device,
           // debug
           DEBUG_BACKWARD_ASSEMBLY();
 
-        if( GPU_ASYNC_COPY ){
-          // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
-          cudaStreamSynchronize(mp->copy_stream);
-        }else{
-          // (cudaMemcpy implicitly synchronizes all other cuda operations)
-          // copies buffer values to GPU
-          print_CUDA_error_if_any(cudaMemcpy(mp->d_b_send_accel_buffer_inner_core.cuda,buffer_recv_vector,size_mpi_buffer*sizeof(realw),
-                                             cudaMemcpyHostToDevice),41001);
-        }
+          if (GPU_ASYNC_COPY ){
+            // Wait until previous copy stream finishes. We assemble while other compute kernels execute.
+            cudaStreamSynchronize(mp->copy_stream);
+          }else{
+            // (cudaMemcpy implicitly synchronizes all other cuda operations)
+            // copies buffer values to GPU
+            print_CUDA_error_if_any(cudaMemcpy(mp->d_b_send_accel_buffer_inner_core.cuda,buffer_recv_vector,size_mpi_buffer*sizeof(realw),
+                                               cudaMemcpyHostToDevice),41001);
+          }
 
           //assemble adjoint accel
           assemble_boundary_accel_on_device<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_accel_inner_core.cuda,
@@ -568,29 +611,47 @@ void FC_FUNC_(transfer_buffer_to_device_async,
 
       if (*FORWARD_OR_ADJOINT == 1) {
         // copy on host memory
-        memcpy(mp->h_recv_accel_buffer_cm,buffer,size_mpi_buffer*sizeof(realw));
+        memcpy(mp->h_recv_accel_buffer_cm, buffer, size_mpi_buffer * sizeof(realw));
 
-#ifdef USE_CUDA
         // asynchronous copy to GPU using copy_stream
-        cudaMemcpyAsync(mp->d_send_accel_buffer_crust_mantle.cuda, mp->h_recv_accel_buffer_cm,size_mpi_buffer*sizeof(realw),
-                        cudaMemcpyHostToDevice,mp->copy_stream);
+#ifdef USE_OPENCL
+        if (run_opencl) {
+          clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_send_accel_buffer_crust_mantle.ocl, CL_FALSE, 0,
+                                         size_mpi_buffer * sizeof (realw),
+                                         mp->h_recv_accel_buffer_cm, 0, NULL, NULL));
+        }
+#endif
+#ifdef USE_CUDA
+        if (run_cuda) {
+          cudaMemcpyAsync(mp->d_send_accel_buffer_crust_mantle.cuda, mp->h_recv_accel_buffer_cm,size_mpi_buffer*sizeof(realw),
+                          cudaMemcpyHostToDevice,mp->copy_stream);
+        }
 #endif
 
-      } else if(*FORWARD_OR_ADJOINT == 3) {
+      } else if (*FORWARD_OR_ADJOINT == 3) {
         // debug
         DEBUG_BACKWARD_ASSEMBLY();
 
         // copy on host memory
-        memcpy(mp->h_b_recv_accel_buffer_cm,buffer,size_mpi_buffer*sizeof(realw));
+        memcpy(mp->h_b_recv_accel_buffer_cm, buffer, size_mpi_buffer * sizeof(realw));
 
         // asynchronous copy to GPU using copy_stream
+#ifdef USE_OPENCL
+        if (run_opencl) {
+          clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_b_send_accel_buffer_crust_mantle.ocl, CL_FALSE, 0,
+                                         size_mpi_buffer * sizeof (realw),
+                                         mp->h_b_recv_accel_buffer_cm, 0, NULL, NULL));
+        }
+#endif    
 #ifdef USE_CUDA
-        cudaMemcpyAsync(mp->d_b_send_accel_buffer_crust_mantle.cuda,mp->h_b_recv_accel_buffer_cm,size_mpi_buffer*sizeof(realw),
+        if (run_cuda) {
+          cudaMemcpyAsync(mp->d_b_send_accel_buffer_crust_mantle.cuda,mp->h_b_recv_accel_buffer_cm,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+        }
 #endif
       }
     }
-  } else if( *IREGION == IREGION_INNER_CORE ){
+  } else if (*IREGION == IREGION_INNER_CORE) {
     // inner core region
     size_mpi_buffer = NDIM * mp->max_nibool_interfaces_ic * mp->num_interfaces_inner_core;
 
@@ -598,55 +659,91 @@ void FC_FUNC_(transfer_buffer_to_device_async,
 
       if (*FORWARD_OR_ADJOINT == 1) {
         // copy on host memory
-        memcpy(mp->h_recv_accel_buffer_ic,buffer,size_mpi_buffer*sizeof(realw));
+        memcpy(mp->h_recv_accel_buffer_ic, buffer, size_mpi_buffer * sizeof(realw));
 
         // asynchronous copy to GPU using copy_stream
+#ifdef USE_OPENCL
+        if (run_opencl) {
+          clCheck(clEnqueueWriteBuffer(mocl.command_queue, mp->d_send_accel_buffer_inner_core.ocl, CL_FALSE, 0,
+                                         size_mpi_buffer * sizeof (realw),
+                                         mp->h_recv_accel_buffer_ic, 0, NULL, NULL));
+        }
+#endif
 #ifdef USE_CUDA
-        cudaMemcpyAsync(mp->d_send_accel_buffer_inner_core.cuda,mp->h_recv_accel_buffer_ic,size_mpi_buffer*sizeof(realw),
+        if (run_cuda) {
+          cudaMemcpyAsync(mp->d_send_accel_buffer_inner_core.cuda,mp->h_recv_accel_buffer_ic,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+        }
 #endif
 
-      }else if (*FORWARD_OR_ADJOINT == 3) {
+      } else if (*FORWARD_OR_ADJOINT == 3) {
         // debug
         DEBUG_BACKWARD_ASSEMBLY();
 
         // copy on host memory
-        memcpy(mp->h_b_recv_accel_buffer_ic,buffer,size_mpi_buffer*sizeof(realw));
+        memcpy(mp->h_b_recv_accel_buffer_ic, buffer, size_mpi_buffer * sizeof(realw));
 
         // asynchronous copy to GPU using copy_stream
+#ifdef USE_OPENCL
+        if (run_opencl) {
+          clCheck(clEnqueueWriteBuffer(mocl.command_queue, mp->d_b_send_accel_buffer_inner_core.ocl, CL_FALSE, 0,
+                                       size_mpi_buffer * sizeof (realw),
+                                       mp->h_b_recv_accel_buffer_ic, 0, NULL, NULL));
+        }
+#endif
 #ifdef USE_CUDA
-        cudaMemcpyAsync(mp->d_b_send_accel_buffer_inner_core.cuda, mp->h_b_recv_accel_buffer_ic,size_mpi_buffer*sizeof(realw),
+        if (run_cuda) {
+          cudaMemcpyAsync(mp->d_b_send_accel_buffer_inner_core.cuda, mp->h_b_recv_accel_buffer_ic,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+        }
 #endif
       }
     }
-  } else if( *IREGION == IREGION_OUTER_CORE ){
+  } else if (*IREGION == IREGION_OUTER_CORE) {
     // outer core region
-    size_mpi_buffer = mp->max_nibool_interfaces_oc*mp->num_interfaces_outer_core;
+    size_mpi_buffer = mp->max_nibool_interfaces_oc * mp->num_interfaces_outer_core;
 
     if (size_mpi_buffer > 0) {
 
       if (*FORWARD_OR_ADJOINT == 1) {
         // copy on host memory
-        memcpy(mp->h_recv_accel_buffer_oc,buffer,size_mpi_buffer*sizeof(realw));
+        memcpy(mp->h_recv_accel_buffer_oc, buffer, size_mpi_buffer * sizeof(realw));
 
         // asynchronous copy to GPU using copy_stream
+#ifdef USE_OPENCL
+        if (run_opencl) {
+          clCheck(clEnqueueWriteBuffer(mocl.command_queue, mp->d_send_accel_buffer_outer_core.ocl, CL_FALSE, 0,
+                                       size_mpi_buffer * sizeof (realw),
+                                       mp->h_recv_accel_buffer_oc, 0, NULL, NULL));
+      }
+#endif
 #ifdef USE_CUDA
-        cudaMemcpyAsync(mp->d_send_accel_buffer_outer_core.cuda, mp->h_recv_accel_buffer_oc,size_mpi_buffer*sizeof(realw),
+        if (run_cuda) {
+          cudaMemcpyAsync(mp->d_send_accel_buffer_outer_core.cuda, mp->h_recv_accel_buffer_oc,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+        }
 #endif
 
-      } else if(*FORWARD_OR_ADJOINT == 3) {
+      } else if (*FORWARD_OR_ADJOINT == 3) {
         // debug
         DEBUG_BACKWARD_ASSEMBLY();
 
         // copy on host memory
-        memcpy(mp->h_b_recv_accel_buffer_oc,buffer,size_mpi_buffer*sizeof(realw));
+        memcpy(mp->h_b_recv_accel_buffer_oc, buffer, size_mpi_buffer * sizeof(realw));
 
         // asynchronous copy to GPU using copy_stream
+#ifdef USE_OPENCL
+        if (run_opencl) {
+          clCheck(clEnqueueWriteBuffer(mocl.command_queue, mp->d_b_send_accel_buffer_outer_core.ocl, CL_FALSE, 0,
+                                       size_mpi_buffer * sizeof (realw),
+                                       mp->h_b_recv_accel_buffer_oc, 0, NULL, NULL));
+      }
+#endif
 #ifdef USE_CUDA
-        cudaMemcpyAsync(mp->d_b_send_accel_buffer_outer_core.cuda, mp->h_b_recv_accel_buffer_oc,size_mpi_buffer*sizeof(realw),
+        if (run_cuda) {
+          cudaMemcpyAsync(mp->d_b_send_accel_buffer_outer_core.cuda, mp->h_b_recv_accel_buffer_oc,size_mpi_buffer*sizeof(realw),
                         cudaMemcpyHostToDevice,mp->copy_stream);
+        }
 #endif
       }
     }
@@ -662,15 +759,14 @@ void FC_FUNC_(sync_copy_from_device,
                                      int* iphase,
                                      realw* send_buffer,
                                      int* IREGION,
-                                     int* FORWARD_OR_ADJOINT) {
-
-// synchronizes copy stream before copying buffers from pinned memory to CPU host
-
+                                     int* FORWARD_OR_ADJOINT)
+{
+  // synchronizes copy stream before copying buffers from pinned memory to CPU host
   TRACE("sync_copy_from_device");
 
   int size_mpi_buffer;
 
-  Mesh* mp = (Mesh*)(*Mesh_pointer); // get Mesh from fortran integer wrapper
+  Mesh *mp = (Mesh *)(*Mesh_pointer); // get Mesh from fortran integer wrapper
 
   // checks async-memcpy
   if (GPU_ASYNC_COPY == 0) {
@@ -683,33 +779,47 @@ void FC_FUNC_(sync_copy_from_device,
   }
 
   // regions
-  if(* IREGION == IREGION_CRUST_MANTLE) {
+  if (*IREGION == IREGION_CRUST_MANTLE) {
     // crust/mantle
-    size_mpi_buffer = NDIM*mp->max_nibool_interfaces_cm*mp->num_interfaces_crust_mantle;
+    size_mpi_buffer = NDIM * mp->max_nibool_interfaces_cm * mp->num_interfaces_crust_mantle;
 
     if (size_mpi_buffer > 0) {
       // waits for asynchronous copy to finish
-#ifdef USE_CUDA
-      cudaStreamSynchronize(mp->copy_stream);
+#ifdef USE_OPENCL
+      if (run_opencl) {
+        clCheck(clFinish(mocl.copy_queue));
+      }
 #endif
-      if(*FORWARD_OR_ADJOINT == 1) {
+#ifdef USE_CUDA
+      if (run_cuda) {
+        cudaStreamSynchronize(mp->copy_stream);
+      }
+#endif
+      if (*FORWARD_OR_ADJOINT == 1) {
         // There have been problems using the pinned-memory with MPI, so
         // we copy the buffer into a non-pinned region.
-        memcpy(send_buffer,mp->h_send_accel_buffer_cm,size_mpi_buffer*sizeof(realw));
+        memcpy(send_buffer, mp->h_send_accel_buffer_cm, size_mpi_buffer * sizeof(realw));
 
-      } else if(*FORWARD_OR_ADJOINT == 3) {
+      } else if (*FORWARD_OR_ADJOINT == 3) {
         // we copy the buffer into a non-pinned region.
-        memcpy(send_buffer,mp->h_b_send_accel_buffer_cm,size_mpi_buffer*sizeof(realw));
+        memcpy(send_buffer, mp->h_b_send_accel_buffer_cm, size_mpi_buffer * sizeof(realw));
       }
     }
   } else if (*IREGION == IREGION_INNER_CORE) {
     // inner core
-    size_mpi_buffer = NDIM*mp->max_nibool_interfaces_ic*mp->num_interfaces_inner_core;
+    size_mpi_buffer = NDIM * mp->max_nibool_interfaces_ic * mp->num_interfaces_inner_core;
 
-    if (size_mpi_buffer > 0 ){
+    if (size_mpi_buffer > 0) {
       // waits for asynchronous copy to finish
+#ifdef USE_OPENCL
+      if (run_opencl) {
+        clCheck(clFinish(mocl.copy_queue));
+      }
+#endif
 #ifdef USE_CUDA
-      cudaStreamSynchronize(mp->copy_stream);
+      if (run_cuda) {
+        cudaStreamSynchronize(mp->copy_stream);
+      }
 #endif
 
       if (*FORWARD_OR_ADJOINT == 1) {
@@ -722,28 +832,34 @@ void FC_FUNC_(sync_copy_from_device,
         memcpy(send_buffer,mp->h_b_send_accel_buffer_ic,size_mpi_buffer*sizeof(realw));
       }
     }
-  } else if( *IREGION == IREGION_OUTER_CORE ){
+  } else if (*IREGION == IREGION_OUTER_CORE) {
     // outer core
-    size_mpi_buffer = mp->max_nibool_interfaces_oc*mp->num_interfaces_outer_core;
+    size_mpi_buffer = mp->max_nibool_interfaces_oc * mp->num_interfaces_outer_core;
 
-    if( size_mpi_buffer > 0 ){
+    if (size_mpi_buffer > 0) {
       // waits for asynchronous copy to finish
+#ifdef USE_OPENCL
+      if (run_opencl) {
+        clCheck(clFinish(mocl.copy_queue));
+      }
+#endif
 #ifdef USE_CUDA
-      cudaStreamSynchronize(mp->copy_stream);
+      if (run_cuda) {
+        cudaStreamSynchronize(mp->copy_stream);
+      }
 #endif
 
-      if(*FORWARD_OR_ADJOINT == 1) {
+      if (*FORWARD_OR_ADJOINT == 1) {
         // There have been problems using the pinned-memory with MPI, so
         // we copy the buffer into a non-pinned region.
-        memcpy(send_buffer,mp->h_send_accel_buffer_oc,size_mpi_buffer*sizeof(realw));
+        memcpy(send_buffer, mp->h_send_accel_buffer_oc, size_mpi_buffer * sizeof(realw));
 
-      }else if(*FORWARD_OR_ADJOINT == 3){
+      } else if (*FORWARD_OR_ADJOINT == 3) {
         // we copy the buffer into a non-pinned region.
-        memcpy(send_buffer,mp->h_b_send_accel_buffer_oc,size_mpi_buffer*sizeof(realw));
+        memcpy(send_buffer, mp->h_b_send_accel_buffer_oc, size_mpi_buffer * sizeof(realw));
       }
     }
   }
-
   // memory copy is now finished, so non-blocking MPI send can proceed
 }
 

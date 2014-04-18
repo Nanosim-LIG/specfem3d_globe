@@ -55,6 +55,10 @@ void write_seismograms_transfer_from_device (Mesh *mp,
 
 #ifdef USE_OPENCL
   if (run_opencl) {
+    if (GPU_ASYNC_COPY) {
+      clCheck(clFinish(mocl.copy_queue));
+    }
+    
     size_t global_work_size[2];
     size_t local_work_size[2];
 
@@ -74,9 +78,16 @@ void write_seismograms_transfer_from_device (Mesh *mp,
     clCheck (clEnqueueNDRangeKernel (mocl.command_queue, mocl.kernels.write_seismograms_transfer_from_device_kernel, 2, NULL, global_work_size, local_work_size, 0, NULL, NULL));
 
     //copies array to CPU
-    clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_station_seismo_field.ocl, CL_TRUE, 0,
-                                  3 * NGLL3 * mp->nrec_local * sizeof (realw),
-                                  mp->h_station_seismo_field, 0, NULL, NULL));
+    if (GPU_ASYNC_COPY) {
+      clCheck(clFinish(mocl.command_queue));
+      clCheck (clEnqueueReadBuffer (mocl.copy_queue, mp->d_station_seismo_field.ocl, CL_FALSE, 0,
+                                    3 * NGLL3 * mp->nrec_local * sizeof (realw),
+                                    mp->h_station_seismo_field, 0, NULL, NULL));
+    } else {
+      clCheck (clEnqueueReadBuffer (mocl.command_queue, mp->d_station_seismo_field.ocl, CL_TRUE, 0,
+                                    3 * NGLL3 * mp->nrec_local * sizeof (realw),
+                                    mp->h_station_seismo_field, 0, NULL, NULL));
+    }
   }
 #endif
 #if USE_CUDA
@@ -114,19 +125,19 @@ void write_seismograms_transfer_from_device (Mesh *mp,
 	}
   }
 #endif
-if(!GPU_ASYNC_COPY ){
-  for (irec_local = 0; irec_local < mp->nrec_local; irec_local++) {
-    irec = number_receiver_global[irec_local] - 1;
-    ispec = h_ispec_selected[irec] - 1;
-
-    for (i = 0; i < NGLL3; i++) {
-      iglob = ibool[i+NGLL3*ispec] - 1;
-      h_field[0+3*iglob] = mp->h_station_seismo_field[0+3*i+irec_local*NGLL3*3];
-      h_field[1+3*iglob] = mp->h_station_seismo_field[1+3*i+irec_local*NGLL3*3];
-      h_field[2+3*iglob] = mp->h_station_seismo_field[2+3*i+irec_local*NGLL3*3];
+  if (!GPU_ASYNC_COPY) {
+    for (irec_local = 0; irec_local < mp->nrec_local; irec_local++) {
+      irec = number_receiver_global[irec_local] - 1;
+      ispec = h_ispec_selected[irec] - 1;
+      
+      for (i = 0; i < NGLL3; i++) {
+        iglob = ibool[i+NGLL3*ispec] - 1;
+        h_field[0+3*iglob] = mp->h_station_seismo_field[0+3*i+irec_local*NGLL3*3];
+        h_field[1+3*iglob] = mp->h_station_seismo_field[1+3*i+irec_local*NGLL3*3];
+        h_field[2+3*iglob] = mp->h_station_seismo_field[2+3*i+irec_local*NGLL3*3];
+      }
     }
   }
-}
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
   exit_on_gpu_error ("write_seismograms_transfer_from_device");
 #endif

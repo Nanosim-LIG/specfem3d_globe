@@ -90,13 +90,13 @@ void FC_FUNC_ (compute_add_sources_gpu,
 
     // adds source contributions
     compute_add_sources_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_accel_crust_mantle.cuda,
-                                                 mp->d_ibool_crust_mantle.cuda,
-                                                 mp->d_sourcearrays.cuda,
-                                                 mp->d_stf_pre_compute.cuda,
-                                                 mp->myrank,
-                                                 mp->d_islice_selected_source.cuda,
-                                                 mp->d_ispec_selected_source.cuda,
-                                                 NSOURCES);
+                                                                      mp->d_ibool_crust_mantle.cuda,
+                                                                      mp->d_sourcearrays.cuda,
+                                                                      mp->d_stf_pre_compute.cuda,
+                                                                      mp->myrank,
+                                                                      mp->d_islice_selected_source.cuda,
+                                                                      mp->d_ispec_selected_source.cuda,
+                                                                      NSOURCES);
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
@@ -171,19 +171,19 @@ void FC_FUNC_ (compute_add_sources_backward_gpu,
   if (run_cuda) {
     dim3 grid(num_blocks_x,num_blocks_y);
     dim3 threads(NGLLX,NGLLX,NGLLX);
-    
+
     // copies source time function buffer values to GPU
     print_CUDA_error_if_any(cudaMemcpy(mp->d_stf_pre_compute.cuda,h_stf_pre_compute,
                                        NSOURCES*sizeof(double),cudaMemcpyHostToDevice),71019);
-    
+
     compute_add_sources_kernel<<<grid,threads,0,mp->compute_stream>>>(mp->d_b_accel_crust_mantle.cuda,
-                                                 mp->d_ibool_crust_mantle.cuda,
-                                                 mp->d_sourcearrays.cuda,
-                                                 mp->d_stf_pre_compute.cuda,
-                                                 mp->myrank,
-                                                 mp->d_islice_selected_source.cuda,
-                                                 mp->d_ispec_selected_source.cuda,
-                                                 NSOURCES);
+                                                                      mp->d_ibool_crust_mantle.cuda,
+                                                                      mp->d_sourcearrays.cuda,
+                                                                      mp->d_stf_pre_compute.cuda,
+                                                                      mp->myrank,
+                                                                      mp->d_islice_selected_source.cuda,
+                                                                      mp->d_ispec_selected_source.cuda,
+                                                                      NSOURCES);
   }
 #endif
 #ifdef ENABLE_VERY_SLOW_ERROR_CHECKING
@@ -201,8 +201,8 @@ void FC_FUNC_ (compute_add_sources_adjoint_gpu,
                COMPUTE_ADD_SOURCES_ADJOINT_GPU) (long *Mesh_pointer,
                                                  int *h_nrec) {
 
-// adds adjoint sources
-// note: call this routine after transfer_adj_to_device**() to have correct adjoint sourcearrays in array d_adj_sourcearrays
+  // adds adjoint sources
+  // note: call this routine after transfer_adj_to_device**() to have correct adjoint sourcearrays in array d_adj_sourcearrays
 
   TRACE("compute_add_sources_adjoint_cuda");
 
@@ -217,9 +217,9 @@ void FC_FUNC_ (compute_add_sources_adjoint_gpu,
   int num_blocks_x, num_blocks_y;
   get_blocks_xy (mp->nadj_rec_local, &num_blocks_x, &num_blocks_y);
 
-    // the irec_local variable needs to be precomputed (as
-    // h_pre_comp..), because normally it is in the loop updating accel,
-    // and due to how it's incremented, it cannot be parallelized
+  // the irec_local variable needs to be precomputed (as
+  // h_pre_comp..), because normally it is in the loop updating accel,
+  // and due to how it's incremented, it cannot be parallelized
 #ifdef USE_CUDA
   if (run_cuda) {
     // waits for previous transfer_** calls to be finished
@@ -245,10 +245,9 @@ void FC_FUNC_ (compute_add_sources_adjoint_gpu,
     size_t global_work_size[3];
     size_t local_work_size[3];
 
-    clCheck (clEnqueueWriteBuffer (mocl.command_queue, mp->d_adj_sourcearrays.ocl, CL_FALSE, 0,
-                                   mp->nadj_rec_local * NDIM * NGLL3 * sizeof (realw),
-                                   mp->h_adj_sourcearrays_slice, 0, NULL, NULL));
-
+    if (GPU_ASYNC_COPY) {
+      clCheck(clFinish(mocl.copy_queue));
+    }
 
     clCheck (clSetKernelArg (mocl.kernels.compute_add_sources_adjoint_kernel, 0, sizeof (gpu_realw_mem), (void *) &mp->d_accel_crust_mantle.ocl));
     clCheck (clSetKernelArg (mocl.kernels.compute_add_sources_adjoint_kernel, 1, sizeof (int), (void *) &nrec));
@@ -286,14 +285,14 @@ void FC_FUNC_(transfer_adj_to_device,
                                       realw* h_adj_sourcearrays,
                                       int* h_islice_selected_rec) {
 
-// transfers adjoint source arrays synchronuously to GPU
+  // transfers adjoint source arrays synchronuously to GPU
 
   TRACE("transfer_adj_to_device");
 
   Mesh* mp = (Mesh*)(*Mesh_pointer); //get mesh pointer out of fortran integer container
 
   // check if anything to do
-  if(mp->nadj_rec_local == 0) 
+  if(mp->nadj_rec_local == 0)
     return;
 
   // total number of receivers/adjoint sources
@@ -364,7 +363,7 @@ void FC_FUNC_(transfer_adj_to_device_async,
               TRANSFER_ADJ_TO_DEVICE_ASYNC)(long *Mesh_pointer,
                                             int *h_nrec,
                                             realw *h_adj_sourcearrays,
-                                            int *h_islice_selected_rec) 
+                                            int *h_islice_selected_rec)
 {
   // asynchronous transfer for next adjoint source arrays from host to device
 
@@ -397,7 +396,9 @@ please check mesh_constants_cuda.h");
   //    which has dimension (NDIM,NGLLX,NGLLY,NGLLZ,nadj_rec_local)
 
 #if USE_OPENCL
-  
+  if (run_opencl) {
+    clCheck(clFinish(mocl.copy_queue));
+  }
 #endif
 #if USE_CUDA
   if (run_cuda) {
@@ -433,15 +434,23 @@ please check mesh_constants_cuda.h");
   if( irec_local != mp->nadj_rec_local) {
     exit_on_error("irec_local not equal to nadj_rec_local\n");
   }
+#if USE_OPENCL
+  if (run_opencl) {
+    clCheck(clFinish(mocl.command_queue));
+    clCheck (clEnqueueWriteBuffer (mocl.copy_queue, mp->d_adj_sourcearrays.ocl, CL_FALSE, 0,
+                                   mp->nadj_rec_local * NDIM * NGLL3 * sizeof (realw),
+                                   mp->h_adj_sourcearrays_slice, 0, NULL, NULL));
+  }
+#endif
 #if USE_CUDA
   if (run_cuda) {
-  // waits for previous compute_add_sources_adjoint_cuda_kernel() call to be finished
-  cudaStreamSynchronize(mp->compute_stream);
+    // waits for previous compute_add_sources_adjoint_cuda_kernel() call to be finished
+    cudaStreamSynchronize(mp->compute_stream);
 
-  // copies extracted array values onto GPU
-  // (asynchronous copy to GPU using copy_stream)
-  cudaMemcpyAsync(mp->d_adj_sourcearrays.cuda, mp->h_adj_sourcearrays_slice,(mp->nadj_rec_local)*NDIM*NGLL3*sizeof(realw),
-                  cudaMemcpyHostToDevice,mp->copy_stream);
+    // copies extracted array values onto GPU
+    // (asynchronous copy to GPU using copy_stream)
+    cudaMemcpyAsync(mp->d_adj_sourcearrays.cuda, mp->h_adj_sourcearrays_slice,(mp->nadj_rec_local)*NDIM*NGLL3*sizeof(realw),
+                    cudaMemcpyHostToDevice,mp->copy_stream);
   }
 #endif
 }
