@@ -95,7 +95,7 @@ inline void atomicAdd(volatile __global float *source, const float val) {\n\
 #define BLOCKSIZE_TRANSFER 256\n\
 #endif\n\
 \n\
-static void compute_element_strain_undoatt(const int ispec, const int ijk_ispec, const __global int * d_ibool, const __local float * s_dummyx_loc, const __local float * s_dummyy_loc, const __local float * s_dummyz_loc, const __global float * d_xix, const __global float * d_xiy, const __global float * d_xiz, const __global float * d_etax, const __global float * d_etay, const __global float * d_etaz, const __global float * d_gammax, const __global float * d_gammay, const __global float * d_gammaz, const __local float * sh_hprime_xx, float * epsilondev_loc, float * epsilon_trace_over_3){\n\
+void compute_element_strain_undoatt(const int ispec, const int ijk_ispec, const __global int * d_ibool, const __local float * s_dummyx_loc, const __local float * s_dummyy_loc, const __local float * s_dummyz_loc, const __global float * d_xix, const __global float * d_xiy, const __global float * d_xiz, const __global float * d_etax, const __global float * d_etay, const __global float * d_etaz, const __global float * d_gammax, const __global float * d_gammay, const __global float * d_gammaz, const __local float * sh_hprime_xx, float * epsilondev_loc, float * epsilon_trace_over_3){\n\
   int tx;\n\
   int K;\n\
   int J;\n\
