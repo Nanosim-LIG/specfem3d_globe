@@ -48,14 +48,15 @@ mesh() {
     then 
         echo "Preparing mesher script on $NUM_NODES processors." >&2
 
-        JOB_NAME=specfem3d-mesher
+        JOB_NAME=xmeshfem3d
     
         cat > job_meshfem.sh <<EOF
 #!/bin/sh
 
 #SBATCH --partition=mb
 #SBATCH --ntasks=$NUM_NODES
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=2
+#SBATCH --ntasks-per-node=1
 #SBATCH --job-name=$JOB_NAME
 #SBATCH --error=batch/$JOB_NAME.err
 #SBATCH --output=batch/$JOB_NAME.out
@@ -84,7 +85,8 @@ specfem() {
 
 #SBATCH --partition=mb
 #SBATCH --ntasks=$NUM_NODES
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=2
+#SBATCH --ntasks-per-node=1
 #SBATCH --job-name=$JOB_NAME
 #SBATCH --error=batch/$JOB_NAME.err
 #SBATCH --output=batch/$JOB_NAME.out

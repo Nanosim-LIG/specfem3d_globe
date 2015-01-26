@@ -68,7 +68,7 @@ ${OUTPUT}/values_from_mesher.h: $E/xcreate_header_file $B/DATA/Par_file
 	@echo ""
 	@echo "running xcreate_header_file..."
 	@echo ""
-	$E/xcreate_header_file
+	ssh next "cd /home/kpouget/specfem3d_build && $E/xcreate_header_file"
 	@echo ""
 	@test -f $@
 
