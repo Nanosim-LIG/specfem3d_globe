@@ -270,7 +270,7 @@ $O/postprocess_par.postprocess_module.o: $O/shared_par.shared_module.o $O/specfe
 #### rule for each .o file below
 ####
 
-$O/%.postprocess_module.o: $S/%.f90 ${OUTPUT}/values_from_mesher.h
+$O/%.postprocess_module.o: $S/%.f90 setup/values_from_mesher.h
 	${FCCOMPILE_CHECK} ${FCFLAGS_f90} -c -o $@ $<
 
 $O/%.postprocess.o: $S/%.f90 $O/postprocess_par.postprocess_module.o $O/parallel.sharedmpi.o

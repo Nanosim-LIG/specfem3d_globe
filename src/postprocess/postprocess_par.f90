@@ -37,7 +37,7 @@ module postprocess_par
   implicit none
 
   ! array dimensions for static compilation
-  include "OUTPUT_FILES/values_from_mesher.h"
+  include "setup/values_from_mesher.h"
 
   ! maximum number of kernel names (comma-separated e.g. vsv,vsh,vpv,vph,eta,rho -> 6 kernel names)
   integer,parameter :: MAX_KERNEL_NAMES = 255
