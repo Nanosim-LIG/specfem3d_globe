@@ -68,7 +68,7 @@
   implicit none
 
   ! new, target mesh:
-  include 'OUTPUT_FILES/values_from_mesher.h'
+  include 'setup/values_from_mesher.h'
   ! takes:
   ! NPROC_XI and NPROC_ETA
   ! NPROCTOT_VAL

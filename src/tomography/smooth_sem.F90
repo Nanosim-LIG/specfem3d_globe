@@ -72,7 +72,7 @@ program smooth_sem_globe
 
   implicit none
 
-  include 'OUTPUT_FILES/values_from_mesher.h'
+  include 'setup/values_from_mesher.h'
 
   ! copy from static compilation (depends on Par_file values)
   integer, parameter :: NPROC_XI  = NPROC_XI_VAL

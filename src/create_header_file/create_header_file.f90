@@ -25,7 +25,7 @@
 !
 !=====================================================================
 
-! create file OUTPUT_FILES/values_from_mesher.h based upon DATA/Par_file
+! create file setup/values_from_mesher.h based upon DATA/Par_file
 ! in order to compile the solver with the right array sizes
 
   program xcreate_header_file
@@ -55,7 +55,7 @@
 ! ************** PROGRAM STARTS HERE **************
 
   print *
-  print *,'creating file OUTPUT_FILES/values_from_mesher.h to compile solver with correct values'
+  print *,'creating file setup/values_from_mesher.h to compile solver with correct values'
 
 ! read the parameter file and compute additional parameters
   call read_compute_parameters()

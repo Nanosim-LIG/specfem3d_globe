@@ -331,7 +331,7 @@
     write(IMAIN,*) ' - outer core: ',sngl(100.d0*dble(numelem_outer_core)/dble(numelem_total)),' %'
     write(IMAIN,*) ' - inner core: ',sngl(100.d0*dble(numelem_inner_core)/dble(numelem_total)),' %'
     write(IMAIN,*)
-    write(IMAIN,*) 'for some mesh statistics, see comments in file OUTPUT_FILES/values_from_mesher.h'
+    write(IMAIN,*) 'for some mesh statistics, see comments in file setup/values_from_mesher.h'
     write(IMAIN,*)
 
     ! load balancing

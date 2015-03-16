@@ -41,7 +41,7 @@ program convert_model_file_adios
 
   implicit none
 
-  include "OUTPUT_FILES/values_from_mesher.h"
+  include "setup/values_from_mesher.h"
 
   !-------------------------------------------------------------------
   ! USER PARAMETERS

@@ -35,7 +35,7 @@ module tomography_par
   implicit none
 
   ! array dimensions for static compilation
-  include "OUTPUT_FILES/values_from_mesher.h"
+  include "setup/values_from_mesher.h"
 
   ! tomography parameter settings
   include "constants_tomography.h"

@@ -848,7 +848,7 @@
 
   implicit none
 
-  include "OUTPUT_FILES/values_from_mesher.h"
+  include "setup/values_from_mesher.h"
 
   print *
   print *,'reading parameter file'

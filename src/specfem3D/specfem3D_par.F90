@@ -35,7 +35,7 @@ module constants_solver
 
   ! include values created by the mesher
   ! done for performance only using static allocation to allow for loop unrolling
-  include "OUTPUT_FILES/values_from_mesher.h"
+  include "setup/values_from_mesher.h"
 
 end module constants_solver
 

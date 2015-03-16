@@ -25,7 +25,7 @@
 !
 !=====================================================================
 
-! save header file OUTPUT_FILES/values_from_mesher.h
+! save header file setup/values_from_mesher.h
 
   subroutine save_header_file(NSPEC,NGLOB,NPROC,NPROCTOT, &
                               static_memory_size, &
@@ -153,7 +153,7 @@
   if (PRINT_INFO_TO_SCREEN) then
 
     print *
-    print *,'edit file OUTPUT_FILES/values_from_mesher.h to see'
+    print *,'edit file setup/values_from_mesher.h to see'
     print *,'some statistics about the mesh'
     print *
 
@@ -300,8 +300,8 @@
   endif
 
   ! copy number of elements and points in an include file for the solver
-  open(unit=IOUT,file='OUTPUT_FILES/values_from_mesher.h',status='unknown',iostat=ier)
-  if (ier /= 0 ) stop 'Error opening OUTPUT_FILES/values_from_mesher.h'
+  open(unit=IOUT,file='setup/values_from_mesher.h',status='unknown',iostat=ier)
+  if (ier /= 0 ) stop 'Error opening setup/values_from_mesher.h'
 
   write(IOUT,*)
 

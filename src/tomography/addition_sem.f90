@@ -41,7 +41,7 @@ program addition_sem
 
   implicit none
 
-  include 'OUTPUT_FILES/values_from_mesher.h'
+  include 'setup/values_from_mesher.h'
 
   character(len=MAX_STRING_LEN) :: arg(5)
   character(len=MAX_STRING_LEN) :: file1name,file2name

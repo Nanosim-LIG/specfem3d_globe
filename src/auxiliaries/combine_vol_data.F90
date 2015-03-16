@@ -40,7 +40,7 @@ program combine_vol_data
 
   implicit none
 
-  include "OUTPUT_FILES/values_from_mesher.h"
+  include "setup/values_from_mesher.h"
 
   integer,parameter :: MAX_NUM_NODES = 2000
   integer :: ir, irs, ire, ires

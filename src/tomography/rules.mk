@@ -351,7 +351,7 @@ $O/tomography_par.tomo_module.o: $O/shared_par.shared_module.o
 ## tomography
 ##
 
-$O/%.tomo_module.o: $S/%.f90 ${SETUP}/constants_tomography.h ${OUTPUT}/values_from_mesher.h $O/shared_par.shared_module.o
+$O/%.tomo_module.o: $S/%.f90 ${SETUP}/constants_tomography.h setup/values_from_mesher.h $O/shared_par.shared_module.o
 	${FCCOMPILE_CHECK} ${FCFLAGS_f90} -c -o $@ $<
 
 

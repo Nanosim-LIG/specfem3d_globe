@@ -29,7 +29,7 @@
 
 create_header_file_TARGETS = \
 	$E/xcreate_header_file \
-	${OUTPUT}/values_from_mesher.h \
+	setup/values_from_mesher.h \
 	$(EMPTY_MACRO)
 
 create_header_file_OBJECTS = \
