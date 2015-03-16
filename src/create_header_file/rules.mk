@@ -62,13 +62,15 @@ create_header_file_SHARED_OBJECTS = \
 ####
 #### Mesher header file
 ####
-
-${OUTPUT}/values_from_mesher.h: $E/xcreate_header_file $B/DATA/Par_file
+DEST=localhost
+#DEST=next
+setup/values_from_mesher.h: $E/xcreate_header_file $B/DATA/Par_file
 	@-rm -f $@
 	@echo ""
 	@echo "running xcreate_header_file..."
 	@echo ""
-	ssh next "cd /home/kpouget/specfem3d_build && $E/xcreate_header_file"
+	ssh ${DEST} "cd /home/kpouget/specfem3d_build && $E/xcreate_header_file" && touch setup/values_from_mesher.h
+	
 	@echo ""
 	@test -f $@
 
