@@ -1,5 +1,5 @@
 //note: please do not modify this file manually!
-//      this file has been generated automatically by BOAST version 0.99996
+//      this file has been generated automatically by BOAST version 0.99997
 //      by: make boast_kernels
 
 /*
@@ -98,6 +98,9 @@ inline void atomicAdd(volatile __global float *source, const float val) {\n\
 #ifdef USE_TEXTURES_CONSTANTS\n\
 #undef USE_TEXTURES_CONSTANTS\n\
 #endif\n\
+#if __OPENCL_C_VERSION__ && __OPENCL_C_VERSION__ >= 120\n\
+static\n\
+#endif\n\
 void compute_element_ic_att_stress(const int tx, const int working_element, const __global float * R_xx, const __global float * R_yy, const __global float * R_xy, const __global float * R_xz, const __global float * R_yz, float * sigma_xx, float * sigma_yy, float * sigma_zz, float * sigma_xy, float * sigma_xz, float * sigma_yz){\n\
   int offset;\n\
   int i_sls;\n\
@@ -115,6 +118,9 @@ void compute_element_ic_att_stress(const int tx, const int working_element, cons
     sigma_yz[0] = sigma_yz[0] - (R_yz[offset]);\n\
   }\n\
 }\n\
+#if __OPENCL_C_VERSION__ && __OPENCL_C_VERSION__ >= 120\n\
+static\n\
+#endif\n\
 void compute_element_ic_att_memory(const int tx, const int working_element, const __global float * d_muv, const __global float * factor_common, const __global float * alphaval, const __global float * betaval, const __global float * gammaval, __global float * R_xx, __global float * R_yy, __global float * R_xy, __global float * R_xz, __global float * R_yz, const __global float * epsilondev_xx, const __global float * epsilondev_yy, const __global float * epsilondev_xy, const __global float * epsilondev_xz, const __global float * epsilondev_yz, const float epsilondev_xx_loc, const float epsilondev_yy_loc, const float epsilondev_xy_loc, const float epsilondev_xz_loc, const float epsilondev_yz_loc, const int USE_3D_ATTENUATION_ARRAYS){\n\
   int offset;\n\
   int i_sls;\n\
@@ -153,6 +159,9 @@ void compute_element_ic_att_memory(const int tx, const int working_element, cons
     R_yz[offset] = (alphaval_loc) * (R_yz[offset]) + (betaval_loc) * (sn) + (gammaval_loc) * (snp1);\n\
   }\n\
 }\n\
+#if __OPENCL_C_VERSION__ && __OPENCL_C_VERSION__ >= 120\n\
+static\n\
+#endif\n\
 void compute_element_ic_gravity(const int tx, const int iglob, const __global float * restrict d_xstore, const __global float * restrict d_ystore, const __global float * restrict d_zstore, const __global float * restrict d_minus_gravity_table, const __global float * restrict d_minus_deriv_gravity_table, const __global float * restrict d_density_table, const __global float * restrict wgll_cube, const float jacobianl, const __local float * s_dummyx_loc, const __local float * s_dummyy_loc, const __local float * s_dummyz_loc, float * sigma_xx, float * sigma_yy, float * sigma_zz, float * sigma_xy, float * sigma_yx, float * sigma_xz, float * sigma_zx, float * sigma_yz, float * sigma_zy, float * rho_s_H1, float * rho_s_H2, float * rho_s_H3){\n\
   float radius;\n\
   float theta;\n\
@@ -260,9 +269,11 @@ __kernel  void inner_core_impl_kernel_forward(const int nb_blocks_to_compute, co
 #ifndef MANUALLY_UNROLLED_LOOPS\n\
   int l;\n\
 #endif\n\
-  ushort active;\n\
+  ushort active_1;\n\
+  ushort active_2;\n\
   int offset;\n\
-  int iglob;\n\
+  int iglob_1;\n\
+  int iglob_2;\n\
   int working_element;\n\
   float tempx1l;\n\
   float tempx2l;\n\
@@ -317,11 +328,16 @@ __kernel  void inner_core_impl_kernel_forward(const int nb_blocks_to_compute, co
   float sigma_zx;\n\
   float sigma_zy;\n\
   float sigma_zz;\n\
-  float epsilondev_xx_loc;\n\
-  float epsilondev_yy_loc;\n\
-  float epsilondev_xy_loc;\n\
-  float epsilondev_xz_loc;\n\
-  float epsilondev_yz_loc;\n\
+  float epsilondev_xx_loc_1;\n\
+  float epsilondev_xx_loc_2;\n\
+  float epsilondev_yy_loc_1;\n\
+  float epsilondev_yy_loc_2;\n\
+  float epsilondev_xy_loc_1;\n\
+  float epsilondev_xy_loc_2;\n\
+  float epsilondev_xz_loc_1;\n\
+  float epsilondev_xz_loc_2;\n\
+  float epsilondev_yz_loc_1;\n\
+  float epsilondev_yz_loc_2;\n\
   float c11;\n\
   float c12;\n\
   float c13;\n\
@@ -330,9 +346,12 @@ __kernel  void inner_core_impl_kernel_forward(const int nb_blocks_to_compute, co
   float sum_terms1;\n\
   float sum_terms2;\n\
   float sum_terms3;\n\
-  float rho_s_H1;\n\
-  float rho_s_H2;\n\
-  float rho_s_H3;\n\
+  float rho_s_H_1_1;\n\
+  float rho_s_H_1_2;\n\
+  float rho_s_H_1_3;\n\
+  float rho_s_H_2_1;\n\
+  float rho_s_H_2_2;\n\
+  float rho_s_H_2_3;\n\
   __local float s_dummyx_loc[(NGLL3)];\n\
   __local float s_dummyy_loc[(NGLL3)];\n\
   __local float s_dummyz_loc[(NGLL3)];\n\
@@ -348,12 +367,9 @@ __kernel  void inner_core_impl_kernel_forward(const int nb_blocks_to_compute, co
   __local float sh_hprime_xx[(NGLL2)];\n\
   __local float sh_hprimewgll_xx[(NGLL2)];\n\
   bx = (get_group_id(1)) * (get_num_groups(0)) + get_group_id(0);\n\
-  tx = get_local_id(0);\n\
-  K = (tx) / (NGLL2);\n\
-  J = (tx - ((K) * (NGLL2))) / (NGLLX);\n\
-  I = tx - ((K) * (NGLL2)) - ((J) * (NGLLX));\n\
-  active = (tx < NGLL3 && bx < nb_blocks_to_compute ? 1 : 0);\n\
-  if (active) {\n\
+  tx = get_local_id(0) + ((NGLL3_PADDED) * (0)) / (2);\n\
+  active_1 = (tx < NGLL3 && bx < nb_blocks_to_compute ? 1 : 0);\n\
+  if (active_1) {\n\
 #ifdef USE_MESH_COLORING_GPU\n\
     working_element = bx;\n\
 #else\n\
@@ -364,17 +380,44 @@ __kernel  void inner_core_impl_kernel_forward(const int nb_blocks_to_compute, co
     }\n\
 #endif\n\
     if (d_idoubling[working_element] == IFLAG_IN_FICTITIOUS_CUBE) {\n\
-      active = 0;\n\
+      active_1 = 0;\n\
     } else {\n\
-      iglob = d_ibool[(working_element) * (NGLL3) + tx] - (1);\n\
+      iglob_1 = d_ibool[(working_element) * (NGLL3) + tx] - (1);\n\
 #ifdef USE_TEXTURES_FIELDS\n\
-      s_dummyx_loc[tx] = as_float(read_imageui(d_displ_ic_tex, sampler_d_displ_ic_tex, int2((iglob) * (3) + 0,0)).x);\n\
-      s_dummyy_loc[tx] = as_float(read_imageui(d_displ_ic_tex, sampler_d_displ_ic_tex, int2((iglob) * (3) + 1,0)).x);\n\
-      s_dummyz_loc[tx] = as_float(read_imageui(d_displ_ic_tex, sampler_d_displ_ic_tex, int2((iglob) * (3) + 2,0)).x);\n\
+      s_dummyx_loc[tx] = as_float(read_imageui(d_displ_ic_tex, sampler_d_displ_ic_tex, int2((iglob_1) * (3) + 0,0)).x);\n\
+      s_dummyy_loc[tx] = as_float(read_imageui(d_displ_ic_tex, sampler_d_displ_ic_tex, int2((iglob_1) * (3) + 1,0)).x);\n\
+      s_dummyz_loc[tx] = as_float(read_imageui(d_displ_ic_tex, sampler_d_displ_ic_tex, int2((iglob_1) * (3) + 2,0)).x);\n\
 #else\n\
-      s_dummyx_loc[tx] = d_displ[0 + (3) * (iglob)];\n\
-      s_dummyy_loc[tx] = d_displ[1 + (3) * (iglob)];\n\
-      s_dummyz_loc[tx] = d_displ[2 + (3) * (iglob)];\n\
+      s_dummyx_loc[tx] = d_displ[0 + (3) * (iglob_1)];\n\
+      s_dummyy_loc[tx] = d_displ[1 + (3) * (iglob_1)];\n\
+      s_dummyz_loc[tx] = d_displ[2 + (3) * (iglob_1)];\n\
+#endif\n\
+    }\n\
+  }\n\
+  if (tx < NGLL2) {\n\
+#ifdef USE_TEXTURES_CONSTANTS\n\
+    sh_hprime_xx[tx] = as_float(read_imageui(d_hprime_xx_ic_tex, sampler_d_hprime_xx_ic_tex, int2(tx,0)).x);\n\
+    sh_hprimewgll_xx[tx] = as_float(read_imageui(d_hprimewgll_xx_ic_tex, sampler_d_hprimewgll_xx_ic_tex, int2(tx,0)).x);\n\
+#else\n\
+    sh_hprime_xx[tx] = d_hprime_xx[tx];\n\
+    sh_hprimewgll_xx[tx] = d_hprimewgll_xx[tx];\n\
+#endif\n\
+  }\n\
+  tx = get_local_id(0) + ((NGLL3_PADDED) * (1)) / (2);\n\
+  active_2 = (tx < NGLL3 && bx < nb_blocks_to_compute ? 1 : 0);\n\
+  if (active_2) {\n\
+    if (d_idoubling[working_element] == IFLAG_IN_FICTITIOUS_CUBE) {\n\
+      active_2 = 0;\n\
+    } else {\n\
+      iglob_2 = d_ibool[(working_element) * (NGLL3) + tx] - (1);\n\
+#ifdef USE_TEXTURES_FIELDS\n\
+      s_dummyx_loc[tx] = as_float(read_imageui(d_displ_ic_tex, sampler_d_displ_ic_tex, int2((iglob_2) * (3) + 0,0)).x);\n\
+      s_dummyy_loc[tx] = as_float(read_imageui(d_displ_ic_tex, sampler_d_displ_ic_tex, int2((iglob_2) * (3) + 1,0)).x);\n\
+      s_dummyz_loc[tx] = as_float(read_imageui(d_displ_ic_tex, sampler_d_displ_ic_tex, int2((iglob_2) * (3) + 2,0)).x);\n\
+#else\n\
+      s_dummyx_loc[tx] = d_displ[0 + (3) * (iglob_2)];\n\
+      s_dummyy_loc[tx] = d_displ[1 + (3) * (iglob_2)];\n\
+      s_dummyz_loc[tx] = d_displ[2 + (3) * (iglob_2)];\n\
 #endif\n\
     }\n\
   }\n\
@@ -388,7 +431,11 @@ __kernel  void inner_core_impl_kernel_forward(const int nb_blocks_to_compute, co
 #endif\n\
   }\n\
   barrier(CLK_LOCAL_MEM_FENCE);\n\
-  if (active) {\n\
+  tx = get_local_id(0) + ((NGLL3_PADDED) * (0)) / (2);\n\
+  K = (tx) / (NGLL2);\n\
+  J = (tx - ((K) * (NGLL2))) / (NGLLX);\n\
+  I = tx - ((K) * (NGLL2)) - ((J) * (NGLLX));\n\
+  if (active_1) {\n\
     tempx1l = 0.0f;\n\
     tempx2l = 0.0f;\n\
     tempx3l = 0.0f;\n\
@@ -502,11 +549,11 @@ __kernel  void inner_core_impl_kernel_forward(const int nb_blocks_to_compute, co
     duzdyl_plus_duydzl = duzdyl + duydzl;\n\
     if (COMPUTE_AND_STORE_STRAIN) {\n\
       templ = (duxdxl + duydyl + duzdzl) * (0.3333333333333333f);\n\
-      epsilondev_xx_loc = duxdxl - (templ);\n\
-      epsilondev_yy_loc = duydyl - (templ);\n\
-      epsilondev_xy_loc = (duxdyl_plus_duydxl) * (0.5f);\n\
-      epsilondev_xz_loc = (duzdxl_plus_duxdzl) * (0.5f);\n\
-      epsilondev_yz_loc = (duzdyl_plus_duydzl) * (0.5f);\n\
+      epsilondev_xx_loc_1 = duxdxl - (templ);\n\
+      epsilondev_yy_loc_1 = duydyl - (templ);\n\
+      epsilondev_xy_loc_1 = (duxdyl_plus_duydxl) * (0.5f);\n\
+      epsilondev_xz_loc_1 = (duzdxl_plus_duxdzl) * (0.5f);\n\
+      epsilondev_yz_loc_1 = (duzdyl_plus_duydzl) * (0.5f);\n\
       if (NSPEC_INNER_CORE_STRAIN_ONLY == 1) {\n\
         epsilon_trace_over_3[tx] = templ;\n\
       } else {\n\
@@ -563,7 +610,198 @@ __kernel  void inner_core_impl_kernel_forward(const int nb_blocks_to_compute, co
     sigma_zy = sigma_yz;\n\
     jacobianl = (1.0f) / ((xixl) * ((etayl) * (gammazl) - ((etazl) * (gammayl))) - ((xiyl) * ((etaxl) * (gammazl) - ((etazl) * (gammaxl)))) + (xizl) * ((etaxl) * (gammayl) - ((etayl) * (gammaxl))));\n\
     if (GRAVITY) {\n\
-      compute_element_ic_gravity(tx, iglob, d_xstore, d_ystore, d_zstore, d_minus_gravity_table, d_minus_deriv_gravity_table, d_density_table, wgll_cube, jacobianl, s_dummyx_loc, s_dummyy_loc, s_dummyz_loc,  &sigma_xx,  &sigma_yy,  &sigma_zz,  &sigma_xy,  &sigma_yx,  &sigma_xz,  &sigma_zx,  &sigma_yz,  &sigma_zy,  &rho_s_H1,  &rho_s_H2,  &rho_s_H3);\n\
+      compute_element_ic_gravity(tx, iglob_1, d_xstore, d_ystore, d_zstore, d_minus_gravity_table, d_minus_deriv_gravity_table, d_density_table, wgll_cube, jacobianl, s_dummyx_loc, s_dummyy_loc, s_dummyz_loc,  &sigma_xx,  &sigma_yy,  &sigma_zz,  &sigma_xy,  &sigma_yx,  &sigma_xz,  &sigma_zx,  &sigma_yz,  &sigma_zy,  &rho_s_H_1_1,  &rho_s_H_1_2,  &rho_s_H_1_3);\n\
+    }\n\
+    s_tempx1[tx] = (jacobianl) * ((sigma_xx) * (xixl) + (sigma_yx) * (xiyl) + (sigma_zx) * (xizl));\n\
+    s_tempy1[tx] = (jacobianl) * ((sigma_xy) * (xixl) + (sigma_yy) * (xiyl) + (sigma_zy) * (xizl));\n\
+    s_tempz1[tx] = (jacobianl) * ((sigma_xz) * (xixl) + (sigma_yz) * (xiyl) + (sigma_zz) * (xizl));\n\
+    s_tempx2[tx] = (jacobianl) * ((sigma_xx) * (etaxl) + (sigma_yx) * (etayl) + (sigma_zx) * (etazl));\n\
+    s_tempy2[tx] = (jacobianl) * ((sigma_xy) * (etaxl) + (sigma_yy) * (etayl) + (sigma_zy) * (etazl));\n\
+    s_tempz2[tx] = (jacobianl) * ((sigma_xz) * (etaxl) + (sigma_yz) * (etayl) + (sigma_zz) * (etazl));\n\
+    s_tempx3[tx] = (jacobianl) * ((sigma_xx) * (gammaxl) + (sigma_yx) * (gammayl) + (sigma_zx) * (gammazl));\n\
+    s_tempy3[tx] = (jacobianl) * ((sigma_xy) * (gammaxl) + (sigma_yy) * (gammayl) + (sigma_zy) * (gammazl));\n\
+    s_tempz3[tx] = (jacobianl) * ((sigma_xz) * (gammaxl) + (sigma_yz) * (gammayl) + (sigma_zz) * (gammazl));\n\
+  }\n\
+  tx = get_local_id(0) + ((NGLL3_PADDED) * (1)) / (2);\n\
+  K = (tx) / (NGLL2);\n\
+  J = (tx - ((K) * (NGLL2))) / (NGLLX);\n\
+  I = tx - ((K) * (NGLL2)) - ((J) * (NGLLX));\n\
+  if (active_2) {\n\
+    tempx1l = 0.0f;\n\
+    tempx2l = 0.0f;\n\
+    tempx3l = 0.0f;\n\
+    tempy1l = 0.0f;\n\
+    tempy2l = 0.0f;\n\
+    tempy3l = 0.0f;\n\
+    tempz1l = 0.0f;\n\
+    tempz2l = 0.0f;\n\
+    tempz3l = 0.0f;\n\
+#ifdef MANUALLY_UNROLLED_LOOPS\n\
+    fac1 = sh_hprime_xx[(0) * (NGLLX) + I];\n\
+    tempx1l = tempx1l + (s_dummyx_loc[(K) * (NGLL2) + (J) * (NGLLX) + 0]) * (fac1);\n\
+    tempy1l = tempy1l + (s_dummyy_loc[(K) * (NGLL2) + (J) * (NGLLX) + 0]) * (fac1);\n\
+    tempz1l = tempz1l + (s_dummyz_loc[(K) * (NGLL2) + (J) * (NGLLX) + 0]) * (fac1);\n\
+    fac2 = sh_hprime_xx[(0) * (NGLLX) + J];\n\
+    tempx2l = tempx2l + (s_dummyx_loc[(K) * (NGLL2) + (0) * (NGLLX) + I]) * (fac2);\n\
+    tempy2l = tempy2l + (s_dummyy_loc[(K) * (NGLL2) + (0) * (NGLLX) + I]) * (fac2);\n\
+    tempz2l = tempz2l + (s_dummyz_loc[(K) * (NGLL2) + (0) * (NGLLX) + I]) * (fac2);\n\
+    fac3 = sh_hprime_xx[(0) * (NGLLX) + K];\n\
+    tempx3l = tempx3l + (s_dummyx_loc[(0) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    tempy3l = tempy3l + (s_dummyy_loc[(0) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    tempz3l = tempz3l + (s_dummyz_loc[(0) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    fac1 = sh_hprime_xx[(1) * (NGLLX) + I];\n\
+    tempx1l = tempx1l + (s_dummyx_loc[(K) * (NGLL2) + (J) * (NGLLX) + 1]) * (fac1);\n\
+    tempy1l = tempy1l + (s_dummyy_loc[(K) * (NGLL2) + (J) * (NGLLX) + 1]) * (fac1);\n\
+    tempz1l = tempz1l + (s_dummyz_loc[(K) * (NGLL2) + (J) * (NGLLX) + 1]) * (fac1);\n\
+    fac2 = sh_hprime_xx[(1) * (NGLLX) + J];\n\
+    tempx2l = tempx2l + (s_dummyx_loc[(K) * (NGLL2) + (1) * (NGLLX) + I]) * (fac2);\n\
+    tempy2l = tempy2l + (s_dummyy_loc[(K) * (NGLL2) + (1) * (NGLLX) + I]) * (fac2);\n\
+    tempz2l = tempz2l + (s_dummyz_loc[(K) * (NGLL2) + (1) * (NGLLX) + I]) * (fac2);\n\
+    fac3 = sh_hprime_xx[(1) * (NGLLX) + K];\n\
+    tempx3l = tempx3l + (s_dummyx_loc[(1) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    tempy3l = tempy3l + (s_dummyy_loc[(1) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    tempz3l = tempz3l + (s_dummyz_loc[(1) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    fac1 = sh_hprime_xx[(2) * (NGLLX) + I];\n\
+    tempx1l = tempx1l + (s_dummyx_loc[(K) * (NGLL2) + (J) * (NGLLX) + 2]) * (fac1);\n\
+    tempy1l = tempy1l + (s_dummyy_loc[(K) * (NGLL2) + (J) * (NGLLX) + 2]) * (fac1);\n\
+    tempz1l = tempz1l + (s_dummyz_loc[(K) * (NGLL2) + (J) * (NGLLX) + 2]) * (fac1);\n\
+    fac2 = sh_hprime_xx[(2) * (NGLLX) + J];\n\
+    tempx2l = tempx2l + (s_dummyx_loc[(K) * (NGLL2) + (2) * (NGLLX) + I]) * (fac2);\n\
+    tempy2l = tempy2l + (s_dummyy_loc[(K) * (NGLL2) + (2) * (NGLLX) + I]) * (fac2);\n\
+    tempz2l = tempz2l + (s_dummyz_loc[(K) * (NGLL2) + (2) * (NGLLX) + I]) * (fac2);\n\
+    fac3 = sh_hprime_xx[(2) * (NGLLX) + K];\n\
+    tempx3l = tempx3l + (s_dummyx_loc[(2) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    tempy3l = tempy3l + (s_dummyy_loc[(2) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    tempz3l = tempz3l + (s_dummyz_loc[(2) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    fac1 = sh_hprime_xx[(3) * (NGLLX) + I];\n\
+    tempx1l = tempx1l + (s_dummyx_loc[(K) * (NGLL2) + (J) * (NGLLX) + 3]) * (fac1);\n\
+    tempy1l = tempy1l + (s_dummyy_loc[(K) * (NGLL2) + (J) * (NGLLX) + 3]) * (fac1);\n\
+    tempz1l = tempz1l + (s_dummyz_loc[(K) * (NGLL2) + (J) * (NGLLX) + 3]) * (fac1);\n\
+    fac2 = sh_hprime_xx[(3) * (NGLLX) + J];\n\
+    tempx2l = tempx2l + (s_dummyx_loc[(K) * (NGLL2) + (3) * (NGLLX) + I]) * (fac2);\n\
+    tempy2l = tempy2l + (s_dummyy_loc[(K) * (NGLL2) + (3) * (NGLLX) + I]) * (fac2);\n\
+    tempz2l = tempz2l + (s_dummyz_loc[(K) * (NGLL2) + (3) * (NGLLX) + I]) * (fac2);\n\
+    fac3 = sh_hprime_xx[(3) * (NGLLX) + K];\n\
+    tempx3l = tempx3l + (s_dummyx_loc[(3) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    tempy3l = tempy3l + (s_dummyy_loc[(3) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    tempz3l = tempz3l + (s_dummyz_loc[(3) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    fac1 = sh_hprime_xx[(4) * (NGLLX) + I];\n\
+    tempx1l = tempx1l + (s_dummyx_loc[(K) * (NGLL2) + (J) * (NGLLX) + 4]) * (fac1);\n\
+    tempy1l = tempy1l + (s_dummyy_loc[(K) * (NGLL2) + (J) * (NGLLX) + 4]) * (fac1);\n\
+    tempz1l = tempz1l + (s_dummyz_loc[(K) * (NGLL2) + (J) * (NGLLX) + 4]) * (fac1);\n\
+    fac2 = sh_hprime_xx[(4) * (NGLLX) + J];\n\
+    tempx2l = tempx2l + (s_dummyx_loc[(K) * (NGLL2) + (4) * (NGLLX) + I]) * (fac2);\n\
+    tempy2l = tempy2l + (s_dummyy_loc[(K) * (NGLL2) + (4) * (NGLLX) + I]) * (fac2);\n\
+    tempz2l = tempz2l + (s_dummyz_loc[(K) * (NGLL2) + (4) * (NGLLX) + I]) * (fac2);\n\
+    fac3 = sh_hprime_xx[(4) * (NGLLX) + K];\n\
+    tempx3l = tempx3l + (s_dummyx_loc[(4) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    tempy3l = tempy3l + (s_dummyy_loc[(4) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    tempz3l = tempz3l + (s_dummyz_loc[(4) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+#else\n\
+    for (l = 0; l <= NGLLX - (1); l += 1) {\n\
+      fac1 = sh_hprime_xx[(l) * (NGLLX) + I];\n\
+      tempx1l = tempx1l + (s_dummyx_loc[(K) * (NGLL2) + (J) * (NGLLX) + l]) * (fac1);\n\
+      tempy1l = tempy1l + (s_dummyy_loc[(K) * (NGLL2) + (J) * (NGLLX) + l]) * (fac1);\n\
+      tempz1l = tempz1l + (s_dummyz_loc[(K) * (NGLL2) + (J) * (NGLLX) + l]) * (fac1);\n\
+      fac2 = sh_hprime_xx[(l) * (NGLLX) + J];\n\
+      tempx2l = tempx2l + (s_dummyx_loc[(K) * (NGLL2) + (l) * (NGLLX) + I]) * (fac2);\n\
+      tempy2l = tempy2l + (s_dummyy_loc[(K) * (NGLL2) + (l) * (NGLLX) + I]) * (fac2);\n\
+      tempz2l = tempz2l + (s_dummyz_loc[(K) * (NGLL2) + (l) * (NGLLX) + I]) * (fac2);\n\
+      fac3 = sh_hprime_xx[(l) * (NGLLX) + K];\n\
+      tempx3l = tempx3l + (s_dummyx_loc[(l) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+      tempy3l = tempy3l + (s_dummyy_loc[(l) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+      tempz3l = tempz3l + (s_dummyz_loc[(l) * (NGLL2) + (J) * (NGLLX) + I]) * (fac3);\n\
+    }\n\
+#endif\n\
+    offset = (working_element) * (NGLL3_PADDED) + tx;\n\
+    xixl = d_xix[offset];\n\
+    etaxl = d_etax[offset];\n\
+    gammaxl = d_gammax[offset];\n\
+    xiyl = d_xiy[offset];\n\
+    etayl = d_etay[offset];\n\
+    gammayl = d_gammay[offset];\n\
+    xizl = d_xiz[offset];\n\
+    etazl = d_etaz[offset];\n\
+    gammazl = d_gammaz[offset];\n\
+    duxdxl = (xixl) * (tempx1l) + (etaxl) * (tempx2l) + (gammaxl) * (tempx3l);\n\
+    duxdyl = (xiyl) * (tempx1l) + (etayl) * (tempx2l) + (gammayl) * (tempx3l);\n\
+    duxdzl = (xizl) * (tempx1l) + (etazl) * (tempx2l) + (gammazl) * (tempx3l);\n\
+    duydxl = (xixl) * (tempy1l) + (etaxl) * (tempy2l) + (gammaxl) * (tempy3l);\n\
+    duydyl = (xiyl) * (tempy1l) + (etayl) * (tempy2l) + (gammayl) * (tempy3l);\n\
+    duydzl = (xizl) * (tempy1l) + (etazl) * (tempy2l) + (gammazl) * (tempy3l);\n\
+    duzdxl = (xixl) * (tempz1l) + (etaxl) * (tempz2l) + (gammaxl) * (tempz3l);\n\
+    duzdyl = (xiyl) * (tempz1l) + (etayl) * (tempz2l) + (gammayl) * (tempz3l);\n\
+    duzdzl = (xizl) * (tempz1l) + (etazl) * (tempz2l) + (gammazl) * (tempz3l);\n\
+    duxdxl_plus_duydyl = duxdxl + duydyl;\n\
+    duxdxl_plus_duzdzl = duxdxl + duzdzl;\n\
+    duydyl_plus_duzdzl = duydyl + duzdzl;\n\
+    duxdyl_plus_duydxl = duxdyl + duydxl;\n\
+    duzdxl_plus_duxdzl = duzdxl + duxdzl;\n\
+    duzdyl_plus_duydzl = duzdyl + duydzl;\n\
+    if (COMPUTE_AND_STORE_STRAIN) {\n\
+      templ = (duxdxl + duydyl + duzdzl) * (0.3333333333333333f);\n\
+      epsilondev_xx_loc_2 = duxdxl - (templ);\n\
+      epsilondev_yy_loc_2 = duydyl - (templ);\n\
+      epsilondev_xy_loc_2 = (duxdyl_plus_duydxl) * (0.5f);\n\
+      epsilondev_xz_loc_2 = (duzdxl_plus_duxdzl) * (0.5f);\n\
+      epsilondev_yz_loc_2 = (duzdyl_plus_duydzl) * (0.5f);\n\
+      if (NSPEC_INNER_CORE_STRAIN_ONLY == 1) {\n\
+        epsilon_trace_over_3[tx] = templ;\n\
+      } else {\n\
+        epsilon_trace_over_3[tx + (working_element) * (NGLL3)] = templ;\n\
+      }\n\
+    }\n\
+    kappal = d_kappavstore[offset];\n\
+    mul = d_muvstore[offset];\n\
+    if (ATTENUATION) {\n\
+      if (USE_3D_ATTENUATION_ARRAYS) {\n\
+        mul_iso = (mul) * (one_minus_sum_beta[tx + (working_element) * (NGLL3)]);\n\
+        mul_aniso = (mul) * (one_minus_sum_beta[tx + (working_element) * (NGLL3)] - (1.0f));\n\
+      } else {\n\
+        mul_iso = (mul) * (one_minus_sum_beta[working_element]);\n\
+        mul_aniso = (mul) * (one_minus_sum_beta[working_element] - (1.0f));\n\
+      }\n\
+    } else {\n\
+      mul_iso = mul;\n\
+    }\n\
+    if (ANISOTROPY) {\n\
+      c11 = d_c11store[offset];\n\
+      c12 = d_c12store[offset];\n\
+      c13 = d_c13store[offset];\n\
+      c33 = d_c33store[offset];\n\
+      c44 = d_c44store[offset];\n\
+      if (ATTENUATION) {\n\
+        c11 = c11 + (mul_aniso) * (1.3333333333333333f);\n\
+        c12 = c12 - ((mul_aniso) * (0.6666666666666666f));\n\
+        c13 = c13 - ((mul_aniso) * (0.6666666666666666f));\n\
+        c33 = c33 + (mul_aniso) * (1.3333333333333333f);\n\
+        c44 = c44 + mul_aniso;\n\
+      }\n\
+      sigma_xx = (c11) * (duxdxl) + (c12) * (duydyl) + (c13) * (duzdzl);\n\
+      sigma_yy = (c12) * (duxdxl) + (c11) * (duydyl) + (c13) * (duzdzl);\n\
+      sigma_zz = (c13) * (duxdxl) + (c13) * (duydyl) + (c33) * (duzdzl);\n\
+      sigma_xy = ((c11 - (c12)) * (duxdyl_plus_duydxl)) * (0.5f);\n\
+      sigma_xz = (c44) * (duzdxl_plus_duxdzl);\n\
+      sigma_yz = (c44) * (duzdyl_plus_duydzl);\n\
+    } else {\n\
+      lambdalplus2mul = kappal + (mul_iso) * (1.3333333333333333f);\n\
+      lambdal = lambdalplus2mul - ((mul_iso) * (2.0f));\n\
+      sigma_xx = (lambdalplus2mul) * (duxdxl) + (lambdal) * (duydyl_plus_duzdzl);\n\
+      sigma_yy = (lambdalplus2mul) * (duydyl) + (lambdal) * (duxdxl_plus_duzdzl);\n\
+      sigma_zz = (lambdalplus2mul) * (duzdzl) + (lambdal) * (duxdxl_plus_duydyl);\n\
+      sigma_xy = (mul) * (duxdyl_plus_duydxl);\n\
+      sigma_xz = (mul) * (duzdxl_plus_duxdzl);\n\
+      sigma_yz = (mul) * (duzdyl_plus_duydzl);\n\
+    }\n\
+    if (ATTENUATION &&  ! PARTIAL_PHYS_DISPERSION_ONLY) {\n\
+      compute_element_ic_att_stress(tx, working_element, R_xx, R_yy, R_xy, R_xz, R_yz,  &sigma_xx,  &sigma_yy,  &sigma_zz,  &sigma_xy,  &sigma_xz,  &sigma_yz);\n\
+    }\n\
+    sigma_yx = sigma_xy;\n\
+    sigma_zx = sigma_xz;\n\
+    sigma_zy = sigma_yz;\n\
+    jacobianl = (1.0f) / ((xixl) * ((etayl) * (gammazl) - ((etazl) * (gammayl))) - ((xiyl) * ((etaxl) * (gammazl) - ((etazl) * (gammaxl)))) + (xizl) * ((etaxl) * (gammayl) - ((etayl) * (gammaxl))));\n\
+    if (GRAVITY) {\n\
+      compute_element_ic_gravity(tx, iglob_2, d_xstore, d_ystore, d_zstore, d_minus_gravity_table, d_minus_deriv_gravity_table, d_density_table, wgll_cube, jacobianl, s_dummyx_loc, s_dummyy_loc, s_dummyz_loc,  &sigma_xx,  &sigma_yy,  &sigma_zz,  &sigma_xy,  &sigma_yx,  &sigma_xz,  &sigma_zx,  &sigma_yz,  &sigma_zy,  &rho_s_H_2_1,  &rho_s_H_2_2,  &rho_s_H_2_3);\n\
     }\n\
     s_tempx1[tx] = (jacobianl) * ((sigma_xx) * (xixl) + (sigma_yx) * (xiyl) + (sigma_zx) * (xizl));\n\
     s_tempy1[tx] = (jacobianl) * ((sigma_xy) * (xixl) + (sigma_yy) * (xiyl) + (sigma_zy) * (xizl));\n\
@@ -576,7 +814,11 @@ __kernel  void inner_core_impl_kernel_forward(const int nb_blocks_to_compute, co
     s_tempz3[tx] = (jacobianl) * ((sigma_xz) * (gammaxl) + (sigma_yz) * (gammayl) + (sigma_zz) * (gammazl));\n\
   }\n\
   barrier(CLK_LOCAL_MEM_FENCE);\n\
-  if (active) {\n\
+  tx = get_local_id(0) + ((NGLL3_PADDED) * (0)) / (2);\n\
+  K = (tx) / (NGLL2);\n\
+  J = (tx - ((K) * (NGLL2))) / (NGLLX);\n\
+  I = tx - ((K) * (NGLL2)) - ((J) * (NGLLX));\n\
+  if (active_1) {\n\
     tempx1l = 0.0f;\n\
     tempx2l = 0.0f;\n\
     tempx3l = 0.0f;\n\
@@ -688,52 +930,216 @@ __kernel  void inner_core_impl_kernel_forward(const int nb_blocks_to_compute, co
     sum_terms2 =  -((fac1) * (tempy1l) + (fac2) * (tempy2l) + (fac3) * (tempy3l));\n\
     sum_terms3 =  -((fac1) * (tempz1l) + (fac2) * (tempz2l) + (fac3) * (tempz3l));\n\
     if (GRAVITY) {\n\
-      sum_terms1 = sum_terms1 + rho_s_H1;\n\
-      sum_terms2 = sum_terms2 + rho_s_H2;\n\
-      sum_terms3 = sum_terms3 + rho_s_H3;\n\
+      sum_terms1 = sum_terms1 + rho_s_H_1_1;\n\
+      sum_terms2 = sum_terms2 + rho_s_H_1_2;\n\
+      sum_terms3 = sum_terms3 + rho_s_H_1_3;\n\
     }\n\
 #ifdef USE_MESH_COLORING_GPU\n\
 #ifdef USE_TEXTURES_FIELDS\n\
-    d_accel[0 + (3) * (iglob)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob) * (3) + 0,0)).x) + sum_terms1;\n\
-    d_accel[1 + (3) * (iglob)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob) * (3) + 1,0)).x) + sum_terms2;\n\
-    d_accel[2 + (3) * (iglob)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob) * (3) + 2,0)).x) + sum_terms3;\n\
+    d_accel[0 + (3) * (iglob_1)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_1) * (3) + 0,0)).x) + sum_terms1;\n\
+    d_accel[1 + (3) * (iglob_1)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_1) * (3) + 1,0)).x) + sum_terms2;\n\
+    d_accel[2 + (3) * (iglob_1)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_1) * (3) + 2,0)).x) + sum_terms3;\n\
 #else\n\
-    d_accel[0 + (3) * (iglob)] = d_accel[0 + (3) * (iglob)] + sum_terms1;\n\
-    d_accel[1 + (3) * (iglob)] = d_accel[1 + (3) * (iglob)] + sum_terms2;\n\
-    d_accel[2 + (3) * (iglob)] = d_accel[2 + (3) * (iglob)] + sum_terms3;\n\
+    d_accel[0 + (3) * (iglob_1)] = d_accel[0 + (3) * (iglob_1)] + sum_terms1;\n\
+    d_accel[1 + (3) * (iglob_1)] = d_accel[1 + (3) * (iglob_1)] + sum_terms2;\n\
+    d_accel[2 + (3) * (iglob_1)] = d_accel[2 + (3) * (iglob_1)] + sum_terms3;\n\
 #endif\n\
 #else\n\
     if (use_mesh_coloring_gpu) {\n\
       if (NSPEC_INNER_CORE > 1000) {\n\
 #ifdef USE_TEXTURES_FIELDS\n\
-        d_accel[0 + (3) * (iglob)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob) * (3) + 0,0)).x) + sum_terms1;\n\
-        d_accel[1 + (3) * (iglob)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob) * (3) + 1,0)).x) + sum_terms2;\n\
-        d_accel[2 + (3) * (iglob)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob) * (3) + 2,0)).x) + sum_terms3;\n\
+        d_accel[0 + (3) * (iglob_1)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_1) * (3) + 0,0)).x) + sum_terms1;\n\
+        d_accel[1 + (3) * (iglob_1)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_1) * (3) + 1,0)).x) + sum_terms2;\n\
+        d_accel[2 + (3) * (iglob_1)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_1) * (3) + 2,0)).x) + sum_terms3;\n\
 #else\n\
-        d_accel[0 + (3) * (iglob)] = d_accel[0 + (3) * (iglob)] + sum_terms1;\n\
-        d_accel[1 + (3) * (iglob)] = d_accel[1 + (3) * (iglob)] + sum_terms2;\n\
-        d_accel[2 + (3) * (iglob)] = d_accel[2 + (3) * (iglob)] + sum_terms3;\n\
+        d_accel[0 + (3) * (iglob_1)] = d_accel[0 + (3) * (iglob_1)] + sum_terms1;\n\
+        d_accel[1 + (3) * (iglob_1)] = d_accel[1 + (3) * (iglob_1)] + sum_terms2;\n\
+        d_accel[2 + (3) * (iglob_1)] = d_accel[2 + (3) * (iglob_1)] + sum_terms3;\n\
 #endif\n\
       } else {\n\
-        atomicAdd(d_accel + (iglob) * (3) + 0, sum_terms1);\n\
-        atomicAdd(d_accel + (iglob) * (3) + 1, sum_terms2);\n\
-        atomicAdd(d_accel + (iglob) * (3) + 2, sum_terms3);\n\
+        atomicAdd(d_accel + (iglob_1) * (3) + 0, sum_terms1);\n\
+        atomicAdd(d_accel + (iglob_1) * (3) + 1, sum_terms2);\n\
+        atomicAdd(d_accel + (iglob_1) * (3) + 2, sum_terms3);\n\
       }\n\
     } else {\n\
-      atomicAdd(d_accel + (iglob) * (3) + 0, sum_terms1);\n\
-      atomicAdd(d_accel + (iglob) * (3) + 1, sum_terms2);\n\
-      atomicAdd(d_accel + (iglob) * (3) + 2, sum_terms3);\n\
+      atomicAdd(d_accel + (iglob_1) * (3) + 0, sum_terms1);\n\
+      atomicAdd(d_accel + (iglob_1) * (3) + 1, sum_terms2);\n\
+      atomicAdd(d_accel + (iglob_1) * (3) + 2, sum_terms3);\n\
     }\n\
 #endif\n\
     if (ATTENUATION &&  ! PARTIAL_PHYS_DISPERSION_ONLY) {\n\
-      compute_element_ic_att_memory(tx, working_element, d_muvstore, factor_common, alphaval, betaval, gammaval, R_xx, R_yy, R_xy, R_xz, R_yz, epsilondev_xx, epsilondev_yy, epsilondev_xy, epsilondev_xz, epsilondev_yz, epsilondev_xx_loc, epsilondev_yy_loc, epsilondev_xy_loc, epsilondev_xz_loc, epsilondev_yz_loc, USE_3D_ATTENUATION_ARRAYS);\n\
+      compute_element_ic_att_memory(tx, working_element, d_muvstore, factor_common, alphaval, betaval, gammaval, R_xx, R_yy, R_xy, R_xz, R_yz, epsilondev_xx, epsilondev_yy, epsilondev_xy, epsilondev_xz, epsilondev_yz, epsilondev_xx_loc_1, epsilondev_yy_loc_1, epsilondev_xy_loc_1, epsilondev_xz_loc_1, epsilondev_yz_loc_1, USE_3D_ATTENUATION_ARRAYS);\n\
     }\n\
     if (COMPUTE_AND_STORE_STRAIN) {\n\
-      epsilondev_xx[tx + (working_element) * (NGLL3)] = epsilondev_xx_loc;\n\
-      epsilondev_yy[tx + (working_element) * (NGLL3)] = epsilondev_yy_loc;\n\
-      epsilondev_xy[tx + (working_element) * (NGLL3)] = epsilondev_xy_loc;\n\
-      epsilondev_xz[tx + (working_element) * (NGLL3)] = epsilondev_xz_loc;\n\
-      epsilondev_yz[tx + (working_element) * (NGLL3)] = epsilondev_yz_loc;\n\
+      epsilondev_xx[tx + (working_element) * (NGLL3)] = epsilondev_xx_loc_1;\n\
+      epsilondev_yy[tx + (working_element) * (NGLL3)] = epsilondev_yy_loc_1;\n\
+      epsilondev_xy[tx + (working_element) * (NGLL3)] = epsilondev_xy_loc_1;\n\
+      epsilondev_xz[tx + (working_element) * (NGLL3)] = epsilondev_xz_loc_1;\n\
+      epsilondev_yz[tx + (working_element) * (NGLL3)] = epsilondev_yz_loc_1;\n\
+    }\n\
+  }\n\
+  tx = get_local_id(0) + ((NGLL3_PADDED) * (1)) / (2);\n\
+  K = (tx) / (NGLL2);\n\
+  J = (tx - ((K) * (NGLL2))) / (NGLLX);\n\
+  I = tx - ((K) * (NGLL2)) - ((J) * (NGLLX));\n\
+  if (active_2) {\n\
+    tempx1l = 0.0f;\n\
+    tempx2l = 0.0f;\n\
+    tempx3l = 0.0f;\n\
+    tempy1l = 0.0f;\n\
+    tempy2l = 0.0f;\n\
+    tempy3l = 0.0f;\n\
+    tempz1l = 0.0f;\n\
+    tempz2l = 0.0f;\n\
+    tempz3l = 0.0f;\n\
+#ifdef MANUALLY_UNROLLED_LOOPS\n\
+    fac1 = sh_hprimewgll_xx[(I) * (NGLLX) + 0];\n\
+    offset = (K) * (NGLL2) + (J) * (NGLLX) + 0;\n\
+    tempx1l = tempx1l + (s_tempx1[offset]) * (fac1);\n\
+    tempy1l = tempy1l + (s_tempy1[offset]) * (fac1);\n\
+    tempz1l = tempz1l + (s_tempz1[offset]) * (fac1);\n\
+    fac2 = sh_hprimewgll_xx[(J) * (NGLLX) + 0];\n\
+    offset = (K) * (NGLL2) + (0) * (NGLLX) + I;\n\
+    tempx2l = tempx2l + (s_tempx2[offset]) * (fac2);\n\
+    tempy2l = tempy2l + (s_tempy2[offset]) * (fac2);\n\
+    tempz2l = tempz2l + (s_tempz2[offset]) * (fac2);\n\
+    fac3 = sh_hprimewgll_xx[(K) * (NGLLX) + 0];\n\
+    offset = (0) * (NGLL2) + (J) * (NGLLX) + I;\n\
+    tempx3l = tempx3l + (s_tempx3[offset]) * (fac3);\n\
+    tempy3l = tempy3l + (s_tempy3[offset]) * (fac3);\n\
+    tempz3l = tempz3l + (s_tempz3[offset]) * (fac3);\n\
+    fac1 = sh_hprimewgll_xx[(I) * (NGLLX) + 1];\n\
+    offset = (K) * (NGLL2) + (J) * (NGLLX) + 1;\n\
+    tempx1l = tempx1l + (s_tempx1[offset]) * (fac1);\n\
+    tempy1l = tempy1l + (s_tempy1[offset]) * (fac1);\n\
+    tempz1l = tempz1l + (s_tempz1[offset]) * (fac1);\n\
+    fac2 = sh_hprimewgll_xx[(J) * (NGLLX) + 1];\n\
+    offset = (K) * (NGLL2) + (1) * (NGLLX) + I;\n\
+    tempx2l = tempx2l + (s_tempx2[offset]) * (fac2);\n\
+    tempy2l = tempy2l + (s_tempy2[offset]) * (fac2);\n\
+    tempz2l = tempz2l + (s_tempz2[offset]) * (fac2);\n\
+    fac3 = sh_hprimewgll_xx[(K) * (NGLLX) + 1];\n\
+    offset = (1) * (NGLL2) + (J) * (NGLLX) + I;\n\
+    tempx3l = tempx3l + (s_tempx3[offset]) * (fac3);\n\
+    tempy3l = tempy3l + (s_tempy3[offset]) * (fac3);\n\
+    tempz3l = tempz3l + (s_tempz3[offset]) * (fac3);\n\
+    fac1 = sh_hprimewgll_xx[(I) * (NGLLX) + 2];\n\
+    offset = (K) * (NGLL2) + (J) * (NGLLX) + 2;\n\
+    tempx1l = tempx1l + (s_tempx1[offset]) * (fac1);\n\
+    tempy1l = tempy1l + (s_tempy1[offset]) * (fac1);\n\
+    tempz1l = tempz1l + (s_tempz1[offset]) * (fac1);\n\
+    fac2 = sh_hprimewgll_xx[(J) * (NGLLX) + 2];\n\
+    offset = (K) * (NGLL2) + (2) * (NGLLX) + I;\n\
+    tempx2l = tempx2l + (s_tempx2[offset]) * (fac2);\n\
+    tempy2l = tempy2l + (s_tempy2[offset]) * (fac2);\n\
+    tempz2l = tempz2l + (s_tempz2[offset]) * (fac2);\n\
+    fac3 = sh_hprimewgll_xx[(K) * (NGLLX) + 2];\n\
+    offset = (2) * (NGLL2) + (J) * (NGLLX) + I;\n\
+    tempx3l = tempx3l + (s_tempx3[offset]) * (fac3);\n\
+    tempy3l = tempy3l + (s_tempy3[offset]) * (fac3);\n\
+    tempz3l = tempz3l + (s_tempz3[offset]) * (fac3);\n\
+    fac1 = sh_hprimewgll_xx[(I) * (NGLLX) + 3];\n\
+    offset = (K) * (NGLL2) + (J) * (NGLLX) + 3;\n\
+    tempx1l = tempx1l + (s_tempx1[offset]) * (fac1);\n\
+    tempy1l = tempy1l + (s_tempy1[offset]) * (fac1);\n\
+    tempz1l = tempz1l + (s_tempz1[offset]) * (fac1);\n\
+    fac2 = sh_hprimewgll_xx[(J) * (NGLLX) + 3];\n\
+    offset = (K) * (NGLL2) + (3) * (NGLLX) + I;\n\
+    tempx2l = tempx2l + (s_tempx2[offset]) * (fac2);\n\
+    tempy2l = tempy2l + (s_tempy2[offset]) * (fac2);\n\
+    tempz2l = tempz2l + (s_tempz2[offset]) * (fac2);\n\
+    fac3 = sh_hprimewgll_xx[(K) * (NGLLX) + 3];\n\
+    offset = (3) * (NGLL2) + (J) * (NGLLX) + I;\n\
+    tempx3l = tempx3l + (s_tempx3[offset]) * (fac3);\n\
+    tempy3l = tempy3l + (s_tempy3[offset]) * (fac3);\n\
+    tempz3l = tempz3l + (s_tempz3[offset]) * (fac3);\n\
+    fac1 = sh_hprimewgll_xx[(I) * (NGLLX) + 4];\n\
+    offset = (K) * (NGLL2) + (J) * (NGLLX) + 4;\n\
+    tempx1l = tempx1l + (s_tempx1[offset]) * (fac1);\n\
+    tempy1l = tempy1l + (s_tempy1[offset]) * (fac1);\n\
+    tempz1l = tempz1l + (s_tempz1[offset]) * (fac1);\n\
+    fac2 = sh_hprimewgll_xx[(J) * (NGLLX) + 4];\n\
+    offset = (K) * (NGLL2) + (4) * (NGLLX) + I;\n\
+    tempx2l = tempx2l + (s_tempx2[offset]) * (fac2);\n\
+    tempy2l = tempy2l + (s_tempy2[offset]) * (fac2);\n\
+    tempz2l = tempz2l + (s_tempz2[offset]) * (fac2);\n\
+    fac3 = sh_hprimewgll_xx[(K) * (NGLLX) + 4];\n\
+    offset = (4) * (NGLL2) + (J) * (NGLLX) + I;\n\
+    tempx3l = tempx3l + (s_tempx3[offset]) * (fac3);\n\
+    tempy3l = tempy3l + (s_tempy3[offset]) * (fac3);\n\
+    tempz3l = tempz3l + (s_tempz3[offset]) * (fac3);\n\
+#else\n\
+    for (l = 0; l <= NGLLX - (1); l += 1) {\n\
+      fac1 = sh_hprimewgll_xx[(I) * (NGLLX) + l];\n\
+      offset = (K) * (NGLL2) + (J) * (NGLLX) + l;\n\
+      tempx1l = tempx1l + (s_tempx1[offset]) * (fac1);\n\
+      tempy1l = tempy1l + (s_tempy1[offset]) * (fac1);\n\
+      tempz1l = tempz1l + (s_tempz1[offset]) * (fac1);\n\
+      fac2 = sh_hprimewgll_xx[(J) * (NGLLX) + l];\n\
+      offset = (K) * (NGLL2) + (l) * (NGLLX) + I;\n\
+      tempx2l = tempx2l + (s_tempx2[offset]) * (fac2);\n\
+      tempy2l = tempy2l + (s_tempy2[offset]) * (fac2);\n\
+      tempz2l = tempz2l + (s_tempz2[offset]) * (fac2);\n\
+      fac3 = sh_hprimewgll_xx[(K) * (NGLLX) + l];\n\
+      offset = (l) * (NGLL2) + (J) * (NGLLX) + I;\n\
+      tempx3l = tempx3l + (s_tempx3[offset]) * (fac3);\n\
+      tempy3l = tempy3l + (s_tempy3[offset]) * (fac3);\n\
+      tempz3l = tempz3l + (s_tempz3[offset]) * (fac3);\n\
+    }\n\
+#endif\n\
+    fac1 = d_wgllwgll_yz[(K) * (NGLLX) + J];\n\
+    fac2 = d_wgllwgll_xz[(K) * (NGLLX) + I];\n\
+    fac3 = d_wgllwgll_xy[(J) * (NGLLX) + I];\n\
+    sum_terms1 =  -((fac1) * (tempx1l) + (fac2) * (tempx2l) + (fac3) * (tempx3l));\n\
+    sum_terms2 =  -((fac1) * (tempy1l) + (fac2) * (tempy2l) + (fac3) * (tempy3l));\n\
+    sum_terms3 =  -((fac1) * (tempz1l) + (fac2) * (tempz2l) + (fac3) * (tempz3l));\n\
+    if (GRAVITY) {\n\
+      sum_terms1 = sum_terms1 + rho_s_H_2_1;\n\
+      sum_terms2 = sum_terms2 + rho_s_H_2_2;\n\
+      sum_terms3 = sum_terms3 + rho_s_H_2_3;\n\
+    }\n\
+#ifdef USE_MESH_COLORING_GPU\n\
+#ifdef USE_TEXTURES_FIELDS\n\
+    d_accel[0 + (3) * (iglob_2)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_2) * (3) + 0,0)).x) + sum_terms1;\n\
+    d_accel[1 + (3) * (iglob_2)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_2) * (3) + 1,0)).x) + sum_terms2;\n\
+    d_accel[2 + (3) * (iglob_2)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_2) * (3) + 2,0)).x) + sum_terms3;\n\
+#else\n\
+    d_accel[0 + (3) * (iglob_2)] = d_accel[0 + (3) * (iglob_2)] + sum_terms1;\n\
+    d_accel[1 + (3) * (iglob_2)] = d_accel[1 + (3) * (iglob_2)] + sum_terms2;\n\
+    d_accel[2 + (3) * (iglob_2)] = d_accel[2 + (3) * (iglob_2)] + sum_terms3;\n\
+#endif\n\
+#else\n\
+    if (use_mesh_coloring_gpu) {\n\
+      if (NSPEC_INNER_CORE > 1000) {\n\
+#ifdef USE_TEXTURES_FIELDS\n\
+        d_accel[0 + (3) * (iglob_2)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_2) * (3) + 0,0)).x) + sum_terms1;\n\
+        d_accel[1 + (3) * (iglob_2)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_2) * (3) + 1,0)).x) + sum_terms2;\n\
+        d_accel[2 + (3) * (iglob_2)] = as_float(read_imageui(d_accel_ic_tex, sampler_d_accel_ic_tex, int2((iglob_2) * (3) + 2,0)).x) + sum_terms3;\n\
+#else\n\
+        d_accel[0 + (3) * (iglob_2)] = d_accel[0 + (3) * (iglob_2)] + sum_terms1;\n\
+        d_accel[1 + (3) * (iglob_2)] = d_accel[1 + (3) * (iglob_2)] + sum_terms2;\n\
+        d_accel[2 + (3) * (iglob_2)] = d_accel[2 + (3) * (iglob_2)] + sum_terms3;\n\
+#endif\n\
+      } else {\n\
+        atomicAdd(d_accel + (iglob_2) * (3) + 0, sum_terms1);\n\
+        atomicAdd(d_accel + (iglob_2) * (3) + 1, sum_terms2);\n\
+        atomicAdd(d_accel + (iglob_2) * (3) + 2, sum_terms3);\n\
+      }\n\
+    } else {\n\
+      atomicAdd(d_accel + (iglob_2) * (3) + 0, sum_terms1);\n\
+      atomicAdd(d_accel + (iglob_2) * (3) + 1, sum_terms2);\n\
+      atomicAdd(d_accel + (iglob_2) * (3) + 2, sum_terms3);\n\
+    }\n\
+#endif\n\
+    if (ATTENUATION &&  ! PARTIAL_PHYS_DISPERSION_ONLY) {\n\
+      compute_element_ic_att_memory(tx, working_element, d_muvstore, factor_common, alphaval, betaval, gammaval, R_xx, R_yy, R_xy, R_xz, R_yz, epsilondev_xx, epsilondev_yy, epsilondev_xy, epsilondev_xz, epsilondev_yz, epsilondev_xx_loc_2, epsilondev_yy_loc_2, epsilondev_xy_loc_2, epsilondev_xz_loc_2, epsilondev_yz_loc_2, USE_3D_ATTENUATION_ARRAYS);\n\
+    }\n\
+    if (COMPUTE_AND_STORE_STRAIN) {\n\
+      epsilondev_xx[tx + (working_element) * (NGLL3)] = epsilondev_xx_loc_2;\n\
+      epsilondev_yy[tx + (working_element) * (NGLL3)] = epsilondev_yy_loc_2;\n\
+      epsilondev_xy[tx + (working_element) * (NGLL3)] = epsilondev_xy_loc_2;\n\
+      epsilondev_xz[tx + (working_element) * (NGLL3)] = epsilondev_xz_loc_2;\n\
+      epsilondev_yz[tx + (working_element) * (NGLL3)] = epsilondev_yz_loc_2;\n\
     }\n\
   }\n\
 }\n\
