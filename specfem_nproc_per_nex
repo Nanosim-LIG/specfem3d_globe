@@ -1,0 +1,38 @@
+#!/bin/bash
+
+if [[ $1 == "-v" ]]
+then
+    VERBOSE=1
+    shift
+fi
+
+NEX=$1
+if [[ -z $NEX ]]
+then
+    echo "Usage: $0 [-v] NEX"
+    exit 1
+fi
+
+if [[ $(($NEX % 16)) != 0 ]]
+then
+    echo "ERROR: $NEX is not multiple of 16."
+    exit 1
+fi
+
+sec=
+t=$(($NEX/8))
+[[ $VERBOSE == 1 ]] && echo -n "NPROC= "
+#to find factors of a number
+for i in $(seq $t)
+do
+    if [[ $(($t % $i)) == 0 ]]
+    then
+        echo -n "$i "
+        sec="$sec$(($i*$i)) " 
+    fi
+done
+echo #newline 
+
+[[ $VERBOSE == 1 ]] && echo "  -->  $sec processors"
+
+exit 0
