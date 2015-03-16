@@ -35,15 +35,12 @@
 !   - proc***_reg1_bulk_betah_kernel.bin
 !   - proc***_reg1_eta_kernel.bin
 !
-! this version uses the approximate Hessian stored as
-!   - proc***_reg1_hess_kernel.bin
-!          to precondition the transverse isotropic kernel files
-!
 ! input file: kernels_list.txt
 !   lists all event kernel directories which should be summed together
 !
 ! input directory:  INPUT_KERNELS/
-!    contains links to all event kernel directories (listed in "kernels_list.txt")
+!    contains links to all event kernel directories (listed in
+!    "kernels_list.txt")
 !
 ! output directory: OUTPUT_SUM/
 !    the resulting kernel files will be stored in this directory
@@ -55,7 +52,7 @@ program sum_preconditioned_kernels_globe
 
   implicit none
 
-  character(len=MAX_STRING_LEN) :: kernel_list(MAX_NUM_NODES), sline, kernel_name
+  character(len=MAX_STRING_LEN) :: kernel_list(MAX_KERNEL_PATHS), sline, kernel_name
   integer :: nker
   integer :: ier
 
@@ -83,7 +80,7 @@ program sum_preconditioned_kernels_globe
      read(IIN,'(a)',iostat=ier) sline
      if (ier /= 0) exit
      nker = nker+1
-     if (nker > MAX_NUM_NODES) stop 'Error number of kernels exceeds MAX_NUM_NODES'
+     if (nker > MAX_KERNEL_PATHS) stop 'Error number of kernels exceeds MAX_KERNEL_PATHS'
      kernel_list(nker) = sline
   enddo
   close(IIN)
@@ -182,7 +179,7 @@ subroutine sum_kernel_pre(kernel_name,kernel_list,nker)
 
   implicit none
 
-  character(len=MAX_STRING_LEN) :: kernel_name,kernel_list(MAX_NUM_NODES)
+  character(len=MAX_STRING_LEN) :: kernel_name,kernel_list(MAX_KERNEL_PATHS)
   integer :: nker
 
   ! local parameters

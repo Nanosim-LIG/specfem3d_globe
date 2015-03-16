@@ -25,19 +25,18 @@
 !
 !=====================================================================
 
+! we switch between vectorized and non-vectorized version by using pre-processor flag FORCE_VECTORIZATION
+! and macros INDEX_IJK, DO_LOOP_IJK, ENDDO_LOOP_IJK defined in config.fh
+#include "config.fh"
 
   subroutine compute_seismograms(nglob,displ,seismo_current,seismograms)
 
-  use constants_solver,only: &
-    CUSTOM_REAL,SIZE_REAL,ZERO,NGLLX,NGLLY,NGLLZ, &
-    NDIM
+  use constants_solver
 
   use specfem_par,only: &
     NTSTEP_BETWEEN_OUTPUT_SEISMOS, &
-    nrec_local, &
-    nu,hxir_store,hetar_store,hgammar_store, &
-    ispec_selected_rec,number_receiver_global, &
-    scale_displ
+    nrec_local,nu,ispec_selected_rec,number_receiver_global, &
+    scale_displ,hlagrange_store
 
   use specfem_par_crustmantle,only: ibool_crust_mantle
 
@@ -53,7 +52,12 @@
 
   ! local parameters
   double precision :: uxd,uyd,uzd,hlagrange
-  integer :: i,j,k,ispec,iglob,irec_local,irec
+  integer :: ispec,iglob,irec_local,irec
+#ifdef FORCE_VECTORIZATION
+  integer :: ijk
+#else
+  integer :: i,j,k
+#endif
 
   do irec_local = 1,nrec_local
 
@@ -67,23 +71,19 @@
     uyd = ZERO
     uzd = ZERO
 
-    do k = 1,NGLLZ
-      do j = 1,NGLLY
-        do i = 1,NGLLX
+    DO_LOOP_IJK
 
-          iglob = ibool_crust_mantle(i,j,k,ispec)
+      iglob = ibool_crust_mantle(INDEX_IJK,ispec)
 
-          hlagrange = hxir_store(irec_local,i)*hetar_store(irec_local,j)*hgammar_store(irec_local,k)
+      hlagrange = hlagrange_store(INDEX_IJK,irec_local)
 
-          uxd = uxd + dble(displ(1,iglob))*hlagrange
-          uyd = uyd + dble(displ(2,iglob))*hlagrange
-          uzd = uzd + dble(displ(3,iglob))*hlagrange
+      uxd = uxd + dble(displ(1,iglob))*hlagrange
+      uyd = uyd + dble(displ(2,iglob))*hlagrange
+      uzd = uzd + dble(displ(3,iglob))*hlagrange
 
-        enddo
-      enddo
-    enddo
+    ENDDO_LOOP_IJK
+
     ! store North, East and Vertical components
-
     ! distinguish between single and double precision for reals
     seismograms(:,irec_local,seismo_current) = real(scale_displ*(nu(:,1,irec)*uxd + &
                                                                  nu(:,2,irec)*uyd + &
@@ -107,7 +107,7 @@
                                          seismograms)
 
   use constants_solver,only: &
-    CUSTOM_REAL,SIZE_REAL,ZERO,ONE,PI,GRAV,RHOAV,NGLLX,NGLLY,NGLLZ, &
+    CUSTOM_REAL,SIZE_REAL,ZERO,ONE,PI,GRAV,RHOAV,NGLLX,NGLLY,NGLLZ, NGLLCUBE, &
     NDIM,NGLOB_CRUST_MANTLE,NSPEC_CRUST_MANTLE, &
     NSPEC_CRUST_MANTLE_STRAIN_ONLY,NSPEC_CRUST_MANTLE_STR_OR_ATT
 
@@ -115,6 +115,7 @@
     NSTEP,NTSTEP_BETWEEN_OUTPUT_SEISMOS,UNDO_ATTENUATION, &
     nrec_local, &
     nu_source,Mxx,Myy,Mzz,Mxy,Mxz,Myz, &
+    hlagrange_store, &
     hxir_store,hpxir_store,hetar_store,hpetar_store,hgammar_store,hpgammar_store, &
     tshift_cmt,hdur_gaussian, &
     DT,t0,deltat,it, &
@@ -157,7 +158,7 @@
   real(kind=CUSTOM_REAL) :: displ_s(NDIM,NGLLX,NGLLY,NGLLZ)
   real(kind=CUSTOM_REAL) :: eps_s(NDIM,NDIM), eps_m_s, &
         eps_m_l_s(NDIM), stf_deltat, Kp_deltat, Hp_deltat
-  integer :: i,j,k,iglob,irec_local,irec,ispec
+  integer :: iglob,irec_local,irec,ispec
 
   double precision, external :: comp_source_time_function
 
@@ -167,6 +168,11 @@
 
   double precision :: hxir(NGLLX), hetar(NGLLY), hgammar(NGLLZ), &
                       hpxir(NGLLX),hpetar(NGLLY),hpgammar(NGLLZ)
+#ifdef FORCE_VECTORIZATION
+  integer :: ijk
+#else
+  integer :: i,j,k
+#endif
 
   do irec_local = 1,nrec_local
 
@@ -208,31 +214,27 @@
     endif
 
     ! perform the general interpolation using Lagrange polynomials
-    do k = 1,NGLLZ
-      do j = 1,NGLLY
-        do i = 1,NGLLX
+    DO_LOOP_IJK
 
-          iglob = ibool_crust_mantle(i,j,k,ispec)
+      iglob = ibool_crust_mantle(INDEX_IJK,ispec)
 
-          hlagrange = hxir_store(irec_local,i)*hetar_store(irec_local,j)*hgammar_store(irec_local,k)
+      hlagrange = hlagrange_store(INDEX_IJK,irec_local)
 
-          uxd = uxd + dble(displ_crust_mantle(1,iglob))*hlagrange
-          uyd = uyd + dble(displ_crust_mantle(2,iglob))*hlagrange
-          uzd = uzd + dble(displ_crust_mantle(3,iglob))*hlagrange
+      uxd = uxd + dble(displ_crust_mantle(1,iglob))*hlagrange
+      uyd = uyd + dble(displ_crust_mantle(2,iglob))*hlagrange
+      uzd = uzd + dble(displ_crust_mantle(3,iglob))*hlagrange
 
-          eps_trace = eps_trace + dble(eps_trace_over_3_loc_cm(i,j,k))*hlagrange
+      eps_trace = eps_trace + dble(eps_trace_over_3_loc_cm(INDEX_IJK))*hlagrange
 
-          dxx = dxx + dble(epsilondev_loc_crust_mantle(i,j,k,1))*hlagrange
-          dyy = dyy + dble(epsilondev_loc_crust_mantle(i,j,k,2))*hlagrange
-          dxy = dxy + dble(epsilondev_loc_crust_mantle(i,j,k,3))*hlagrange
-          dxz = dxz + dble(epsilondev_loc_crust_mantle(i,j,k,4))*hlagrange
-          dyz = dyz + dble(epsilondev_loc_crust_mantle(i,j,k,5))*hlagrange
+      dxx = dxx + dble(epsilondev_loc_crust_mantle(INDEX_IJK,1))*hlagrange
+      dyy = dyy + dble(epsilondev_loc_crust_mantle(INDEX_IJK,2))*hlagrange
+      dxy = dxy + dble(epsilondev_loc_crust_mantle(INDEX_IJK,3))*hlagrange
+      dxz = dxz + dble(epsilondev_loc_crust_mantle(INDEX_IJK,4))*hlagrange
+      dyz = dyz + dble(epsilondev_loc_crust_mantle(INDEX_IJK,5))*hlagrange
 
-          displ_s(:,i,j,k) = displ_crust_mantle(:,iglob)
+      displ_s(:,INDEX_IJK) = displ_crust_mantle(:,iglob)
 
-        enddo
-      enddo
-    enddo
+    ENDDO_LOOP_IJK
 
     eps_loc(1,1) = eps_trace + dxx
     eps_loc(2,2) = eps_trace + dyy

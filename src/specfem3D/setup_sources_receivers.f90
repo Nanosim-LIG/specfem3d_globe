@@ -873,6 +873,8 @@
              hetar_store(nrec_local,NGLLY), &
              hgammar_store(nrec_local,NGLLZ),stat=ier)
     if (ier /= 0 ) call exit_MPI(myrank,'Error allocating receiver interpolators')
+    allocate(hlagrange_store(NGLLX, NGLLY, NGLLZ, nrec_local), stat=ier)
+    if (ier /= 0 ) call exit_MPI(myrank,'Error allocating array hlagrange_store')
 
     ! defines and stores Lagrange interpolators at all the receivers
     if (SIMULATION_TYPE == 2) then
@@ -893,7 +895,7 @@
                       SIMULATION_TYPE,nrec,nrec_local, &
                       islice_selected_rec,number_receiver_global, &
                       xi_receiver,eta_receiver,gamma_receiver, &
-                      hxir_store,hetar_store,hgammar_store, &
+                      hxir_store,hetar_store,hgammar_store, hlagrange_store, &
                       nadj_hprec_local,hpxir_store,hpetar_store,hpgammar_store)
 
     ! allocates seismogram array
@@ -938,7 +940,7 @@
                       SIMULATION_TYPE,nrec,nrec_local, &
                       islice_selected_rec,number_receiver_global, &
                       xi_receiver,eta_receiver,gamma_receiver, &
-                      hxir_store,hetar_store,hgammar_store, &
+                      hxir_store,hetar_store,hgammar_store, hlagrange_store, &
                       nadj_hprec_local,hpxir_store,hpetar_store,hpgammar_store)
 
   use constants
@@ -965,6 +967,7 @@
   double precision, dimension(nrec_local,NGLLX) :: hxir_store
   double precision, dimension(nrec_local,NGLLY) :: hetar_store
   double precision, dimension(nrec_local,NGLLZ) :: hgammar_store
+  double precision, dimension(NGLLX,NGLLY,NGLLZ,nrec_local) :: hlagrange_store
 
   integer :: nadj_hprec_local
   double precision, dimension(nadj_hprec_local,NGLLX) :: hpxir_store
@@ -973,7 +976,7 @@
 
 
   ! local parameters
-  integer :: isource,irec,irec_local
+  integer :: isource,irec,irec_local, i, j, k
   double precision, dimension(NGLLX) :: hxir,hpxir
   double precision, dimension(NGLLY) :: hpetar,hetar
   double precision, dimension(NGLLZ) :: hgammar,hpgammar
@@ -987,6 +990,9 @@
     do irec = 1,nrec
       if (myrank == islice_selected_rec(irec)) then
         irec_local = irec_local + 1
+        ! checks counter
+        if (irec_local > nrec_local) call exit_MPI(myrank,'Error receiver interpolators: irec_local exceeds bounds')
+        ! stores local to global receiver ids
         number_receiver_global(irec_local) = irec
       endif
     enddo
@@ -994,10 +1000,15 @@
     do isource = 1,NSOURCES
       if (myrank == islice_selected_source(isource)) then
         irec_local = irec_local + 1
+        ! checks counter
+        if (irec_local > nrec_local) call exit_MPI(myrank,'Error adjoint source interpolators: irec_local exceeds bounds')
+        ! stores local to global receiver/source ids
         number_receiver_global(irec_local) = isource
       endif
     enddo
   endif
+  ! checks if all local receivers have been found
+  if (irec_local /= nrec_local) call exit_MPI(myrank,'Error number of local receivers do not match')
 
   ! define and store Lagrange interpolators at all the receivers
   do irec_local = 1,nrec_local
@@ -1019,6 +1030,14 @@
     hxir_store(irec_local,:) = hxir(:)
     hetar_store(irec_local,:) = hetar(:)
     hgammar_store(irec_local,:) = hgammar(:)
+
+    do k = 1,NGLLZ
+      do j = 1,NGLLY
+        do i = 1,NGLLX
+          hlagrange_store(i,j,k,irec_local) = hxir_store(irec_local,i)*hetar_store(irec_local,j)*hgammar_store(irec_local,k)
+        enddo
+      enddo
+    enddo
 
     ! stores derivatives
     if (SIMULATION_TYPE == 2) then

@@ -80,8 +80,16 @@ end module my_mpi
   ! we need to make sure that NUMBER_OF_SIMULTANEOUS_RUNS and BROADCAST_SAME_MESH_AND_MODEL are read before calling world_split()
   ! thus read the parameter file
   call MPI_COMM_RANK(MPI_COMM_WORLD,myrank,ier)
-
-  if (myrank == 0) call read_parameter_file()
+  if (myrank == 0) then
+    call open_parameter_file_from_master_only(ier)
+    ! we need to make sure that NUMBER_OF_SIMULTANEOUS_RUNS and BROADCAST_SAME_MESH_AND_MODEL are read
+    call read_value_integer(NUMBER_OF_SIMULTANEOUS_RUNS, 'NUMBER_OF_SIMULTANEOUS_RUNS', ier)
+    if (ier /= 0) stop 'Error reading Par_file parameter NUMBER_OF_SIMULTANEOUS_RUNS'
+    call read_value_logical(BROADCAST_SAME_MESH_AND_MODEL, 'BROADCAST_SAME_MESH_AND_MODEL', ier)
+    if (ier /= 0) stop 'Error reading Par_file parameter BROADCAST_SAME_MESH_AND_MODEL'
+    ! close parameter file
+    call close_parameter_file()
+  endif
 
   ! broadcast parameters read from master to all processes
   my_local_mpi_comm_world = MPI_COMM_WORLD
@@ -1529,7 +1537,7 @@ end module my_mpi
   subroutine world_split()
 
   use my_mpi
-  use constants,only: MAX_STRING_LEN,OUTPUT_FILES_PATH, &
+  use constants,only: MAX_STRING_LEN,OUTPUT_FILES_BASE, &
     IMAIN,ISTANDARD_OUTPUT,mygroup,I_should_read_the_database
   use shared_input_parameters
 
@@ -1550,7 +1558,7 @@ end module my_mpi
   if (NUMBER_OF_SIMULTANEOUS_RUNS > 1 .and. IMAIN == ISTANDARD_OUTPUT) &
     stop 'must not have IMAIN == ISTANDARD_OUTPUT when NUMBER_OF_SIMULTANEOUS_RUNS > 1 otherwise output to screen is mingled'
 
-  OUTPUT_FILES = OUTPUT_FILES_PATH(1:len_trim(OUTPUT_FILES))
+  OUTPUT_FILES = OUTPUT_FILES_BASE(1:len_trim(OUTPUT_FILES_BASE))
 
   if (NUMBER_OF_SIMULTANEOUS_RUNS == 1) then
 
@@ -1577,7 +1585,6 @@ end module my_mpi
 
 !   add the right directory for that run (group numbers start at zero, but directory names start at run0001, thus we add one)
     write(path_to_add,"('run',i4.4,'/')") mygroup + 1
-    !OUTPUT_FILES_PATH = path_to_add(1:len_trim(path_to_add))//OUTPUT_FILES_PATH(1:len_trim(OUTPUT_FILES_PATH))
     OUTPUT_FILES = path_to_add(1:len_trim(path_to_add))//OUTPUT_FILES(1:len_trim(OUTPUT_FILES))
 
 !--- create a subcommunicator to broadcast the identical mesh and model databases if needed

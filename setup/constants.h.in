@@ -48,6 +48,13 @@
 
 !*********************************************************************************************************
 
+!! DK DK added this temporarily here to make SPECFEM3D and SPECFEM3D_GLOBE much more similar
+!! DK DK in terms of the structure of their main time iteration loop; these are future features
+!! DK DK that are missing in this code but implemented in the other and that could thus be cut and pasted one day
+  logical, parameter :: OUTPUT_ENERGY = .false.
+  integer, parameter :: IOUT_ENERGY = 937  ! file number for the energy file
+  logical, parameter :: GRAVITY_SIMULATION = .false.
+
 ! if files on a local path on each node are also seen as global with same path
 ! set to .true. typically on a machine with a common (shared) file system, e.g. LUSTRE, GPFS or NFS-mounted /home
 ! set to .false. typically on a cluster of nodes with local disks used to store the mesh (not very common these days)
@@ -318,6 +325,9 @@
 
 ! mesh coloring
 ! add mesh coloring for the GPU + MPI implementation
+! this is needed on NVIDIA hardware up to FERMI boards, included.
+! Starting on KEPLER boards you can leave it off because on KEPLER hardware
+! or higher atomic reduction operations have become as fast as resorting to mesh coloring.
   logical, parameter :: USE_MESH_COLORING_GPU = .false.
   integer, parameter :: MAX_NUMBER_OF_COLORS = 1000
 ! enhanced coloring:
@@ -337,8 +347,10 @@
 !!-----------------------------------------------------------
 
   integer, parameter :: ADIOS_BUFFER_SIZE_IN_MB = 200
-  character(len=*), parameter :: ADIOS_TRANSPORT_METHOD = 'MPI'
+  character(len=*), parameter :: ADIOS_TRANSPORT_METHOD = "MPI"
 
+  character(len=*), parameter :: ADIOS_TRANSPORT_METHOD_UNDO_ATT = "POSIX"
+  character(len=*), parameter :: ADIOS_METHOD_PARAMS_UNDO_ATT =  ""
 
 !!-----------------------------------------------------------
 !!
@@ -392,7 +404,7 @@
 !!-----------------------------------------------------------
 
 ! paths for inputs and outputs files
-  character(len=*), parameter :: OUTPUT_FILES_PATH_BASE = './OUTPUT_FILES/'
+  character(len=*), parameter :: OUTPUT_FILES_BASE = './OUTPUT_FILES/'
 
 
 !!-----------------------------------------------------------
@@ -772,6 +784,10 @@
 
 ! to create a reference model based on 1D_REF but with 3D crust and 410/660 topography
   logical,parameter :: USE_1D_REFERENCE = .false.
+
+!!-- uncomment for using PREM as reference model (used in CEM inversion)
+!  integer, parameter :: GLL_REFERENCE_1D_MODEL = REFERENCE_MODEL_PREM
+!  integer, parameter :: GLL_REFERENCE_MODEL = REFERENCE_MODEL_PREM
 
 !!-- uncomment for using S362ANI as reference model
   integer, parameter :: GLL_REFERENCE_1D_MODEL = REFERENCE_MODEL_1DREF

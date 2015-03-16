@@ -1,12 +1,25 @@
 
   program detect_duplicates_stations_file
 
+! Author: Dimitri Komatitsch, University of Pau and INRIA, France, around 2009.
+
+! This Fortran code also checks if two stations have the same latitude and longitude even if they do not have the same name
+! (this can happen in STATIONS files: the same station appearing twice but under different names,
+! in particular when the network name is different even if the station name itself is the same).
+!
+! Otherwise if the station appears twice but with the same name a simple Unix command such as:
+!
+!    sort STATIONS | uniq
+!
+! should remove multiples.
+
+  use constants
+
   implicit none
 
-  include "../setup/constants.h"
-
 ! input station file to filter
-  character(len=150), parameter :: STATIONS_FILE = 'STATIONS_all_20June2008'
+  character(len=150), parameter :: STATIONS_FILE = '../../DATA/STATIONS'
+! character(len=150), parameter :: STATIONS_FILE = 'STATIONS_all_20June2008'
 ! character(len=150), parameter :: STATIONS_FILE = 'STATIONS_SUBSET_35'
 ! character(len=150), parameter :: STATIONS_FILE = 'STATIONS_FULL_758'
 

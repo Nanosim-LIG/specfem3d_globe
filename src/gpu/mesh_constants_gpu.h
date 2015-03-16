@@ -164,6 +164,10 @@ typedef float realw;
 // (set to 0 for synchronuous/blocking copies, set to 1 for asynchronuous copies)
 #define GPU_ASYNC_COPY 1
 
+#ifndef GPU_ELEM_PER_THREAD
+#define GPU_ELEM_PER_THREAD 2
+#endif
+
 /*----------------------------------------------------------------------------------------------- */
 
 // (optional) pre-processing directive used in kernels: if defined check that it is also set in src/shared/constants.h:
@@ -993,6 +997,7 @@ void gpuSetConst (gpu_realw_mem *buffer, size_t size, realw *array);
 void gpuFree (void *d_array_addr_ptr);
 void gpuInitialize_buffers (Mesh *mp);
 void gpuSynchronize ();
+void gpuReset ();
 
 void exit_on_gpu_error (char *kernel_name);
 void exit_on_error (char *info);
@@ -1005,6 +1010,8 @@ void get_free_memory (double *free_db, double *used_db, double *total_db);
 realw get_device_array_maximum_value (gpu_realw_mem d_array, int size);
 
 /* ----------------------------------------------------------------------------------------------- */
+
+// OpenCL / CUDA macro definitions
 
 #ifndef TAKE_REF_OCL
 #define TAKE_REF_OCL(_buffer_)
@@ -1036,7 +1043,7 @@ realw get_device_array_maximum_value (gpu_realw_mem d_array, int size);
 #endif
 
 #define INIT_OFFSET(_buffer_, _offset_)         \
-  typeof(mp->_buffer_) _buffer_##_##_offset_;   \
+  __typeof__(mp->_buffer_) _buffer_##_##_offset_;   \
   INIT_OFFSET_OCL(_buffer_, _offset_);           \
   INIT_OFFSET_CUDA(_buffer_, _offset_);
 

@@ -27,6 +27,8 @@
 
 ! Ebru & Daniel
 ! Nice & Zurich, September 2014
+!
+! converts between adios and binary format for a model file 'model_gll.bp'
 
 program convert_model_file_adios
 
@@ -34,14 +36,12 @@ program convert_model_file_adios
   use adios_write_mod
   use adios_helpers_mod
 
-  use constants,only: CUSTOM_REAL,NGLLX,NGLLY,NGLLZ,IIN,IOUT, &
-    ADIOS_TRANSPORT_METHOD,ADIOS_BUFFER_SIZE_IN_MB,MAX_STRING_LEN
+  use postprocess_par,only: CUSTOM_REAL,NGLLX,NGLLY,NGLLZ,IIN,IOUT, &
+    MAX_STRING_LEN,NPROCTOT_VAL,NSPEC_CRUST_MANTLE
 
-  ! converts between adios and binary format for a model file like
+  use constants,only: ADIOS_TRANSPORT_METHOD
 
   implicit none
-
-  include "setup/values_from_mesher.h"
 
   !-------------------------------------------------------------------
   ! USER PARAMETERS

@@ -71,9 +71,11 @@ FCLINK = $(MPIFCCOMPILE_CHECK)
 @COND_OCL_FALSE@OCL = no
 
 MPI_INCLUDES = @MPI_INCLUDES@
+
 CUDA_FLAGS = @CUDA_FLAGS@
 CUDA_INC = @CUDA_CPPFLAGS@
 CUDA_LINK = @CUDA_LDFLAGS@ @CUDA_LIBS@
+CUDA_DEBUG = --cudart=shared
 
 @COND_CUDA_TRUE@NVCC = nvcc
 @COND_CUDA_FALSE@NVCC = @CC@
@@ -117,7 +119,7 @@ GENCODE_35 = -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 @COND_CUDA_TRUE@@COND_CUDA5_FALSE@GENCODE = $(GENCODE_20)
 
 # CUDA flags and linking
-@COND_CUDA_TRUE@NVCC_FLAGS_BASE = $(CUDA_FLAGS) $(CUDA_INC) $(MPI_INCLUDES)
+@COND_CUDA_TRUE@NVCC_FLAGS_BASE = $(CUDA_FLAGS) $(CUDA_INC) $(CUDA_DEBUG) $(MPI_INCLUDES)
 @COND_CUDA_TRUE@@COND_CUDA5_TRUE@NVCC_FLAGS = $(NVCC_FLAGS_BASE) -dc $(GENCODE)
 @COND_CUDA_TRUE@@COND_CUDA5_FALSE@NVCC_FLAGS = $(NVCC_FLAGS_BASE) -DUSE_OLDER_CUDA4_GPU $(GENCODE)
 
@@ -215,6 +217,7 @@ SUBDIRS = \
 	meshfem3D \
 	specfem3D \
 	auxiliaries \
+	postprocess \
 	tomography \
 	$(EMPTY_MACRO)
 
@@ -243,7 +246,7 @@ DEFAULT += 	\
 	$(EMPTY_MACRO)
 endif
 
-all: default
+all: default aux movies postprocess tomography
 
 default: $(DEFAULT)
 
@@ -296,20 +299,24 @@ endif
 	@echo "    xcreate_movie_GMT_global"
 	@echo "    xcombine_paraview_strain_data"
 	@echo ""
+	@echo "- postprocessing tools: [make postprocess]"
+	@echo "    xaddition_sem"
+	@echo "    xclip_sem"
+	@echo "    xcombine_sem"
+	@echo "    xdifference_sem"
+	@echo "    xinterpolate_model"
+	@echo "    xsmooth_sem"
+ifeq ($(ADIOS), yes)
+	@echo "    xconvert_model_file_adios"
+endif
+	@echo ""
 	@echo "- tomography tools: [make tomography]"
 	@echo "    xadd_model_iso"
 	@echo "    xadd_model_tiso"
 	@echo "    xadd_model_tiso_cg"
 	@echo "    xadd_model_tiso_iso"
-	@echo "    xaddition_sem"
-	@echo "    xdifference_sem"
-	@echo "    xinterpolate_model"
-	@echo "    xsmooth_sem"
 	@echo "    xsum_kernels"
 	@echo "    xsum_preconditioned_kernels"
-ifeq ($(ADIOS), yes)
-	@echo "    xconvert_model_file_adios"
-endif
 	@echo ""
 
 .PHONY: all default clean help

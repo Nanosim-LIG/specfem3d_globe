@@ -1,80 +1,78 @@
-!=====================================================================
-!
-!          S p e c f e m 3 D  G l o b e  V e r s i o n  7 . 0
-!          --------------------------------------------------
-!
-!     Main historical authors: Dimitri Komatitsch and Jeroen Tromp
-!                        Princeton University, USA
-!                and CNRS / University of Marseille, France
-!                 (there are currently many more authors!)
-! (c) Princeton University and CNRS / University of Marseille, April 2014
-!
-! This program is free software; you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation; either version 2 of the License, or
-! (at your option) any later version.
-!
-! This program is distributed in the hope that it will be useful,
-! but WITHOUT ANY WARRANTY; without even the implied warranty of
-! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! GNU General Public License for more details.
-!
-! You should have received a copy of the GNU General Public License along
-! with this program; if not, write to the Free Software Foundation, Inc.,
-! 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-!
-!=====================================================================
+        !=====================================================================
+        !
+        !          S p e c f e m 3 D  G l o b e  V e r s i o n  7 . 0
+        !          --------------------------------------------------
+        !
+        !     Main historical authors: Dimitri Komatitsch and Jeroen Tromp
+        !                        Princeton University, USA
+        !                and CNRS / University of Marseille, France
+        !                 (there are currently many more authors!)
+        ! (c) Princeton University and CNRS / University of Marseille, April 2014
+        !
+        ! This program is free software; you can redistribute it and/or modify
+        ! it under the terms of the GNU General Public License as published by
+        ! the Free Software Foundation; either version 2 of the License, or
+        ! (at your option) any later version.
+        !
+        ! This program is distributed in the hope that it will be useful,
+        ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+        ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        ! GNU General Public License for more details.
+        !
+        ! You should have received a copy of the GNU General Public License along
+        ! with this program; if not, write to the Free Software Foundation, Inc.,
+        ! 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+        !
+        !=====================================================================
 
-!------------------------------------------------------------------------------
-! interpolates from one mesh resolution to another
-!
-! inputs:
-!   - model parameter                       e.g. vsv, vsh   (-> proc***_reg1_vsv.bin)
-!
-!   - source model directory                 e.g. MODEL_M10/ (directory where proc***_reg1_vsv.bin lies)
-!
-! outputs:
-!   - velocity model into output_model_dir/
-!
-!
-! needs:
-!   - topo files from first mesh            e.g. topo_1/proc000001_reg1_solver_data.bin
-!
-!   - topo files from target mesh           e.g. topo_2/proc000001_reg1_solver_data.bin
-!
-!
-! usage: ./xinterpolate_model vsv MODEL_M10/
-!
-! note on mid-point search option:
-!  - mid-point-search == 1: looking for mid-points only is a good approach when changing number of processes (NPROC) only,
-!                           while keeping the mesh resolution (NEX) the same
-!                           (by default set to .true.)
-!  - mid-point-search == 0: searching for each single gll point is a good approach when changing resolution (NEX) of meshes;
-!                           in general, interpolation suffers and might lead to differences at internal interfaces (e.g. 410)
-!
-!------------------------------------------------------------------------------
+        !------------------------------------------------------------------------------
+        ! interpolates from one mesh resolution to another
+        !
+        ! inputs:
+        !   - model parameter                       e.g. vsv, vsh   (-> proc***_reg1_vsv.bin)
+        !
+        !   - source model directory                 e.g. MODEL_M10/ (directory where proc***_reg1_vsv.bin lies)
+        !
+        ! outputs:
+        !   - velocity model into output_model_dir/
+        !
+        !
+        ! needs:
+        !   - topo files from first mesh            e.g. topo_1/proc000001_reg1_solver_data.bin
+        !
+        !   - topo files from target mesh           e.g. topo_2/proc000001_reg1_solver_data.bin
+        !
+        !
+        ! usage: ./xinterpolate_model vsv MODEL_M10/
+        !
+        ! note on mid-point search option:
+        !  - mid-point-search == 1: looking for mid-points only is a good approach when changing number of processes (NPROC) only,
+        !                           while keeping the mesh resolution (NEX) the same
+        !                           (by default set to .true.)
+        !  - mid-point-search == 0: searching for each single gll point is a good approach when changing resolution (NEX) of meshes;
+        !                           in general, interpolation suffers and might lead to differences at internal interfaces (e.g. 410)
+        !
+        !------------------------------------------------------------------------------
 
 
-  program interpolate_model
+          program interpolate_model
 
-  use constants,only: CUSTOM_REAL,SIZE_INTEGER,NGLLX,NGLLY,NGLLZ, &
-    TWO_PI,R_UNIT_SPHERE, &
-    GAUSSALPHA,GAUSSBETA,NGNOD,MIDX,MIDY,MIDZ,R_EARTH_KM, &
-    IIN,IOUT,IFLAG_CRUST,IFLAG_80_MOHO,IFLAG_220_80,IFLAG_670_220,IFLAG_MANTLE_NORMAL,MAX_STRING_LEN
+          use constants,only: SIZE_INTEGER, &
+            TWO_PI,R_UNIT_SPHERE, &
+            NGNOD,MIDX,MIDY,MIDZ,R_EARTH_KM, &
+            IFLAG_CRUST,IFLAG_80_MOHO,IFLAG_220_80,IFLAG_670_220,IFLAG_MANTLE_NORMAL
 
-  use kdtree_search, only: kdtree_setup,kdtree_set_verbose,kdtree_delete,kdtree_find_nearest_neighbor, &
-    kdtree_num_nodes,kdtree_nodes_location,kdtree_nodes_index
+          use postprocess_par,only: &
+            CUSTOM_REAL,NGLLX,NGLLY,NGLLZ, &
+            GAUSSALPHA,GAUSSBETA,R_EARTH_KM, &
+            IIN,IOUT,MAX_STRING_LEN, &
+            NCHUNKS_VAL,NPROC_XI_VAL,NPROC_ETA_VAL,NPROCTOT_VAL,NEX_XI_VAL, &
+            NSPEC_CRUST_MANTLE,NGLOB_CRUST_MANTLE
 
-  implicit none
+          use kdtree_search, only: kdtree_setup,kdtree_set_verbose,kdtree_delete,kdtree_find_nearest_neighbor, &
+            kdtree_num_nodes,kdtree_nodes_location,kdtree_nodes_index
 
-  ! new, target mesh:
-  include 'setup/values_from_mesher.h'
-  ! takes:
-  ! NPROC_XI and NPROC_ETA
-  ! NPROCTOT_VAL
-  ! NEX_XI_VAL
-  ! NSPEC_CRUST_MANTLE
-  ! NGLOB_CRUST_MANTLE
+          implicit none
 
   !-------------------------------------------------------------------
   ! USER PARAMETERS
