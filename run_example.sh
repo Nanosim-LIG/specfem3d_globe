@@ -69,13 +69,14 @@ SPEC_BUILD=$HOME/specfem3d_build
 
 specfem() {
     get_config
-    echo "Preparing specfem script on $NUM_NODES processors." | grep --color=always -e '^Preparing.*$' >&2
+    
     if [[ -z "$1" ]]
     then
         JOB_NAME=specfem
     else
         JOB_NAME=$1
     fi
+    echo "Preparing $JOB_NAME script on $NUM_NODES processors." | grep --color=always -e '^Preparing.*$' >&2
     
     cat > job_$JOB_NAME.sh <<EOF
 #!/bin/bash
@@ -104,15 +105,11 @@ function cleanup {
     ln -s \$DEST last
 }
 
-cd $SPEC_BUILD/OUTPUT_FILES/
-rm -rf *.ascii timestamp_forward* *.vtk gpu_device* output_solver.txt starttimeloop.txt output_list_stations.txt
-cd - > /dev/null
-
-echo "Checking specfem build state ..."
+echo "Checking $JOB_NAME build state ..."
 do_make=\$(check_make)
 if [ \$? != 0 ]
 then
-  echo "Specfem build is not up to date, please recompile ..."
+  echo "Specfem/$JOB_NAME build is not up to date, please recompile ..."
   echo \$do_make 
   exit 1
 fi
@@ -198,6 +195,7 @@ enqueue() {
     chmod u+x $JOB
     my_sbatch $OPT $JOB
 }
+
 REMOTE="ssh.hca.bsc.es"
 REMOTE="localhost"
 compile() {
@@ -214,8 +212,11 @@ compile() {
     fi
 }
 
-run_benchmark() {    
+run() {    
     echo "Prepare mesher for $1"
+    
+    rm -rf $SPEC_BUILD/OUTPUT_FILES/*
+
     # run mesher
     if ! compile
     then
@@ -279,7 +280,7 @@ benchmark() {
         sed "s|^\(NPROC_XI\s*=\).*$|\1 $val|" -i DATA/Par_file
         sed "s|^\(NPROC_ETA\s*=\).*$|\1 $val|" -i DATA/Par_file
         
-        run_benchmark $val
+        run $val
     done
 }
 
@@ -294,12 +295,15 @@ do
   elif [ $1 == 'adjust' ]
   then
       adjust
+  elif [ $1 == 'compile' ]
+  then
+      adjust
   elif [ $1 == 'benchmark' ]
   then
       benchmark
-  elif [ $1 == 'specfem' ]
+  elif [ $1 == 'run' ]
   then
-      specfem
+      run once
   elif [ $1 == 'see' ]
   then
       cat last/specfem3d.out
@@ -335,11 +339,11 @@ do
       what=$([[ $run_mesh == 0 ]] && echo meshfem || echo specfem)
       echo -e "### $txtred Running $what $txtblk ###" 
       
-      echo "Checking specfem build state ..."
+      echo "Checking $what build state ..."
       do_make=$(check_make)
       if [ $? != 0 ]
       then
-          echo "Specfem build is not  up to date, please recompile ..."
+          echo "Specfem/$what build is not  up to date, please recompile ..."
           echo $do_make 
           exit 1
       fi
